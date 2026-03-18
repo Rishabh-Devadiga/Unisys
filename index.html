@@ -367,9 +367,22 @@
         <div class="form-group"><label class="form-label">Your Role</label><input class="form-input" id="cs-role" placeholder="Principal / Director"/></div>
         <div class="form-group"><label class="form-label">Create Password</label><input class="form-input" id="cs-password" type="password" placeholder="Min. 8 characters"/></div>
       </div>
+      <div id="cs-error" style="display:none;color:var(--red);font-size:13px;margin-bottom:12px;padding:10px 14px;background:rgba(248,113,113,0.1);border-radius:var(--r-sm);border:1px solid rgba(248,113,113,0.2)">&#9888; </div>
       <div class="form-actions">
-        <button class="btn btn-primary" onclick="registerCollege()">Register College &rarr;</button>
+        <button class="btn btn-primary" onclick="sendOtpForSignup()">Register College &rarr;</button>
         <button class="btn" onclick="showPage('edusys-access')">Back to Access</button>
+      </div>
+    </div>
+    <div class="panel" id="otp-verify-panel" style="display:none">
+      <div class="form-section-title">📧 Email Verification Required</div>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:16px">We've sent a verification code to <strong id="otp-email-display"></strong>. Please enter it below.</p>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Verification Code (OTP)</label><input class="form-input" id="cs-otp" placeholder="000000" maxlength="6"/></div>
+      </div>
+      <div id="otp-error" style="display:none;color:var(--red);font-size:13px;margin-bottom:12px;padding:10px 14px;background:rgba(248,113,113,0.1);border-radius:var(--r-sm);border:1px solid rgba(248,113,113,0.2)">&#9888; </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="verifyOtpForSignup()">Verify & Create Account &rarr;</button>
+        <button class="btn" onclick="backToFormFromOtp()">Back to Form</button>
       </div>
     </div>
     <div class="panel" id="key-panel" style="display:none">
@@ -1010,6 +1023,45 @@
     s.src = "firebase-email.js?v=2026-03-17-9";
     document.head.appendChild(s);
   })();
+</script>
+<!-- Supabase Auth Library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Initialize Supabase directly after the library loads
+  console.log('1️⃣ Initializing Supabase client...');
+  
+  const SUPABASE_URL = 'https://lavpauiiehixxebjxdej.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_OG6wuzlkm-7GFP1dRDENew_nDBe2x-E';
+  
+  // Check if library is available
+  let supabaseClient = null;
+  if (window.supabase && window.supabase.createClient) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Make it globally available
+    window.supabase_client = supabaseClient;
+    console.log('✓ Supabase initialized successfully');
+  } else {
+    console.warn('⚠️ Supabase library not found. Will retry...');
+    // Retry after a short delay
+    setTimeout(() => {
+      if (window.supabase && window.supabase.createClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase_client = supabaseClient;
+        console.log('✓ Supabase initialized successfully (after retry)');
+      } else {
+        console.error('✕ Supabase library failed to load');
+      }
+    }, 500);
+  }
+</script>
+<!-- Supabase Configuration (minimal) -->
+<script src="supabase-config.js?v=2026-03-17-9"></script>
+<!-- OTP Verification Functions -->
+<script src="otp.js?v=2026-03-17-9"></script>
+<script>
+  console.log('2️⃣ All scripts loaded');
+  console.log('  supabase_client:', typeof window.supabase_client !== 'undefined' ? '✓ Available' : '✗ Not available');
+  console.log('  sendOtpForSignup:', typeof sendOtpForSignup === 'function' ? '✓ Available' : '✗ Not available');
 </script>
 <script src="main.js?v=2026-03-17-9"></script>
 <script src="roles.js?v=2026-03-17-9"></script>

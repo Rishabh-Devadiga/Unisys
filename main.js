@@ -659,16 +659,16 @@ function fillDemo() {
   showToast('Credentials filled — click Enter ERP', 'info');
 }
 
-/* ── CREATE SYSTEM ─────────────────────────────── */
+/* ── CREATE SYSTEM (WITH EMAIL OTP VERIFICATION) ─────────────────────────────── */
+// Registration with OTP verification is now handled by sendOtpForSignup() in otp.js
+// This function maintains backward compatibility but is delegated to otp.js
 function registerCollege() {
-  const college = gv('cs-college'), email = gv('cs-email'), head = gv('cs-head');
-  if (!college || !email || !head) { showToast('Please fill all required fields', 'error'); return; }
-  const key = 'EDU-' + Math.random().toString(36).slice(2, 6).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
-  storeSet('edusys-key', key);
-  const kd = g('generated-key'); if (kd) kd.textContent = key;
-  const fp = g('create-form-panel'); if (fp) fp.style.display = 'none';
-  const kp = g('key-panel'); if (kp) kp.style.display = 'block';
-  showToast(college + ' registered! System Key generated.');
+  // Delegate to OTP verification flow
+  if (typeof sendOtpForSignup === 'function') {
+    sendOtpForSignup();
+  } else {
+    showToast('OTP module not loaded. Please refresh the page.', 'error');
+  }
 }
 function copyKey() {
   const key = (g('generated-key') || {}).textContent || '';
