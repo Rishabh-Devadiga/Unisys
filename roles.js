@@ -1,7 +1,7 @@
 /* ============================================================
    roles.js — UniSys EduSys Role-Based Dashboard System
    Extends main.js without modifying it.
-   Roles: Admin | Principal | HOD | Faculty
+   Roles: Admin | Principal | HOD | Faculty | Account | Admissions | Railway Concession
    Storage: localStorage (demo mode, no backend needed)
    ============================================================ */
 
@@ -13,7 +13,10 @@ var DEMO_USERS = [
   { email:'admin@edusys.in',     password:'admin123',     role:'Admin',     name:'Mr. Suresh Kumar',   dept:'All',  title:'System Administrator' },
   { email:'principal@edusys.in', password:'principal123', role:'Principal', name:'Dr. Anita Sharma',   dept:'All',  title:'Principal' },
   { email:'hod@edusys.in',       password:'hod123',       role:'HOD',       name:'Dr. Rajiv Rao',      dept:'CSE',  title:'Head of Department — CSE' },
-  { email:'faculty@edusys.in',   password:'faculty123',   role:'Faculty',   name:'Prof. Meera Singh',  dept:'CSE',  title:'Assistant Professor — CSE' }
+  { email:'faculty@edusys.in',   password:'faculty123',   role:'Faculty',   name:'Prof. Meera Singh',  dept:'CSE',  title:'Assistant Professor — CSE' },
+  { email:'accounts@edusys.in',  password:'accounts123',  role:'Account',   name:'Ms. Kavita Shah',    dept:'Finance', title:'Accounts Officer' },
+  { email:'admissions@edusys.in',password:'admissions123',role:'Admissions',name:'Mr. Abhishek Rao',   dept:'Admissions', title:'Admissions Officer' },
+  { email:'concession@edusys.in',password:'concession123',role:'Railway Concession', name:'Ms. Sana Ali', dept:'Student Services', title:'Railway Concession Desk' }
 ];
 
 /* ── DEMO DATA ──────────────────────────────────────────────
@@ -30,7 +33,10 @@ var SEED_DATA = {
     { id:3, name:'Dr. Rajiv Rao',     email:'hod@edusys.in',       role:'HOD',       dept:'CSE',   status:'Active',  lastLogin:'2026-03-13 17:30' },
     { id:4, name:'Prof. Meera Singh', email:'faculty@edusys.in',   role:'Faculty',   dept:'CSE',   status:'Active',  lastLogin:'2026-03-14 10:00' },
     { id:5, name:'Dr. Vikram Iyer',   email:'hod2@edusys.in',      role:'HOD',       dept:'ECE',   status:'Active',  lastLogin:'2026-03-13 15:20' },
-    { id:6, name:'Prof. Nisha Patel', email:'faculty2@edusys.in',  role:'Faculty',   dept:'ECE',   status:'Inactive',lastLogin:'2026-03-10 11:00' }
+    { id:6, name:'Prof. Nisha Patel', email:'faculty2@edusys.in',  role:'Faculty',   dept:'ECE',   status:'Inactive',lastLogin:'2026-03-10 11:00' },
+    { id:7, name:'Ms. Kavita Shah',   email:'accounts@edusys.in',  role:'Account',   dept:'Finance', status:'Active', lastLogin:'2026-03-14 09:40' },
+    { id:8, name:'Mr. Abhishek Rao',  email:'admissions@edusys.in',role:'Admissions',dept:'Admissions', status:'Active', lastLogin:'2026-03-14 09:20' },
+    { id:9, name:'Ms. Sana Ali',      email:'concession@edusys.in',role:'Railway Concession', dept:'Student Services', status:'Active', lastLogin:'2026-03-14 08:55' }
   ],
 
   /* Departments */
@@ -48,16 +54,12 @@ var SEED_DATA = {
     { id:2,  name:'Rohan Mehta',    roll:'CSE-102', dept:'CSE', year:'3rd Year', status:'Active',   cgpa:7.9, attendance:88, email:'rohan@college.edu',   phone:'9876543211' },
     { id:3,  name:'Ananya Das',     roll:'CSE-103', dept:'CSE', year:'3rd Year', status:'Active',   cgpa:9.1, attendance:96, email:'ananya@college.edu',  phone:'9876543212' },
     { id:4,  name:'Karan Gupta',    roll:'CSE-104', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:7.2, attendance:74, email:'karan@college.edu',   phone:'9876543213' },
-    { id:5,  name:'Rishabh Devadiga', roll:'CSE-105', dept:'CSE', year:'2nd Year', status:'Active', cgpa:6.8, attendance:60, email:'devadigarishabh@gmail.com', phone:'9876543220' },
-    { id:6,  name:'Gaurav Pawar',   roll:'CSE-106', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:7.0, attendance:65, email:'gauravpawar2618@gmail.com', phone:'9876543221' },
-    { id:7,  name:'Sneha Nair',     roll:'CSE-107', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:8.8, attendance:95, email:'sneha@college.edu',   phone:'9876543214' },
+    { id:5,  name:'Sneha Nair',     roll:'CSE-105', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:8.8, attendance:95, email:'sneha@college.edu',   phone:'9876543214' },
     { id:6,  name:'Dev Malhotra',   roll:'ME-204',  dept:'ME',  year:'2nd Year', status:'Active',   cgpa:7.5, attendance:81, email:'dev@college.edu',     phone:'9876543215' },
     { id:7,  name:'Anjali Singh',   roll:'ECE-305', dept:'ECE', year:'3rd Year', status:'Active',   cgpa:8.2, attendance:89, email:'anjali@college.edu',  phone:'9876543216' },
     { id:8,  name:'Vijay Kumar',    roll:'CSE-106', dept:'CSE', year:'1st Year', status:'Active',   cgpa:7.8, attendance:85, email:'vijay@college.edu',   phone:'9876543217' },
     { id:9,  name:'Pooja Reddy',    roll:'MBA-201', dept:'MBA', year:'1st Year', status:'Active',   cgpa:8.6, attendance:91, email:'pooja@college.edu',   phone:'9876543218' },
-    { id:10, name:'Amit Joshi',     roll:'CSE-107', dept:'CSE', year:'4th Year', status:'Active',   cgpa:9.3, attendance:97, email:'amit@college.edu',    phone:'9876543219' },
-    { id:11, name:'Rishabh Devadiga', roll:'CSE-108', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:6.8, attendance:60, email:'devadigarishabh@gmail.com', phone:'9876543220' },
-    { id:12, name:'Gaurav Pawar',   roll:'CSE-109', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:7.1, attendance:65, email:'gauravpawar2618@gmail.com', phone:'9876543221' }
+    { id:10, name:'Amit Joshi',     roll:'CSE-107', dept:'CSE', year:'4th Year', status:'Active',   cgpa:9.3, attendance:97, email:'amit@college.edu',    phone:'9876543219' }
   ],
 
   /* Courses (CSE focus for HOD/Faculty) */
@@ -277,6 +279,15 @@ var ROLE_MODULES = {
     /* Faculty-only */
     'role-mycourses','role-attendance','role-marks','role-assignments',
     'role-materials','role-schedule','role-announce'
+  ],
+  Account: [
+    'overview','students','communications','analytics'
+  ],
+  Admissions: [
+    'overview','students'
+  ],
+  'Railway Concession': [
+    'overview'
   ]
 };
 
@@ -309,7 +320,10 @@ var ROLE_NAV = {
     { id:'role-materials',  icon:'📁', label:'Study Materials',    section:'My Dashboard' },
     { id:'role-schedule',   icon:'🗓', label:'My Schedule',        section:'My Dashboard' },
     { id:'role-announce',   icon:'📣', label:'Post Announcement',  section:'My Dashboard' }
-  ]
+  ],
+  Account: [],
+  Admissions: [],
+  'Railway Concession': []
 };
 
 /* ══════════════════════════════════════════════════════════
@@ -384,14 +398,17 @@ function buildAdminOverride() {
 /* Admin: User Management */
 function buildAdminUsers() {
   var db = dbGet();
-  var roleColors = { Admin:'purple', Principal:'blue', HOD:'accent', Faculty:'green' };
+  var roleColors = {
+    Admin:'purple', Principal:'blue', HOD:'accent', Faculty:'green',
+    Account:'yellow', Admissions:'blue', 'Railway Concession':'orange'
+  };
   return '<div class="module-header"><div class="module-title">User Management</div>'
     + '<div class="module-sub">Create, edit, delete users and assign roles. Changes saved to localStorage.</div></div>'
     + '<div class="panel"><div class="form-section-title">Add New User</div>'
     + '<div class="form-grid">'
     + '<div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="nu-name" placeholder="Dr. Name"/></div>'
     + '<div class="form-group"><label class="form-label">Email</label><input class="form-input" id="nu-email" type="email" placeholder="user@edusys.in"/></div>'
-    + '<div class="form-group"><label class="form-label">Role</label><select class="form-select" id="nu-role"><option>Admin</option><option>Principal</option><option>HOD</option><option>Faculty</option></select></div>'
+    + '<div class="form-group"><label class="form-label">Role</label><select class="form-select" id="nu-role"><option>Admin</option><option>Principal</option><option>HOD</option><option>Faculty</option><option>Account</option><option>Admissions</option><option>Railway Concession</option></select></div>'
     + '<div class="form-group"><label class="form-label">Department</label><select class="form-select" id="nu-dept"><option>All</option><option>CSE</option><option>ECE</option><option>ME</option><option>Civil</option><option>MBA</option></select></div>'
     + '<div class="form-group"><label class="form-label">Password</label><input class="form-input" id="nu-pass" type="password" placeholder="Temp password"/></div>'
     + '</div>'
@@ -1254,7 +1271,15 @@ function injectRoleNav(role) {
         /* Deactivate all nav items */
         document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
         btn.classList.add('active');
-        renderRoleSection(item.id);
+        if (item.module) {
+          document.querySelectorAll('.module-section').forEach(function(s) {
+            s.classList.toggle('active', s.id === item.module);
+          });
+          var mw = document.querySelector('.module-wrap');
+          if (mw) mw.scrollTop = 0;
+        } else {
+          renderRoleSection(item.id);
+        }
       });
       insertRoleEl(btn);
     });
@@ -1290,7 +1315,10 @@ function applyRoleOverview(role) {
     Admin:     buildAdminOverride,
     Principal: buildPrincipalOverride,
     HOD:       buildHODOverride,
-    Faculty:   buildFacultyOverride
+    Faculty:   buildFacultyOverride,
+    Account:   buildAccountOverview,
+    Admissions: buildAdmissionsOverview,
+    'Railway Concession': buildRailwayOverview
   };
   if (overrideMap[role]) {
     overviewEl.innerHTML = overrideMap[role]();
@@ -1303,7 +1331,10 @@ function showRoleBadge(sess) {
   if (!topbar) return;
   var existing = topbar.querySelector('.role-badge-wrap');
   if (existing) existing.remove();
-  var colors = { Admin:'purple', Principal:'blue', HOD:'accent', Faculty:'green' };
+  var colors = {
+    Admin:'purple', Principal:'blue', HOD:'accent', Faculty:'green',
+    Account:'yellow', Admissions:'blue', 'Railway Concession':'orange'
+  };
   var wrap = document.createElement('div');
   wrap.className = 'role-badge-wrap';
   wrap.style.cssText = 'display:flex;align-items:center;gap:8px;flex-shrink:0;margin-right:4px';
@@ -1419,6 +1450,9 @@ function enhanceAccessPage() {
     + buildRoleCard('Principal', '🏛',  'principal@edusys.in', 'principal123', 'blue',   'Institution performance, approve HOD proposals')
     + buildRoleCard('HOD',       '📚', 'hod@edusys.in',       'hod123',       'accent', 'CSE dept management, leave approvals, timetable')
     + buildRoleCard('Faculty',   '👨‍🏫', 'faculty@edusys.in',   'faculty123',   'green',  'My courses, attendance, marks, assignments')
+    + buildRoleCard('Account',   '💰', 'accounts@edusys.in',  'accounts123',  'yellow', 'Student accounts, finance, outstanding, analytics')
+    + buildRoleCard('Admissions','🎓', 'admissions@edusys.in','admissions123','blue',   'Admissions pipeline, caste/category, documents')
+    + buildRoleCard('Railway Concession','🚆', 'concession@edusys.in','concession123','orange', 'Concession requests and appointment scheduling')
     + '</div>';
 
   /* Insert after last panel */

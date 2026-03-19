@@ -151,11 +151,43 @@ var EXT_SEED = {
 
   /* Student lifecycle flags */
   studentFlags: [
-    { studentId:4,  roll:'CSE-104', name:'Karan Gupta',      flag:'Low Attendance (74%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-12' },
-    { studentId:5,  roll:'CSE-105', name:'Rishabh Devadiga', flag:'Low Attendance (60%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-19' },
-    { studentId:6,  roll:'CSE-106', name:'Gaurav Pawar',     flag:'Low Attendance (65%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-19' },
-    { studentId:2,  roll:'CSE-102', name:'Rohan Mehta',      flag:'CO3 Attainment Gap',      severity:'Info',    raisedBy:'OBE Engine',        date:'2026-03-14' },
-    { studentId:9,  roll:'MBA-201', name:'Pooja Reddy',      flag:'Fee Payment Overdue',     severity:'Urgent',  raisedBy:'Finance',           date:'2026-03-10' }
+    { studentId:4,  roll:'CSE-104', name:'Karan Gupta',   flag:'Low Attendance (74%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-12' },
+    { studentId:2,  roll:'CSE-102', name:'Rohan Mehta',   flag:'CO3 Attainment Gap',      severity:'Info',    raisedBy:'OBE Engine',        date:'2026-03-14' },
+    { studentId:9,  roll:'MBA-201', name:'Pooja Reddy',   flag:'Fee Payment Overdue',     severity:'Urgent',  raisedBy:'Finance',           date:'2026-03-10' }
+  ],
+
+  /* Admissions: caste/category data */
+  studentCategories: [
+    { studentId:1, category:'General', caste:'General' },
+    { studentId:2, category:'OBC',     caste:'OBC-NCL' },
+    { studentId:3, category:'SC',      caste:'SC' },
+    { studentId:4, category:'OBC',     caste:'OBC-NCL' },
+    { studentId:5, category:'General', caste:'General' },
+    { studentId:9, category:'OBC',     caste:'OBC-NCL' }
+  ],
+
+  /* Admissions: submitted documents */
+  studentDocuments: [
+    { id:1, studentId:1, type:'10th Marksheet',      status:'Verified',  submittedOn:'2026-03-02' },
+    { id:2, studentId:1, type:'12th Marksheet',      status:'Verified',  submittedOn:'2026-03-02' },
+    { id:3, studentId:2, type:'Caste Certificate',   status:'Submitted', submittedOn:'2026-03-05' },
+    { id:4, studentId:3, type:'Transfer Certificate',status:'Pending',   submittedOn:'2026-03-06' },
+    { id:5, studentId:4, type:'Income Certificate',  status:'Submitted', submittedOn:'2026-03-07' },
+    { id:6, studentId:9, type:'Degree Certificate',  status:'Verified',  submittedOn:'2026-03-01' }
+  ],
+
+  /* Accounts: outstanding fees */
+  feeOutstanding: [
+    { id:1, studentId:4, type:'Tuition Fee', amount:45000, dueDate:'2026-03-10', status:'Overdue' },
+    { id:2, studentId:2, type:'Hostel Fee',  amount:18000, dueDate:'2026-03-25', status:'Pending' },
+    { id:3, studentId:9, type:'Exam Fee',    amount:2500,  dueDate:'2026-03-30', status:'Pending' }
+  ],
+
+  /* Railway concession requests */
+  concessionRequests: [
+    { id:1, studentId:2, route:'Bengaluru - Mysore',  requestDate:'2026-03-12', status:'Requested', appointmentDate:'' },
+    { id:2, studentId:4, route:'Mysore - Bengaluru',  requestDate:'2026-03-11', status:'Requested', appointmentDate:'' },
+    { id:3, studentId:9, route:'Bengaluru - Chennai', requestDate:'2026-03-08', status:'Scheduled', appointmentDate:'2026-03-18' }
   ],
 
   /* Student behavior records */
@@ -553,6 +585,147 @@ function buildResourceCard(name, usage, sub, color) {
   return '<div class="kpi-card"><div class="kpi-label">'+name+'</div>'
     +'<div class="kpi-value" style="-webkit-text-fill-color:var(--'+color+')">'+ usage+'</div>'
     +'<span class="kpi-sub kpi-neutral">'+sub+'</span></div>';
+}
+
+/* ============================================================
+   ADMIN SUB-SCHEMAS — Accounts, Admissions, Railway Concession
+   ============================================================ */
+
+function findStudentById(db, id) {
+  return (db.students || []).find(function(s){ return s.id === id; }) || {};
+}
+
+function buildAccountOverview() {
+  var db = dbGet();
+  var items = db.feeOutstanding || [];
+  var pending = items.filter(function(i){ return i.status !== 'Paid'; });
+  var overdue = items.filter(function(i){ return i.status === 'Overdue'; });
+  var totalDue = pending.reduce(function(s,i){ return s + (i.amount || 0); }, 0);
+  return '<div class="module-header"><div class="module-title">Accounts Dashboard</div>'
+    + '<div class="module-sub">Student fee status, outstanding balances, and quick finance insights.</div></div>'
+    + '<div class="kpi-grid">'
+    + widgetKpi('Outstanding Students', pending.length, 'Fees pending', pending.length ? 'down' : 'up')
+    + widgetKpi('Total Due', '₹' + totalDue.toLocaleString(), 'Across all students', pending.length ? 'down' : 'up')
+    + widgetKpi('Overdue', overdue.length, 'Needs follow-up', overdue.length ? 'down' : 'neutral')
+    + widgetKpi('Paid Today', items.filter(function(i){ return i.status === 'Paid'; }).length, 'Transactions logged', 'up')
+    + '</div>';
+}
+
+function buildAdmissionsOverview() {
+  var db = dbGet();
+  var cats = db.studentCategories || [];
+  var docs = db.studentDocuments || [];
+  var pendingDocs = docs.filter(function(d){ return d.status !== 'Verified'; });
+  return '<div class="module-header"><div class="module-title">Admissions Dashboard</div>'
+    + '<div class="module-sub">Admissions pipeline with caste/category and document verification.</div></div>'
+    + '<div class="kpi-grid">'
+    + widgetKpi('Applicants', (db.admissions || []).length, 'Current cycle', 'up')
+    + widgetKpi('Students Categorized', cats.length, 'Caste/Category entries', 'up')
+    + widgetKpi('Docs Pending', pendingDocs.length, 'Awaiting verification', pendingDocs.length ? 'down' : 'up')
+    + widgetKpi('Docs Verified', docs.length - pendingDocs.length, 'Completed', 'up')
+    + '</div>';
+}
+
+function buildRailwayOverview() {
+  var db = dbGet();
+  var reqs = db.concessionRequests || [];
+  var scheduled = reqs.filter(function(r){ return (r.appointmentDate || r.status === 'Scheduled'); });
+  var pending = reqs.filter(function(r){ return !r.appointmentDate && r.status !== 'Scheduled'; });
+  return '<div class="module-header"><div class="module-title">Railway Concession Dashboard</div>'
+    + '<div class="module-sub">Track concession requests and assign appointment dates.</div></div>'
+    + '<div class="kpi-grid">'
+    + widgetKpi('Requests', reqs.length, 'Total submitted', 'up')
+    + widgetKpi('Scheduled', scheduled.length, 'Appointments fixed', scheduled.length ? 'up' : 'neutral')
+    + widgetKpi('Pending', pending.length, 'Need appointment date', pending.length ? 'down' : 'up')
+    + widgetKpi('Completed', reqs.filter(function(r){ return r.status === 'Completed'; }).length, 'Closed', 'neutral')
+    + '</div>';
+}
+
+function buildAccountOutstanding() {
+  var db = dbGet();
+  var rows = (db.feeOutstanding || []).map(function(o){
+    var s = findStudentById(db, o.studentId);
+    var name = s.name || '—';
+    var roll = s.roll || '—';
+    var status = o.status || 'Pending';
+    var action = status === 'Paid'
+      ? '<span class="badge badge-green">Paid</span>'
+      : '<button class="btn btn-sm btn-success" onclick="accountMarkPaid('+o.id+')">Mark Paid</button>';
+    return [
+      name,
+      roll,
+      o.type || 'Fee',
+      '₹' + Number(o.amount || 0).toLocaleString(),
+      o.dueDate || '—',
+      sbadge(status),
+      action
+    ];
+  });
+
+  return '<div class="module-header"><div class="module-title">Outstanding Fees</div>'
+    + '<div class="module-sub">Track pending and overdue student payments. Mark items as paid once collected.</div></div>'
+    + widgetTable(['Student','Roll','Fee Type','Amount','Due Date','Status','Action'], rows);
+}
+
+function buildAdmissionsCasteCategory() {
+  var db = dbGet();
+  var rows = (db.studentCategories || []).map(function(c){
+    var s = findStudentById(db, c.studentId);
+    return [
+      s.name || '—',
+      s.roll || '—',
+      s.dept || '—',
+      c.category || '—',
+      c.caste || '—'
+    ];
+  });
+  return '<div class="module-header"><div class="module-title">Student Caste / Category</div>'
+    + '<div class="module-sub">Admissions category details for enrolled students.</div></div>'
+    + widgetTable(['Student','Roll','Dept','Category','Caste'], rows);
+}
+
+function buildAdmissionsDocuments() {
+  var db = dbGet();
+  var rows = (db.studentDocuments || []).map(function(d){
+    var s = findStudentById(db, d.studentId);
+    return [
+      s.name || '—',
+      s.roll || '—',
+      d.type || '—',
+      sbadge(d.status || 'Pending'),
+      d.submittedOn || '—'
+    ];
+  });
+  return '<div class="module-header"><div class="module-title">Student Documents</div>'
+    + '<div class="module-sub">View submitted documents and verification status.</div></div>'
+    + widgetTable(['Student','Roll','Document','Status','Submitted On'], rows);
+}
+
+function buildRailwayConcessionAppointments() {
+  var db = dbGet();
+  var rows = (db.concessionRequests || []).map(function(r){
+    var s = findStudentById(db, r.studentId);
+    var status = r.appointmentDate ? 'Scheduled' : (r.status || 'Requested');
+    var inputId = 'rc-appt-' + r.id;
+    var btnLabel = r.appointmentDate ? 'Update' : 'Set';
+    var action = '<div style="display:flex;gap:6px;align-items:center">'
+      + '<input type="date" class="form-input" id="'+inputId+'" value="'+(r.appointmentDate || '')+'"/>'
+      + '<button class="btn btn-sm btn-primary" onclick="railwaySetAppointment('+r.id+')">'+btnLabel+'</button>'
+      + '</div>';
+    return [
+      s.name || '—',
+      s.roll || '—',
+      r.route || '—',
+      r.requestDate || '—',
+      sbadge(status),
+      r.appointmentDate || '—',
+      action
+    ];
+  });
+
+  return '<div class="module-header"><div class="module-title">Railway Concession Appointments</div>'
+    + '<div class="module-sub">Students request concessions; assign an appointment date for verification.</div></div>'
+    + widgetTable(['Student','Roll','Route','Requested On','Status','Appointment','Action'], rows);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1179,6 +1352,31 @@ function adminResolveFlag(studentId) {
 }
 function adminAddBooking() { showToast('Resource booking form — add via Facilities module', 'info'); }
 
+function accountMarkPaid(id) {
+  var db = dbGet();
+  var item = (db.feeOutstanding || []).find(function(x){ return x.id === id; });
+  if (!item) return;
+  item.status = 'Paid';
+  item.paidOn = new Date().toISOString().split('T')[0];
+  dbSave(db);
+  showToast('Payment marked as paid');
+  renderRoleSection('role-account-outstanding');
+}
+
+function railwaySetAppointment(id) {
+  var db = dbGet();
+  var item = (db.concessionRequests || []).find(function(x){ return x.id === id; });
+  if (!item) return;
+  var input = g('rc-appt-' + id);
+  var date = input ? input.value : '';
+  if (!date) { showToast('Select appointment date', 'error'); return; }
+  item.appointmentDate = date;
+  item.status = 'Scheduled';
+  dbSave(db);
+  showToast('Appointment scheduled');
+  renderRoleSection('role-railway-concession');
+}
+
 function principalAddCalEvent() {
   var db = dbGet();
   var title = prompt('Event title:');
@@ -1644,27 +1842,11 @@ function smEmailMeAsDefaulter(toEmail, dept, threshold) {
 }
 
 function hodEmailDefaulters() {
-  console.log('🚀 hodEmailDefaulters clicked');
-  fetch('http://localhost:3001/send-emails', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  })
-    .then(res => {
-      console.log('Response received:', res);
-      return res.json();
-    })
-    .then(data => {
-      console.log('Data:', data);
-      if (data.success) {
-        showToast('✅ Emails sent successfully!\nTotal: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
-      } else {
-        showToast('⚠️ Failed to send emails: ' + (data.error || 'Unknown error'), 'error');
-      }
-    })
-    .catch(err => {
-      console.error('Fetch error:', err);
-      showToast('❌ Error: ' + err.message, 'error');
-    });
+  var db = dbGet();
+  var dept = smMyDept();
+  var threshold = hodGetThreshold();
+  var list = smDefaulters(smDeptStudents(db, dept), threshold);
+  smEmailDefaulters(list, dept, threshold);
 }
 
 function hodEmailMeAsDefaulter() {
@@ -2244,27 +2426,11 @@ function facExportDefaulters() {
 }
 
 function facEmailDefaulters() {
-  console.log('🚀 facEmailDefaulters clicked');
-  fetch('http://localhost:3001/send-emails', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  })
-    .then(res => {
-      console.log('Response received:', res);
-      return res.json();
-    })
-    .then(data => {
-      console.log('Data:', data);
-      if (data.success) {
-        showToast('✅ Emails sent successfully!\nTotal: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
-      } else {
-        showToast('⚠️ Failed to send emails: ' + (data.error || 'Unknown error'), 'error');
-      }
-    })
-    .catch(err => {
-      console.error('Fetch error:', err);
-      showToast('❌ Error: ' + err.message, 'error');
-    });
+  var db = dbGet();
+  var dept = smMyDept();
+  var threshold = facGetThreshold();
+  var list = smDefaulters(smDeptStudents(db, dept), threshold);
+  smEmailDefaulters(list, dept, threshold);
 }
 
 function facEmailMeAsDefaulter() {
@@ -2772,6 +2938,11 @@ Object.assign(SECTION_BUILDERS, {
   'role-multicampus': buildAdminMultiCampus,
   'role-obe-admin':   buildAdminOBE,
   'role-resources':   buildAdminResources,
+  /* Admin sub-schemas */
+  'role-account-outstanding': buildAccountOutstanding,
+  'role-admission-caste':     buildAdmissionsCasteCategory,
+  'role-admission-docs':      buildAdmissionsDocuments,
+  'role-railway-concession':  buildRailwayConcessionAppointments,
   /* Principal new */
   'role-enrollment':  buildPrincipalEnrollment,
   'role-obe-principal': buildPrincipalOBE,
@@ -2827,6 +2998,15 @@ ROLE_MODULES.Faculty = ROLE_MODULES.Faculty.concat([
   'role-faculty-attendance','role-faculty-performance',
   'role-faculty-defaulters','role-faculty-cia-ese','role-faculty-behavior','role-faculty-reports'
 ]);
+ROLE_MODULES.Account = (ROLE_MODULES.Account || []).concat([
+  'role-account-outstanding'
+]);
+ROLE_MODULES.Admissions = (ROLE_MODULES.Admissions || []).concat([
+  'role-admission-caste','role-admission-docs'
+]);
+ROLE_MODULES['Railway Concession'] = (ROLE_MODULES['Railway Concession'] || []).concat([
+  'role-railway-concession'
+]);
 
 /* Add new nav items to ROLE_NAV */
 ROLE_NAV.Admin = ROLE_NAV.Admin.concat([
@@ -2873,6 +3053,18 @@ ROLE_NAV.Faculty = ROLE_NAV.Faculty.concat([
   { id:'role-faculty-behavior',   icon:'🏷', label:'Behavior',           section:'Faculty — Student Mgmt' },
   { id:'role-faculty-performance', icon:'📈', label:'Student Performance', section:'Faculty — Student Mgmt' },
   { id:'role-faculty-reports',    icon:'📄', label:'Reports',            section:'Faculty — Student Mgmt' }
+]);
+ROLE_NAV.Account = (ROLE_NAV.Account || []).concat([
+  { id:'module-finance', icon:'💰', label:'Finance', section:'Accounts — Finance', module:'finance' },
+  { id:'role-account-outstanding', icon:'💳', label:'Outstanding Fees', section:'Accounts — Finance' }
+]);
+ROLE_NAV.Admissions = (ROLE_NAV.Admissions || []).concat([
+  { id:'module-admissions', icon:'🎓', label:'Admissions', section:'Admissions — Students', module:'admissions' },
+  { id:'role-admission-caste', icon:'🏷', label:'Caste / Category', section:'Admissions — Students' },
+  { id:'role-admission-docs',  icon:'📁', label:'Student Documents', section:'Admissions — Students' }
+]);
+ROLE_NAV['Railway Concession'] = (ROLE_NAV['Railway Concession'] || []).concat([
+  { id:'role-railway-concession', icon:'🚆', label:'Concession Appointments', section:'Railway — Concession' }
 ]);
 
 /* Force re-apply role nav when ERP is already active (handles hot-load) */
