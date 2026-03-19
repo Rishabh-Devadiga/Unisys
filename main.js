@@ -677,6 +677,64 @@ function copyKey() {
   } else { showToast('Key: ' + key); }
 }
 
+/* ── SEND EMAILS TO DEFAULTERS ────────────────── */
+function sendEmailsToDefaulters() {
+  const statusDiv = g('email-status');
+  const btn = event.target;
+  
+  if (!statusDiv) {
+    showToast('Email status display not found', 'error');
+    return;
+  }
+  
+  // Disable button and show loading state
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  statusDiv.style.display = 'block';
+  statusDiv.innerHTML = '⏳ Sending emails...';
+  statusDiv.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+  statusDiv.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+  statusDiv.style.color = 'var(--text1)';
+  
+  // Call the backend endpoint
+  fetch('http://localhost:3001/send-emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  })
+  .then(function(response) {
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return response.json();
+  })
+  .then(function(data) {
+    // Handle success
+    statusDiv.innerHTML = '✅ <strong>Emails sent successfully!</strong><br>' +
+      'Total: ' + data.totalStudents + ' students<br>' +
+      'Sent: ' + data.successCount + '<br>' +
+      'Failed: ' + data.failureCount + '<br><br>' +
+      '<small>' + data.message + '</small>';
+    statusDiv.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+    statusDiv.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+    statusDiv.style.color = 'var(--green)';
+    showToast('Warning emails sent to ' + data.successCount + ' defaulters!', 'success');
+  })
+  .catch(function(error) {
+    // Handle error
+    statusDiv.innerHTML = '❌ <strong>Error sending emails</strong><br>' + 
+      '<small>' + error.message + '</small>';
+    statusDiv.style.backgroundColor = 'rgba(248, 113, 113, 0.1)';
+    statusDiv.style.borderColor = 'rgba(248, 113, 113, 0.3)';
+    statusDiv.style.color = 'var(--red)';
+    showToast('Failed to send emails: ' + error.message, 'error');
+    console.error('Error:', error);
+  })
+  .finally(function() {
+    // Re-enable button
+    btn.disabled = false;
+    btn.textContent = 'Send Warning Emails →';
+  });
+}
+
 /* ── SEARCH ────────────────────────────────────── */
 function handleSearch(query) {
   const clearBtn = g('search-clear');

@@ -151,9 +151,11 @@ var EXT_SEED = {
 
   /* Student lifecycle flags */
   studentFlags: [
-    { studentId:4,  roll:'CSE-104', name:'Karan Gupta',   flag:'Low Attendance (74%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-12' },
-    { studentId:2,  roll:'CSE-102', name:'Rohan Mehta',   flag:'CO3 Attainment Gap',      severity:'Info',    raisedBy:'OBE Engine',        date:'2026-03-14' },
-    { studentId:9,  roll:'MBA-201', name:'Pooja Reddy',   flag:'Fee Payment Overdue',     severity:'Urgent',  raisedBy:'Finance',           date:'2026-03-10' }
+    { studentId:4,  roll:'CSE-104', name:'Karan Gupta',      flag:'Low Attendance (74%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-12' },
+    { studentId:5,  roll:'CSE-105', name:'Rishabh Devadiga', flag:'Low Attendance (60%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-19' },
+    { studentId:6,  roll:'CSE-106', name:'Gaurav Pawar',     flag:'Low Attendance (65%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-19' },
+    { studentId:2,  roll:'CSE-102', name:'Rohan Mehta',      flag:'CO3 Attainment Gap',      severity:'Info',    raisedBy:'OBE Engine',        date:'2026-03-14' },
+    { studentId:9,  roll:'MBA-201', name:'Pooja Reddy',      flag:'Fee Payment Overdue',     severity:'Urgent',  raisedBy:'Finance',           date:'2026-03-10' }
   ],
 
   /* Student behavior records */
@@ -1642,11 +1644,27 @@ function smEmailMeAsDefaulter(toEmail, dept, threshold) {
 }
 
 function hodEmailDefaulters() {
-  var db = dbGet();
-  var dept = smMyDept();
-  var threshold = hodGetThreshold();
-  var list = smDefaulters(smDeptStudents(db, dept), threshold);
-  smEmailDefaulters(list, dept, threshold);
+  console.log('🚀 hodEmailDefaulters clicked');
+  fetch('http://localhost:3001/send-emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+    .then(res => {
+      console.log('Response received:', res);
+      return res.json();
+    })
+    .then(data => {
+      console.log('Data:', data);
+      if (data.success) {
+        showToast('✅ Emails sent successfully!\nTotal: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
+      } else {
+        showToast('⚠️ Failed to send emails: ' + (data.error || 'Unknown error'), 'error');
+      }
+    })
+    .catch(err => {
+      console.error('Fetch error:', err);
+      showToast('❌ Error: ' + err.message, 'error');
+    });
 }
 
 function hodEmailMeAsDefaulter() {
@@ -2226,11 +2244,27 @@ function facExportDefaulters() {
 }
 
 function facEmailDefaulters() {
-  var db = dbGet();
-  var dept = smMyDept();
-  var threshold = facGetThreshold();
-  var list = smDefaulters(smDeptStudents(db, dept), threshold);
-  smEmailDefaulters(list, dept, threshold);
+  console.log('🚀 facEmailDefaulters clicked');
+  fetch('http://localhost:3001/send-emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+    .then(res => {
+      console.log('Response received:', res);
+      return res.json();
+    })
+    .then(data => {
+      console.log('Data:', data);
+      if (data.success) {
+        showToast('✅ Emails sent successfully!\nTotal: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
+      } else {
+        showToast('⚠️ Failed to send emails: ' + (data.error || 'Unknown error'), 'error');
+      }
+    })
+    .catch(err => {
+      console.error('Fetch error:', err);
+      showToast('❌ Error: ' + err.message, 'error');
+    });
 }
 
 function facEmailMeAsDefaulter() {
