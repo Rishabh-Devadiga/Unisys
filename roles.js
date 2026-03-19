@@ -48,12 +48,16 @@ var SEED_DATA = {
     { id:2,  name:'Rohan Mehta',    roll:'CSE-102', dept:'CSE', year:'3rd Year', status:'Active',   cgpa:7.9, attendance:88, email:'rohan@college.edu',   phone:'9876543211' },
     { id:3,  name:'Ananya Das',     roll:'CSE-103', dept:'CSE', year:'3rd Year', status:'Active',   cgpa:9.1, attendance:96, email:'ananya@college.edu',  phone:'9876543212' },
     { id:4,  name:'Karan Gupta',    roll:'CSE-104', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:7.2, attendance:74, email:'karan@college.edu',   phone:'9876543213' },
-    { id:5,  name:'Sneha Nair',     roll:'CSE-105', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:8.8, attendance:95, email:'sneha@college.edu',   phone:'9876543214' },
+    { id:5,  name:'Rishabh Devadiga', roll:'CSE-105', dept:'CSE', year:'2nd Year', status:'Active', cgpa:6.8, attendance:60, email:'devadigarishabh@gmail.com', phone:'9876543220' },
+    { id:6,  name:'Gaurav Pawar',   roll:'CSE-106', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:7.0, attendance:65, email:'gauravpawar2618@gmail.com', phone:'9876543221' },
+    { id:7,  name:'Sneha Nair',     roll:'CSE-107', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:8.8, attendance:95, email:'sneha@college.edu',   phone:'9876543214' },
     { id:6,  name:'Dev Malhotra',   roll:'ME-204',  dept:'ME',  year:'2nd Year', status:'Active',   cgpa:7.5, attendance:81, email:'dev@college.edu',     phone:'9876543215' },
     { id:7,  name:'Anjali Singh',   roll:'ECE-305', dept:'ECE', year:'3rd Year', status:'Active',   cgpa:8.2, attendance:89, email:'anjali@college.edu',  phone:'9876543216' },
     { id:8,  name:'Vijay Kumar',    roll:'CSE-106', dept:'CSE', year:'1st Year', status:'Active',   cgpa:7.8, attendance:85, email:'vijay@college.edu',   phone:'9876543217' },
     { id:9,  name:'Pooja Reddy',    roll:'MBA-201', dept:'MBA', year:'1st Year', status:'Active',   cgpa:8.6, attendance:91, email:'pooja@college.edu',   phone:'9876543218' },
-    { id:10, name:'Amit Joshi',     roll:'CSE-107', dept:'CSE', year:'4th Year', status:'Active',   cgpa:9.3, attendance:97, email:'amit@college.edu',    phone:'9876543219' }
+    { id:10, name:'Amit Joshi',     roll:'CSE-107', dept:'CSE', year:'4th Year', status:'Active',   cgpa:9.3, attendance:97, email:'amit@college.edu',    phone:'9876543219' },
+    { id:11, name:'Rishabh Devadiga', roll:'CSE-108', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:6.8, attendance:60, email:'devadigarishabh@gmail.com', phone:'9876543220' },
+    { id:12, name:'Gaurav Pawar',   roll:'CSE-109', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:7.1, attendance:65, email:'gauravpawar2618@gmail.com', phone:'9876543221' }
   ],
 
   /* Courses (CSE focus for HOD/Faculty) */
