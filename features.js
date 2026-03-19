@@ -1842,11 +1842,27 @@ function smEmailMeAsDefaulter(toEmail, dept, threshold) {
 }
 
 function hodEmailDefaulters() {
-  var db = dbGet();
-  var dept = smMyDept();
-  var threshold = hodGetThreshold();
-  var list = smDefaulters(smDeptStudents(db, dept), threshold);
-  smEmailDefaulters(list, dept, threshold);
+  console.log('🚀 hodEmailDefaulters clicked');
+  fetch('http://localhost:3001/send-emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+    .then(res => {
+      console.log('Response received:', res);
+      return res.json();
+    })
+    .then(data => {
+      console.log('Data:', data);
+      if (data.success) {
+        showToast('✅ Emails sent successfully!\nTotal: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
+      } else {
+        showToast('⚠️ Failed to send emails: ' + (data.error || 'Unknown error'), 'error');
+      }
+    })
+    .catch(err => {
+      console.error('Fetch error:', err);
+      showToast('❌ Error: ' + err.message, 'error');
+    });
 }
 
 function hodEmailMeAsDefaulter() {
@@ -2426,11 +2442,27 @@ function facExportDefaulters() {
 }
 
 function facEmailDefaulters() {
-  var db = dbGet();
-  var dept = smMyDept();
-  var threshold = facGetThreshold();
-  var list = smDefaulters(smDeptStudents(db, dept), threshold);
-  smEmailDefaulters(list, dept, threshold);
+  console.log('🚀 facEmailDefaulters clicked');
+  fetch('http://localhost:3001/send-emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+    .then(res => {
+      console.log('Response received:', res);
+      return res.json();
+    })
+    .then(data => {
+      console.log('Data:', data);
+      if (data.success) {
+        showToast('✅ Emails sent successfully!\nTotal: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
+      } else {
+        showToast('⚠️ Failed to send emails: ' + (data.error || 'Unknown error'), 'error');
+      }
+    })
+    .catch(err => {
+      console.error('Fetch error:', err);
+      showToast('❌ Error: ' + err.message, 'error');
+    });
 }
 
 function facEmailMeAsDefaulter() {
