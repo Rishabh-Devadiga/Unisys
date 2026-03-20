@@ -7,12 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="styles.css?v=2026-03-20-15"/>
+<link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
 
 <!-- TOAST -->
 <div class="toast" id="toast">
+  
   <div class="toast-icon"></div>
   <span class="toast-msg"></span>
 </div>
@@ -310,43 +311,17 @@
       <p style="color:var(--text2);font-size:15px">Enter your college system credentials. Admins need the System Key created by the Head.</p>
     </div>
     <div class="panel">
-      <div class="form-section-title">Access EduSys</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-        <button class="btn btn-sm btn-primary" id="access-toggle-signup" onclick="setAccessMode('signup')">New User Sign Up</button>
-        <button class="btn btn-sm" id="access-toggle-login" onclick="setAccessMode('login')">Existing User Login</button>
+      <div class="form-section-title">Sign In</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">System Key</label><input class="form-input" id="access-key" placeholder="EDU-XXXX-XXXX"/></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="access-email" type="email" placeholder="admin@college.edu"/></div>
+        <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="access-password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"/></div>
+        <div class="form-group"><label class="form-label">Role</label><select class="form-select" id="access-role"><option>Admin</option><option>HOD</option><option>Faculty</option><option>Principal</option></select></div>
       </div>
-
-      <div id="access-signup">
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="signup-name" placeholder="Prof. Asha Menon"/></div>
-          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signup-email" type="email" placeholder="faculty@college.edu"/></div>
-          <div class="form-group"><label class="form-label">Create Password</label><input class="form-input" id="signup-password" type="password" placeholder="Min. 8 characters"/></div>
-          <div class="form-group"><label class="form-label">Desired Role</label><select class="form-select" id="signup-role"><option>Faculty</option><option>HOD</option><option>Account</option><option>Admissions</option><option>Railway Concession</option><option>Admin</option></select></div>
-          <div class="form-group"><label class="form-label">Department</label><input class="form-input" id="signup-dept" placeholder="CSE / Finance / Admissions"/></div>
-          <div class="form-group"><label class="form-label">Institute / College</label><input class="form-input" id="signup-institute" placeholder="Northstar University"/></div>
-          <div class="form-group"><label class="form-label">System Key</label><input class="form-input" id="signup-key" placeholder="EDU-XXXX-XXXX"/></div>
-        </div>
-        <div style="color:var(--text2);font-size:12px;margin-top:10px">Your request is sent to the Principal for approval before access is granted.</div>
-        <div id="access-signup-error" style="display:none;color:var(--red);font-size:13px;margin-top:10px;padding:10px 14px;background:rgba(248,113,113,0.1);border-radius:var(--r-sm);border:1px solid rgba(248,113,113,0.2)">&#9888; </div>
-        <div id="access-signup-success" style="display:none;color:#155724;font-size:13px;margin-top:10px;padding:10px 14px;background:rgba(212,237,218,1);border-radius:var(--r-sm);border:1px solid rgba(195,230,203,1)"></div>
-        <div class="form-actions">
-          <button class="btn btn-primary" onclick="requestAccess()">Request Access &rarr;</button>
-          <button class="btn" onclick="setAccessMode('login')">Go to Login</button>
-        </div>
-      </div>
-
-      <div id="access-login">
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">System Key</label><input class="form-input" id="access-key" placeholder="EDU-XXXX-XXXX"/></div>
-          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="access-email" type="email" placeholder="admin@college.edu"/></div>
-          <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="access-password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"/></div>
-          <div class="form-group"><label class="form-label">Role</label><select class="form-select" id="access-role"><option>Admin</option><option>HOD</option><option>Faculty</option><option>Principal</option></select></div>
-        </div>
-        <div id="access-error" style="display:none;color:var(--red);font-size:13px;margin-top:10px;padding:10px 14px;background:rgba(248,113,113,0.1);border-radius:var(--r-sm);border:1px solid rgba(248,113,113,0.2)">&#9888; Invalid System Key. Use demo credentials below or create a new system.</div>
-        <div class="form-actions">
-          <button class="btn btn-primary" onclick="enterERP()">Enter ERP &rarr;</button>
-          <button class="btn" onclick="showPage('create-system')">Create New System</button>
-        </div>
+      <div id="access-error" style="display:none;color:var(--red);font-size:13px;margin-top:10px;padding:10px 14px;background:rgba(248,113,113,0.1);border-radius:var(--r-sm);border:1px solid rgba(248,113,113,0.2)">&#9888; Invalid System Key. Use demo credentials below or create a new system.</div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="enterERP()">Enter ERP &rarr;</button>
+        <button class="btn" onclick="showPage('create-system')">Create New System</button>
       </div>
     </div>
     <div class="panel">
@@ -436,38 +411,39 @@
       <div><div class="sidebar-logo-text">EduSys ERP</div><div class="sidebar-logo-sub">Admin Panel</div></div>
     </div>
     <span class="sidebar-section-label">Main</span>
-    <button class="nav-item active" data-module="overview"><span class="nav-icon"></span>Overview</button>
-    <button class="nav-item" data-module="admissions"><span class="nav-icon"></span>Admissions<span class="nav-badge nav-badge-blue" id="nb-admissions">2</span></button>
-    <button class="nav-item" data-module="students"><span class="nav-icon"></span>Students</button>
-    <button class="nav-item" data-module="academics"><span class="nav-icon"></span>Academics</button>
-    <button class="nav-item" data-module="attendance"><span class="nav-icon"></span>Attendance</button>
-    <button class="nav-item" data-module="exams"><span class="nav-icon"></span>Exams</button>
+    <button class="nav-item active" data-module="overview"><span class="nav-icon">📊</span>Overview</button>
+    <button class="nav-item" data-module="admissions"><span class="nav-icon">🎓</span>Admissions<span class="nav-badge nav-badge-blue" id="nb-admissions">2</span></button>
+    <button class="nav-item" data-module="students"><span class="nav-icon">👥</span>Students</button>
+    <button class="nav-item" data-module="academics"><span class="nav-icon">📚</span>Academics</button>
+    <button class="nav-item" data-module="attendance"><span class="nav-icon">📍</span>Attendance</button>
+    <button class="nav-item" data-module="exams"><span class="nav-icon">📝</span>Exams</button>
     <span class="sidebar-section-label">Administration</span>
-    <button class="nav-item" data-module="faculty"><span class="nav-icon"></span>Faculty</button>
-    <button class="nav-item" data-module="finance"><span class="nav-icon"></span>Finance<span class="nav-badge" id="nb-finance">1</span></button>
-    <button class="nav-item" data-module="hr"><span class="nav-icon"></span>HR &amp; Payroll</button>
-    <button class="nav-item" data-module="library"><span class="nav-icon"></span>Library</button>
-    <button class="nav-item" data-module="hostel"><span class="nav-icon"></span>Hostel</button>
-    <button class="nav-item" data-module="transport"><span class="nav-icon"></span>Transport</button>
+    <button class="nav-item" data-module="faculty"><span class="nav-icon">👨‍🏫</span>Faculty</button>
+    <button class="nav-item" data-module="finance"><span class="nav-icon">💰</span>Finance<span class="nav-badge" id="nb-finance">1</span></button>
+    <button class="nav-item" data-module="hr"><span class="nav-icon">👤</span>HR &amp; Payroll</button>
+    <button class="nav-item" data-module="library"><span class="nav-icon">📖</span>Library</button>
+    <button class="nav-item" data-module="hostel"><span class="nav-icon">🏠</span>Hostel</button>
+    <button class="nav-item" data-module="transport"><span class="nav-icon">🚌</span>Transport</button>
     <span class="sidebar-section-label">Operations</span>
-    <button class="nav-item" data-module="placements"><span class="nav-icon"></span>Placements</button>
-    <button class="nav-item" data-module="research"><span class="nav-icon"></span>Research</button>
-    <button class="nav-item" data-module="facilities"><span class="nav-icon"></span>Facilities</button>
-    <button class="nav-item" data-module="inventory"><span class="nav-icon"></span>Inventory</button>
-    <button class="nav-item" data-module="procurement"><span class="nav-icon"></span>Procurement</button>
-    <button class="nav-item" data-module="service"><span class="nav-icon"></span>Service Desk<span class="nav-badge" id="nb-service">3</span></button>
+    <button class="nav-item" data-module="placements"><span class="nav-icon">💼</span>Placements</button>
+    <button class="nav-item" data-module="research"><span class="nav-icon">🔬</span>Research</button>
+    <button class="nav-item" data-module="facilities"><span class="nav-icon">🏗</span>Facilities</button>
+    <button class="nav-item" data-module="inventory"><span class="nav-icon">📦</span>Inventory</button>
+    <button class="nav-item" data-module="procurement"><span class="nav-icon">🛒</span>Procurement</button>
+    <button class="nav-item" data-module="service"><span class="nav-icon">🎫</span>Service Desk<span class="nav-badge" id="nb-service">3</span></button>
     <span class="sidebar-section-label">Governance</span>
-    <button class="nav-item" data-module="communications"><span class="nav-icon"></span>Communications</button>
-    <button class="nav-item" data-module="compliance"><span class="nav-icon"></span>Compliance</button>
-    <button class="nav-item" data-module="integrations"><span class="nav-icon"></span>Integrations</button>
-    <button class="nav-item" data-module="analytics"><span class="nav-icon"></span>Analytics</button>
-    <button class="nav-item" data-module="attainment"><span class="nav-icon"></span>Attainment</button>
-    <button class="nav-item" data-module="coverage"><span class="nav-icon"></span>ERP Coverage</button>
+    <button class="nav-item" data-module="communications"><span class="nav-icon">📣</span>Communications</button>
+    <button class="nav-item" data-module="compliance"><span class="nav-icon">🏛</span>Compliance</button>
+    <button class="nav-item" data-module="integrations"><span class="nav-icon">🔗</span>Integrations</button>
+    <button class="nav-item" data-module="analytics"><span class="nav-icon">📈</span>Analytics</button>
+    <button class="nav-item" data-module="attainment"><span class="nav-icon">🎯</span>Attainment</button>
+    <button class="nav-item" data-module="coverage"><span class="nav-icon">📋</span>ERP Coverage</button>
+    <button class="nav-item" data-module="add-feature"><span class="nav-icon">➕</span>Add Feature</button>
   </aside>
 
   <div class="erp-content">
     <div class="topbar">
-      <div class="search-box">
+      <div class="search-box search-box--compact">
         <span style="color:var(--text3)">🔍</span>
         <input id="global-search" placeholder="Search students, tickets, invoices, exams..." oninput="handleSearch(this.value)"/>
         <button id="search-clear" style="display:none;background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px" onclick="clearSearch()">✕</button>
@@ -478,6 +454,17 @@
           <button class="btn btn-icon" onclick="showToast('3 pending approvals require attention','warning')">🔔</button>
           <div class="notif-dot"></div>
         </div>
+
+        <button
+          class="btn btn-icon logout-btn"
+          onclick="handleNavbarLogout()"
+          aria-label="Logout"
+          title="Logout">
+          <svg class="logout-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6A2.25 2.25 0 0 0 5.25 5.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+          </svg>
+        </button>
+
         <button class="btn btn-primary" onclick="showCreateRecord()">+ Create Record</button>
       </div>
     </div>
@@ -552,6 +539,12 @@
             <div class="bar-row"><span class="bar-label">Mar</span><div class="bar-track"><div class="bar-fill" style="width:100%">142</div></div></div>
           </div>
         </div>
+      </section>
+
+      <!-- ADD FEATURE BUILDER -->
+      <section class="module-section" id="add-feature">
+        <div class="module-header"><div class="module-title">Add Feature Builder</div><div class="module-sub">Build custom modules with draggable components, save configs, and attach them to this dashboard.</div></div>
+        <div id="feature-builder-root"></div>
       </section>
 
       <!-- ADMISSIONS -->
@@ -1088,8 +1081,12 @@
   console.log('  supabase_client:', typeof window.supabase_client !== 'undefined' ? '✓ Available' : '✗ Not available');
   console.log('  sendOtpForSignup:', typeof sendOtpForSignup === 'function' ? '✓ Available' : '✗ Not available');
 </script>
+<script src="registry/componentRegistry.js?v=2026-03-20-1"></script>
+<script src="builder/builderStore.js?v=2026-03-20-1"></script>
+<script src="renderer/featureRenderer.js?v=2026-03-20-1"></script>
+<script src="builder/featureBuilder.js?v=2026-03-20-1"></script>
 <script src="main.js?v=2026-03-17-9"></script>
-<script src="roles.js?v=2026-03-20-13"></script>
-<script src="features.js?v=2026-03-20-2"></script>
+<script src="roles.js?v=2026-03-17-9"></script>
+<script src="features.js?v=2026-03-17-9"></script>
 </body>
 </html>
