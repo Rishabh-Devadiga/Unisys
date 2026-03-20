@@ -288,6 +288,10 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .role-nav-item { border-left: 2px solid transparent; transition: border-color 0.2s, all 0.15s; }
 .role-nav-item:hover, .role-nav-item.active { border-left-color: var(--accent); }
 
+/* Principal restrictions */
+.role-principal [data-action="add-student"],
+.role-principal [data-action="add-invoice"] { display: none !important; }
+
 /* Geo demo for faculty attendance */
 .geo-demo { cursor: default; }
 

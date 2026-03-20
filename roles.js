@@ -74,7 +74,11 @@ var SEED_DATA = {
 
     { id:8, name:'Mr. Abhishek Rao',  email:'admissions@edusys.in',role:'Admissions',dept:'Admissions', status:'Active', lastLogin:'2026-03-14 09:20' },
 
-    { id:9, name:'Ms. Sana Ali',      email:'concession@edusys.in',role:'Railway Concession', dept:'Student Services', status:'Active', lastLogin:'2026-03-14 08:55' }
+    { id:9, name:'Ms. Sana Ali',      email:'concession@edusys.in',role:'Railway Concession', dept:'Student Services', status:'Active', lastLogin:'2026-03-14 08:55' },
+
+    { id:10, name:'Prof. Arjun Mehta',  email:'arjun.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
+    { id:11, name:'Dr. Kavya Iyer',    email:'kavya.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
+    { id:12, name:'Prof. Rahul Nair',  email:'rahul.ece@edusys.in',  role:'Faculty', dept:'ECE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-18', institute:'EduSys Demo College' }
 
   ],
 
@@ -412,6 +416,26 @@ function dbGet() {
 
       if (!u.status) { u.status = 'Active'; changed = true; }
 
+    });
+
+    /* Seed mock faculty approvals if missing */
+    var mockFaculty = [
+      { name:'Prof. Arjun Mehta', email:'arjun.cse@edusys.in', role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:DEFAULT_INSTITUTE },
+      { name:'Dr. Kavya Iyer',   email:'kavya.cse@edusys.in', role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:DEFAULT_INSTITUTE },
+      { name:'Prof. Rahul Nair', email:'rahul.ece@edusys.in', role:'Faculty', dept:'ECE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-18', institute:DEFAULT_INSTITUTE },
+      { name:'Ms. Shruti Rao',   email:'shruti.mba@edusys.in', role:'Faculty', dept:'MBA', status:'Pending', lastLogin:'?', requestedRole:'Faculty', requestedOn:'2026-03-17', institute:DEFAULT_INSTITUTE }
+    ];
+    var existingEmails = d.users.map(function(u) { return (u.email || '').toLowerCase(); });
+    var nextId = d.users.reduce(function(maxId, u) {
+      return (u && u.id && u.id > maxId) ? u.id : maxId;
+    }, 0);
+    mockFaculty.forEach(function(m) {
+      if (existingEmails.indexOf(m.email.toLowerCase()) === -1) {
+        nextId += 1;
+        m.id = nextId;
+        d.users.push(m);
+        changed = true;
+      }
     });
 
   }
@@ -765,7 +789,7 @@ function requestAccess() {
 
 
 
-  showOk('Request submitted. Awaiting Principal approval.');
+  showOk('Request submitted. Awaiting ' + (role === 'Faculty' ? 'HOD' : 'Principal') + ' approval.');
 
   setAccessMode('login');
 
@@ -905,6 +929,7 @@ var ROLE_NAV = {
     { id:'role-timetable', icon:'🗓',  label:'Timetable',          section:'HOD Tools' },
 
     { id:'role-leave',     icon:'📅',  label:'Leave Requests',     section:'HOD Tools' },
+    { id:'role-hod-accounts', icon:'',  label:'Faculty Approvals',   section:'HOD Tools' },
 
     { id:'role-marks',     icon:'',  label:'Internal Marks',     section:'HOD Tools' }
 
@@ -1516,9 +1541,14 @@ function buildPrincipalAccounts() {
 
 
 
-  var pending = users.filter(function(u) { return u.status === 'Pending'; });
+  var nonFaculty = users.filter(function(u) {
+    var r = u.requestedRole || u.role;
+    return r !== 'Faculty';
+  });
 
-  var active = users.filter(function(u) { return u.status === 'Active'; });
+  var pending = nonFaculty.filter(function(u) { return u.status === 'Pending'; });
+
+  var active = nonFaculty.filter(function(u) { return u.status === 'Active'; });
 
 
 
@@ -1536,7 +1566,8 @@ function buildPrincipalAccounts() {
 
   var activeRows = active.map(function(u) {
 
-    var act = '<button class="btn btn-sm" onclick="principalUpdateRole('+u.id+')">Update Role</button>';
+    var act = '<button class="btn btn-sm" onclick="principalUpdateRole('+u.id+')">Update Role</button> '
+      + '<button class="btn btn-sm btn-danger" onclick="principalRemoveAccount('+u.id+')">Remove</button>';
 
     return [u.name, u.email, u.dept, roleSelectHtml(u), sbadge(u.status), act];
 
@@ -1579,6 +1610,11 @@ function principalApproveAccount(id, approve) {
   var u = db.users.find(function(x) { return x.id === id; });
 
   if (!u) return;
+  var reqRole = u.requestedRole || u.role;
+  if (reqRole === 'Faculty') {
+    showToast('Faculty approvals are handled by HOD', 'warning');
+    return;
+  }
 
   if (approve) {
 
@@ -1587,6 +1623,7 @@ function principalApproveAccount(id, approve) {
     var newRole = roleSel ? roleSel.value : u.role;
 
     u.role = newRole || u.role;
+    u.requestedRole = null;
 
     u.status = 'Active';
 
@@ -1636,23 +1673,114 @@ function principalUpdateRole(id) {
 function buildHODAccounts() {
   var db = dbGet();
   var sess = getSession();
-  var myDept = sess ? sess.dept : 'CSE';
-  var facultyUsers = db.users.filter(function(u) {
-    return u.role === 'Faculty' && u.dept === myDept;
+  var myDept = (sess && sess.dept) ? sess.dept : '';
+  var deptLabel = myDept || 'All Departments';
+  var institute = getCurrentInstitute();
+
+  var pending = db.users.filter(function(u) {
+    var r = u.requestedRole || u.role;
+    return u.status === 'Pending' && r === 'Faculty'
+      && (!myDept || u.dept === myDept)
+      && getUserInstitute(u) === institute;
   });
 
-  return '<div class="module-header"><div class="module-title">Faculty Accounts - ' + myDept + '</div>'
-    + '<div class="module-sub">All faculty accounts under your department.</div></div>'
+  var facultyUsers = db.users.filter(function(u) {
+    return u.role === 'Faculty' && u.status === 'Active'
+      && (!myDept || u.dept === myDept)
+      && getUserInstitute(u) === institute;
+  });
+
+  var pendingRows = pending.map(function(u) {
+    var act = '<button class="btn btn-sm btn-success" onclick="hodApproveFaculty('+u.id+',true)">Approve</button> '
+      + '<button class="btn btn-sm btn-danger" onclick="hodApproveFaculty('+u.id+',false)">Reject</button>';
+    return [u.name, u.email, u.dept, u.requestedOn || '—', act];
+  });
+
+  return '<div class="module-header"><div class="module-title">Faculty Accounts - ' + deptLabel + '</div>'
+    + '<div class="module-sub">Approve faculty requests and manage accounts under your department.</div></div>'
+    + '<div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+    + '<h3 style="font-family:var(--font-head)">Pending Faculty Requests</h3>'
+    + '<span class="badge badge-yellow">' + pending.length + ' pending</span></div>'
+    + widgetTable(['Name','Email','Dept','Requested On','Decision'], pendingRows, 'No pending faculty requests')
+    + '</div>'
     + '<div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
     + '<h3 style="font-family:var(--font-head)">Faculty Directory</h3>'
     + '<span class="badge badge-blue">' + facultyUsers.length + ' accounts</span></div>'
-    + widgetTable(['Name','Email','Role','Status','Last Login'],
+    + widgetTable(['Name','Email','Role','Status','Last Login','Manage'],
         facultyUsers.map(function(u){
-          return [u.name, u.email, u.role, sbadge(u.status || 'Active'), u.lastLogin || '-'];
+          var act = '<button class="btn btn-sm btn-danger" onclick="hodRemoveFaculty('+u.id+')">Remove</button>';
+          return [u.name, u.email, u.role, sbadge(u.status || 'Active'), u.lastLogin || '-', act];
         }),
         'No faculty accounts found for this department.'
       )
     + '</div>';
+}
+
+
+function hodApproveFaculty(id, approve) {
+  var db = dbGet();
+  var sess = getSession();
+  var institute = getCurrentInstitute();
+  var myDept = sess ? sess.dept : '';
+  var u = db.users.find(function(x) { return x.id === id; });
+  if (!u) return;
+  if (u.dept !== myDept || getUserInstitute(u) !== institute) {
+    showToast('Not allowed to approve this request', 'warning');
+    return;
+  }
+
+  if (approve) {
+    u.role = 'Faculty';
+    u.requestedRole = null;
+    u.status = 'Active';
+    u.lastLogin = u.lastLogin || '—';
+    showToast('Faculty approved: ' + u.name);
+  } else {
+    u.status = 'Rejected';
+    showToast('Faculty rejected: ' + u.name, 'warning');
+  }
+  dbSave(db);
+  renderRoleSection('role-hod-accounts');
+}
+
+
+function principalRemoveAccount(id) {
+  var db = dbGet();
+  var sess = getSession();
+  var u = db.users.find(function(x) { return x.id === id; });
+  if (!u) return;
+  if (sess && u.email === sess.email) {
+    showToast('You cannot remove your own account', 'warning');
+    return;
+  }
+  if (!confirm('Remove account for ' + u.name + '?')) return;
+  db.users = db.users.filter(function(x) { return x.id !== id; });
+  dbSave(db);
+  showToast('Account removed: ' + u.name);
+  renderRoleSection('role-accounts');
+}
+
+
+function hodRemoveFaculty(id) {
+  var db = dbGet();
+  var sess = getSession();
+  var institute = getCurrentInstitute();
+  var myDept = (sess && sess.dept) ? sess.dept : '';
+  var u = db.users.find(function(x) { return x.id === id; });
+  if (!u) return;
+  if (u.role !== 'Faculty') {
+    showToast('Only faculty accounts can be removed here', 'warning');
+    return;
+  }
+  if ((myDept && u.dept !== myDept) || getUserInstitute(u) !== institute) {
+    showToast('Not allowed to remove this account', 'warning');
+    return;
+  }
+  if (!confirm('Remove faculty account for ' + u.name + '?')) return;
+  db.users = db.users.filter(function(x) { return x.id !== id; });
+  dbSave(db);
+  showToast('Faculty removed: ' + u.name);
+  renderRoleSection('role-hod-accounts');
 }
 
 function buildHODOverride() {
@@ -3046,7 +3174,7 @@ function applyRolePermissions(role) {
 
     var mod = btn.getAttribute('data-module');
 
-    var show = allowed.indexOf(mod) > -1 || mod === 'add-feature' || (mod && mod.indexOf('custom-feature-') === 0);
+    var show = allowed.indexOf(mod) > -1;
 
     btn.style.display = show ? '' : 'none';
 
@@ -3077,7 +3205,9 @@ function applyRolePermissions(role) {
 
 
 function applyRoleRestrictions(role) {
+  if (document.body) document.body.classList.remove('role-principal');
   if (role !== 'Principal') return;
+  if (document.body) document.body.classList.add('role-principal');
   var blocked = ['add-invoice','add-student','delete-student','convert-student'];
   blocked.forEach(function(action) {
     document.querySelectorAll('[data-action="'+action+'"]').forEach(function(btn) {
