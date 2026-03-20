@@ -636,6 +636,10 @@ function initERP() {
       requestAnimationFrame(animate);
     })();
   }
+
+  if (window.FeatureBuilder && typeof window.FeatureBuilder.init === 'function') {
+    window.FeatureBuilder.init();
+  }
 }
 
 /* ── ACCESS PAGE ───────────────────────────────── */
@@ -791,6 +795,25 @@ function showCreateRecord() {
   }
   showToast('Navigate to a module to create records', 'info');
 }
+
+/* ── LOGOUT HANDLER ────────────────────────────── */
+window.handleNavbarLogout = async function handleNavbarLogout() {
+  try {
+    if (typeof window.logout === "function") return await window.logout();
+    if (typeof window.handleLogout === "function" && window.handleLogout !== window.handleNavbarLogout) {
+      return await window.handleLogout();
+    }
+    if (window.supabase_client?.auth?.signOut) {
+      await window.supabase_client.auth.signOut();
+    }
+  } catch (err) {
+    console.error("Logout failed:", err);
+  } finally {
+    if (typeof window.showPage === "function") {
+      window.showPage("edusys-access");
+    }
+  }
+};
 
 /* ── BOOT ──────────────────────────────────────── */
 initLanding();

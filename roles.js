@@ -1292,7 +1292,7 @@ function applyRolePermissions(role) {
   /* Standard modules: show/hide based on permissions */
   document.querySelectorAll('.nav-item[data-module]').forEach(function(btn) {
     var mod = btn.getAttribute('data-module');
-    var show = allowed.indexOf(mod) > -1;
+    var show = allowed.indexOf(mod) > -1 || mod === 'add-feature' || (mod && mod.indexOf('custom-feature-') === 0);
     btn.style.display = show ? '' : 'none';
   });
   /* Standard section labels: hide if all items in section are hidden */
