@@ -1607,12 +1607,17 @@ function smStatusCountsForStudent(db, studentId, course, fromISO, toISO) {
   return counts;
 }
 
-function smFortnightPct(db, studentId, course) {
-  var fromISO = smDaysAgoISO(13);
+function smMonthlyPct(db, studentId, course) {
+  var fromISO = smDaysAgoISO(29);
   var toISO = smTodayISO();
   var c = smStatusCountsForStudent(db, studentId, course, fromISO, toISO);
   if (!c.total) return null;
   return Math.round((c.presentLike / c.total) * 100);
+}
+
+/* Backward compatibility */
+function smFortnightPct(db, studentId, course) {
+  return smMonthlyPct(db, studentId, course);
 }
 
 function smDefaulters(students, threshold) {
@@ -1621,7 +1626,7 @@ function smDefaulters(students, threshold) {
   var useDetailed = Array.isArray(db.attendanceEntries) && db.attendanceEntries.length > 0;
   return students.filter(function(s) {
     var att = null;
-    if (useDetailed && s && s.id) att = smFortnightPct(db, s.id, null);
+    if (useDetailed && s && s.id) att = smMonthlyPct(db, s.id, null);
     if (att === null) att = smAttendancePct(s);
     return att !== null && att < threshold;
   });
@@ -1729,7 +1734,7 @@ function smEmailDefaulters(list, dept, threshold) {
     var to = mockEmailFor(s);
     var studentName = (s && s.name) ? s.name : 'Student';
     var roll = (s && s.roll) ? s.roll : '';
-    var pct = (s && s.id) ? smFortnightPct(db, s.id, null) : null;
+    var pct = (s && s.id) ? smMonthlyPct(db, s.id, null) : null;
     if (pct === null) pct = smAttendancePct(s);
     var attLine = (pct === null) ? 'below required threshold' : (pct + '% (below ' + (threshold || 75) + '%)');
 
@@ -1811,7 +1816,7 @@ function smEmailMeAsDefaulter(toEmail, dept, threshold) {
   var toISO = smTodayISO();
   var sess = getSession();
   var sender = sess ? (sess.name + ' (' + sess.role + ')') : 'Faculty';
-  var pct = (s && s.id) ? smFortnightPct(db, s.id, null) : null;
+  var pct = (s && s.id) ? smMonthlyPct(db, s.id, null) : null;
   if (pct === null) pct = smAttendancePct(s);
   var attLine = (pct === null) ? 'below required threshold' : (pct + '% (below ' + (threshold || 75) + '%)');
 
@@ -1925,7 +1930,7 @@ function buildHODDefaulters() {
   var students = smDeptStudents(db, dept);
   var defaulters = smDefaulters(students, threshold);
 
-  return '<div class="module-header"><div class="module-title">Fortnight Defaulters — ' + dept + '</div>'
+  return '<div class="module-header"><div class="module-title">Monthly Defaulters — ' + dept + '</div>'
     + '<div class="module-sub">Students below the attendance threshold (default 75%)</div></div>'
     + '<div class="panel"><div class="form-section-title">Filter & Actions</div>'
     + '<div class="form-grid">'
@@ -1944,7 +1949,7 @@ function buildHODDefaulters() {
     + '<span class="badge badge-red">' + defaulters.length + ' below ' + threshold + '%</span></div>'
     + widgetTable(['Roll','Name','Year','Attendance','CGPA','Flag'],
         defaulters.map(function(s) {
-          var pct = (s && s.id) ? smFortnightPct(db, s.id, null) : null;
+          var pct = (s && s.id) ? smMonthlyPct(db, s.id, null) : null;
           if (pct === null) pct = smAttendancePct(s);
           var color = (pct !== null && pct < 65) ? 'red' : 'yellow';
           return [s.roll, s.name, s.year, pct === null ? '—' : smBadge(pct + '%', color), s.cgpa, smBadge('Defaulter', 'red')];
@@ -2596,7 +2601,7 @@ function buildFacultyDefaultersSMS() {
     + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Defaulter List</h3>'
     + widgetTable(['Roll','Name','Year','Attendance','CGPA'],
         defaulters.map(function(s) {
-          var pct = (s && s.id) ? smFortnightPct(db, s.id, null) : null;
+          var pct = (s && s.id) ? smMonthlyPct(db, s.id, null) : null;
           if (pct === null) pct = smAttendancePct(s);
           return [s.roll, s.name, s.year, pct === null ? '—' : smBadge(pct + '%', pct < 65 ? 'red' : 'yellow'), s.cgpa];
         }))
