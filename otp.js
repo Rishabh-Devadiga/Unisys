@@ -192,16 +192,17 @@ async function verifyOtpForSignup() {
 
     // Generate system key (same as original registerCollege)
     const key = 'EDU-' + Math.random().toString(36).slice(2, 6).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+    const college = signupData.college || 'Your College';
     
-    // Store system key
+    // Store system key + institute name
     const storeSet = window.storeSet || function(k, v) { localStorage.setItem(k, v); };
     storeSet('edusys-key', key);
+    storeSet('edusys-college', college);
 
     // Display success page with key
     const otpPanel = document.getElementById('otp-verify-panel');
     const keyPanel = document.getElementById('key-panel');
     const keyDisplay = document.getElementById('generated-key');
-    const college = signupData.college || 'Your College';
 
     if (otpPanel) otpPanel.style.display = 'none';
     if (keyPanel) {
