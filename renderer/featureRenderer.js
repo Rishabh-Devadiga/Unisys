@@ -17,57 +17,43 @@
     return Number.isFinite(n) ? n : (fallback || 0);
   }
 
-  function toCsv(columns, rows) {
-    var head = columns.join(',');
-    var body = rows.map(function (row) {
-      return row.map(function (cell) {
-        var text = String(cell == null ? '' : cell).replace(/"/g, '""');
-        return '"' + text + '"';
-      }).join(',');
-    }).join('\n');
-    return head + '\n' + body;
+  function hasDataBinding(widget) {
+    return !!(widget && widget.config && widget.config.dataBinding && widget.config.dataBinding.sourceType);
   }
 
-  function downloadBlob(fileName, text, mime) {
-    var blob = new Blob([text], { type: mime });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(a.href);
+  function loadingState(label) {
+    return '<div class="panel"><div class="builder-data-state">' + esc(label || 'Loading live data...') + '</div></div>';
+  }
+
+  function disconnectedState(message) {
+    return '<div class="panel"><div class="builder-data-state builder-data-state-warning">' + esc(message || 'Connect this component to a data source.') + '</div></div>';
   }
 
   function renderKpi(widget) {
     var c = widget.config || {};
     return '<div class="kpi-card">'
-      + '<div class="kpi-label">' + esc(c.title || 'Metric') + '</div>'
-      + '<div class="kpi-value">' + esc(c.value || '0') + '</div>'
+      + '<div class="kpi-label">' + esc(c.title || c.label || 'Metric') + '</div>'
+      + '<div class="kpi-value">' + esc(c.value == null ? '0' : c.value) + '</div>'
       + '<span class="kpi-sub kpi-' + (c.trend === 'down' ? 'down' : c.trend === 'up' ? 'up' : 'neutral') + '">' + esc(c.subtitle || '') + '</span>'
       + '</div>';
   }
 
   function renderSummary(widget) {
     var c = widget.config || {};
-    return '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:10px">' + esc(c.title || 'Summary') + '</h3><p style="color:var(--text2);font-size:13px">' + esc(c.content || '') + '</p></div>';
+    return '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:10px">' + esc(c.title || 'Summary') + '</h3><p style="color:var(--text2);font-size:13px">' + esc(c.content || c.subtitle || '') + '</p></div>';
   }
 
   function renderCounter(widget) {
     var c = widget.config || {};
     return '<div class="panel"><div style="font-size:12px;color:var(--text3);margin-bottom:6px">' + esc(c.label || 'Counter') + '</div><div style="font-size:28px;font-weight:700">'
-      + esc(c.prefix || '') + esc(c.value || 0) + esc(c.suffix || '') + '</div></div>';
+      + esc(c.prefix || '') + esc(c.value == null ? 0 : c.value) + esc(c.suffix || '') + '</div></div>';
   }
 
-  function renderTable(widget, root) {
+  function renderTable(widget) {
     var c = widget.config || {};
     var columns = asArray(c.columns, []);
     var rows = asArray(c.rows, []);
     var searchId = 'tbl-search-' + widget.id;
-    var bodyId = 'tbl-body-' + widget.id;
-
-    root.__tableData = root.__tableData || {};
-    root.__tableData[widget.id] = { columns: columns.slice(), rows: rows.slice(), sortIndex: -1, asc: true };
 
     var head = columns.map(function (col, idx) {
       var sortable = c.sortable ? ' data-sort-index="' + idx + '" class="builder-table-sort"' : '';
@@ -83,7 +69,7 @@
       + '<h3 style="font-family:var(--font-head)">' + esc(c.title || 'Data Table') + '</h3>'
       + (c.filterable ? '<input id="' + searchId + '" class="form-input" placeholder="Filter rows" style="max-width:180px;height:34px" />' : '')
       + '</div>'
-      + '<div class="table-wrap"><table class="table"><thead><tr>' + head + '</tr></thead><tbody id="' + bodyId + '">' + body + '</tbody></table></div>'
+      + '<div class="table-wrap"><table class="table"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>'
       + '</div>';
   }
 
@@ -131,9 +117,9 @@
     var poly = points.join(' ');
     var area = '0,100 ' + poly + ' 100,100';
     return '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:12px">' + esc(c.title || 'Area Chart') + '</h3>'
-      + '<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:160px;background:rgba(110,231,255,0.06);border-radius:10px">'
-      + '<polygon fill="' + esc(c.color || '#9b7bff') + '33" points="' + area + '"></polygon>'
-      + '<polyline fill="none" stroke="' + esc(c.color || '#9b7bff') + '" stroke-width="2" points="' + poly + '"></polyline>'
+      + '<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:160px;background:rgba(14,165,233,0.06);border-radius:10px">'
+      + '<polygon fill="' + esc(c.color || '#0ea5e9') + '33" points="' + area + '"></polygon>'
+      + '<polyline fill="none" stroke="' + esc(c.color || '#0ea5e9') + '" stroke-width="2" points="' + poly + '"></polyline>'
       + '</svg></div>';
   }
 
@@ -163,96 +149,40 @@
 
   function renderInput(widget) {
     var c = widget.config || {};
-    return '<div class="panel"><label class="form-label">' + esc(c.label || 'Input') + '</label><input class="form-input" placeholder="' + esc(c.placeholder || '') + '" ' + (c.required ? 'required' : '') + ' /></div>';
+    return '<div class="panel"><label class="form-label">' + esc(c.label || 'Input') + '</label><input class="form-input" data-form-field="' + esc(widget.id) + '" placeholder="' + esc(c.placeholder || '') + '" ' + (c.required ? 'required' : '') + ' /></div>';
   }
 
   function renderSelect(widget) {
     var c = widget.config || {};
     var options = asArray(c.options, []).map(function (o) { return '<option>' + esc(o) + '</option>'; }).join('');
-    return '<div class="panel"><label class="form-label">' + esc(c.label || 'Select') + '</label><select class="form-select">' + options + '</select></div>';
+    return '<div class="panel"><label class="form-label">' + esc(c.label || 'Select') + '</label><select class="form-select" data-form-field="' + esc(widget.id) + '">' + options + '</select></div>';
   }
 
   function renderCheckbox(widget) {
     var c = widget.config || {};
-    return '<div class="panel"><label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" ' + (c.checked ? 'checked' : '') + '> ' + esc(c.label || 'Checkbox') + '</label></div>';
+    return '<div class="panel"><label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" data-form-field="' + esc(widget.id) + '" ' + (c.checked ? 'checked' : '') + '> ' + esc(c.label || 'Checkbox') + '</label></div>';
   }
 
   function renderDate(widget) {
     var c = widget.config || {};
-    return '<div class="panel"><label class="form-label">' + esc(c.label || 'Date') + '</label><input class="form-input" type="date" ' + (c.required ? 'required' : '') + ' /></div>';
+    return '<div class="panel"><label class="form-label">' + esc(c.label || 'Date') + '</label><input class="form-input" data-form-field="' + esc(widget.id) + '" type="date" ' + (c.required ? 'required' : '') + ' /></div>';
   }
 
   function renderTextarea(widget) {
     var c = widget.config || {};
-    return '<div class="panel"><label class="form-label">' + esc(c.label || 'Notes') + '</label><textarea class="form-textarea" rows="3" placeholder="' + esc(c.placeholder || '') + '"></textarea></div>';
+    return '<div class="panel"><label class="form-label">' + esc(c.label || 'Notes') + '</label><textarea class="form-textarea" data-form-field="' + esc(widget.id) + '" rows="3" placeholder="' + esc(c.placeholder || '') + '"></textarea></div>';
   }
 
-  function renderActionButton(widget) {
-    var c = widget.config || {};
-    var variant = c.variant === 'danger' ? 'btn-danger' : c.variant === 'success' ? 'btn-success' : 'btn-primary';
-    return '<div class="panel"><button class="btn ' + variant + '" data-builder-action="' + esc(widget.id) + '">' + esc(c.label || 'Run Action') + '</button></div>';
+  function renderFallback(widget) {
+    return '<div class="panel"><div style="font-size:12px;color:var(--text3)">Unsupported widget: ' + esc(widget.type) + '</div></div>';
   }
 
-  function renderAlert(widget) {
-    var c = widget.config || {};
-    var sev = c.severity || 'info';
-    var color = sev === 'error' ? 'var(--red)' : sev === 'warning' ? 'var(--yellow)' : sev === 'success' ? 'var(--green)' : 'var(--accent2)';
-    return '<div class="panel" style="border-left:4px solid ' + color + '"><div style="font-size:13px;color:var(--text1)">' + esc(c.message || 'Alert') + '</div></div>';
-  }
-
-  function renderNotif(widget) {
-    var c = widget.config || {};
-    var items = asArray(c.items, []).map(function (text) { return '<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">' + esc(text) + '</div>'; }).join('');
-    return '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:8px">' + esc(c.title || 'Notifications') + '</h3>' + items + '</div>';
-  }
-
-  function renderUpload(widget) {
-    var c = widget.config || {};
-    return '<div class="panel"><label class="form-label">' + esc(c.label || 'Upload file') + '</label><input type="file" data-builder-upload="' + esc(widget.id) + '" accept="' + esc(c.accept || '*') + '" class="form-input" style="padding:6px" /><div id="upload-list-' + esc(widget.id) + '" style="margin-top:8px;font-size:12px;color:var(--text2)"></div></div>';
-  }
-
-  function renderExport(widget) {
-    var c = widget.config || {};
-    return '<div class="panel"><div style="font-size:12px;color:var(--text3);margin-bottom:8px">' + esc(c.title || 'Export') + '</div>'
-      + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      + (c.exportCsv ? '<button class="btn btn-sm" data-builder-export="csv" data-widget-id="' + esc(widget.id) + '">Export CSV</button>' : '')
-      + (c.exportJson ? '<button class="btn btn-sm" data-builder-export="json" data-widget-id="' + esc(widget.id) + '">Export JSON</button>' : '')
-      + (c.exportPdf ? '<button class="btn btn-sm" data-builder-export="pdf" data-widget-id="' + esc(widget.id) + '">Export PDF</button>' : '')
-      + '</div></div>';
-  }
-
-  function renderSearch(widget) {
-    var c = widget.config || {};
-    return '<div class="panel"><input class="form-input" placeholder="' + esc(c.placeholder || 'Search...') + '" data-builder-search="' + esc(widget.id) + '" /></div>';
-  }
-
-  function renderFilters(widget) {
-    var c = widget.config || {};
-    var options = asArray(c.options, []).map(function (o) {
-      return '<label style="font-size:12px;display:flex;align-items:center;gap:6px"><input type="checkbox" data-builder-filter="' + esc(widget.id) + '"> ' + esc(o) + '</label>';
-    }).join('');
-    return '<div class="panel"><div style="font-size:12px;color:var(--text3);margin-bottom:8px">' + esc(c.title || 'Filters') + '</div><div style="display:flex;gap:12px;flex-wrap:wrap">' + options + '</div></div>';
-  }
-
-  function renderSection(widget) {
-    var c = widget.config || {};
-    return '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:6px">' + esc(c.title || 'Section') + '</h3><p style="color:var(--text2);font-size:12px">' + esc(c.description || '') + '</p></div>';
-  }
-
-  function renderSplit(widget) {
-    var c = widget.config || {};
-    var cols = Math.max(2, toNumber(c.columns, 2));
-    return '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:8px">' + esc(c.title || 'Split Container') + '</h3><div style="display:grid;grid-template-columns:repeat(' + cols + ',minmax(0,1fr));gap:8px">'
-      + Array.from({ length: cols }).map(function (_, idx) { return '<div style="height:72px;border:1px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3)">Drop Zone ' + (idx + 1) + '</div>'; }).join('')
-      + '</div></div>';
-  }
-
-  function renderWidget(widget, root) {
+  function renderWidget(widget) {
     switch (widget.type) {
       case 'kpi_card': return renderKpi(widget);
       case 'summary_card': return renderSummary(widget);
       case 'counter': return renderCounter(widget);
-      case 'table': return renderTable(widget, root);
+      case 'table': return renderTable(widget);
       case 'bar_chart': return renderBar(widget);
       case 'line_chart': return renderLine(widget);
       case 'pie_chart': return renderPie(widget);
@@ -262,89 +192,93 @@
       case 'form_checkbox': return renderCheckbox(widget);
       case 'form_date': return renderDate(widget);
       case 'form_textarea': return renderTextarea(widget);
-      case 'action_button': return renderActionButton(widget);
-      case 'alert': return renderAlert(widget);
-      case 'notification_feed': return renderNotif(widget);
-      case 'file_upload': return renderUpload(widget);
-      case 'export_buttons': return renderExport(widget);
-      case 'search_bar': return renderSearch(widget);
-      case 'filters': return renderFilters(widget);
-      case 'section': return renderSection(widget);
-      case 'split_container': return renderSplit(widget);
-      default:
-        return '<div class="panel"><div style="font-size:12px;color:var(--text3)">Unknown widget type: ' + esc(widget.type) + '</div></div>';
+      default: return renderFallback(widget);
     }
   }
 
-  function wireRuntime(root, feature, options) {
-    var showToast = (window.showToast || function (msg) { console.log(msg); });
+  function applyQueryData(widget, result) {
+    var next = JSON.parse(JSON.stringify(widget));
+    var data = result && result.data ? result.data : {};
+    next.config = next.config || {};
 
-    root.querySelectorAll('[data-builder-action]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var wid = btn.getAttribute('data-builder-action');
-        var widget = feature.widgets.find(function (w) { return w.id === wid; });
-        if (!widget) return;
-        var c = widget.config || {};
-        if (c.actionType === 'navigate' && c.actionPayload) {
-          location.hash = c.actionPayload;
-          showToast('Navigated to ' + c.actionPayload, 'info');
-          return;
-        }
-        if (c.actionType === 'api' && c.actionPayload) {
-          fetch(c.actionPayload).then(function () {
-            showToast('API request completed', 'success');
-          }).catch(function () {
-            showToast('API request failed', 'error');
-          });
-          return;
-        }
-        showToast(c.actionPayload || 'Action executed', 'info');
+    if (widget.type === 'bar_chart' || widget.type === 'line_chart' || widget.type === 'area_chart') {
+      next.config.labels = asArray(data.labels, []);
+      next.config.series = asArray(data.series, []);
+    } else if (widget.type === 'pie_chart') {
+      next.config.segments = asArray(data.segments, []);
+    } else if (widget.type === 'kpi_card' || widget.type === 'counter' || widget.type === 'summary_card') {
+      next.config.value = data.value;
+      next.config.subtitle = data.subtitle || next.config.subtitle;
+      if (widget.type === 'summary_card') next.config.content = 'Live value: ' + data.value;
+    } else if (widget.type === 'table') {
+      next.config.columns = asArray(data.columns, []);
+      next.config.rows = asArray(data.rows, []);
+    } else if (widget.type === 'form_select') {
+      next.config.options = asArray(data.options, []);
+    }
+    return next;
+  }
+
+  function bindFormSubmit(root, feature) {
+    var formWidgets = feature.widgets.filter(function (w) {
+      return ['form_input', 'form_select', 'form_checkbox', 'form_date', 'form_textarea'].indexOf(w.type) > -1;
+    });
+    if (!formWidgets.length || !window.FeatureDataClient) return;
+
+    var submitTable = '';
+    formWidgets.forEach(function (widget) {
+      var binding = widget.config && widget.config.dataBinding;
+      if (binding && binding.submitTable && !submitTable) submitTable = binding.submitTable;
+    });
+    if (!submitTable) return;
+
+    var submitBtn = document.createElement('button');
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.style.marginTop = '8px';
+    submitBtn.textContent = 'Submit Form Data';
+    submitBtn.addEventListener('click', function () {
+      var payload = {};
+      formWidgets.forEach(function (widget) {
+        var binding = widget.config && widget.config.dataBinding;
+        if (!binding || !binding.field) return;
+        var input = root.querySelector('[data-form-field="' + widget.id + '"]');
+        if (!input) return;
+        var value = input.type === 'checkbox' ? input.checked : input.value;
+        payload[binding.field] = value;
+      });
+      window.FeatureDataClient.submitRecord(submitTable, payload).then(function () {
+        if (window.showToast) window.showToast('Form submitted to ' + submitTable, 'success');
+      }).catch(function (err) {
+        if (window.showToast) window.showToast(err.message || 'Form submit failed', 'error');
       });
     });
+    root.appendChild(submitBtn);
+  }
 
-    root.querySelectorAll('[data-builder-upload]').forEach(function (input) {
-      input.addEventListener('change', function (e) {
-        var wid = input.getAttribute('data-builder-upload');
-        var list = root.querySelector('#upload-list-' + wid);
-        var files = Array.from((e.target.files || []));
-        if (!list) return;
-        if (!files.length) {
-          list.textContent = 'No file selected';
-          return;
-        }
-        list.innerHTML = files.map(function (f) { return '<div>Uploaded: ' + esc(f.name) + '</div>'; }).join('');
+  function hydrateWidget(slot, widget, options) {
+    if (!hasDataBinding(widget)) {
+      slot.innerHTML = disconnectedState('Choose data source and fields to render live data.');
+      return;
+    }
+    if (!window.FeatureDataClient) {
+      slot.innerHTML = disconnectedState('Data client not loaded.');
+      return;
+    }
+
+    slot.innerHTML = loadingState('Loading live data...');
+    var key = (options && options.mode ? options.mode : 'runtime') + ':' + widget.id + ':' + JSON.stringify(widget.config.dataBinding || {});
+
+    window.FeatureDataClient.executeQueryDebounced(key, widget.type, widget.config.dataBinding, 300)
+      .then(function (result) {
+        var bound = applyQueryData(widget, result);
+        slot.innerHTML = renderWidget(bound);
+      })
+      .catch(function (err) {
+        slot.innerHTML = disconnectedState(err.message || 'Failed to load live data');
       });
-    });
+  }
 
-    root.querySelectorAll('[data-builder-export]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var kind = btn.getAttribute('data-builder-export');
-        var wid = btn.getAttribute('data-widget-id');
-        var widget = feature.widgets.find(function (w) { return w.id === wid; });
-        if (!widget) return;
-        var c = widget.config || {};
-        var fileName = (c.fileName || feature.name || 'feature').replace(/\s+/g, '-').toLowerCase();
-        var tableWidget = feature.widgets.find(function (w) { return w.type === 'table'; });
-        var tableColumns = tableWidget ? asArray(tableWidget.config.columns, ['Col1']) : ['Field', 'Value'];
-        var tableRows = tableWidget ? asArray(tableWidget.config.rows, [['Example', '1']]) : [['Feature', feature.name], ['Widgets', feature.widgets.length]];
-
-        if (kind === 'csv') {
-          downloadBlob(fileName + '.csv', toCsv(tableColumns, tableRows), 'text/csv;charset=utf-8');
-          showToast('CSV exported', 'success');
-          return;
-        }
-        if (kind === 'json') {
-          downloadBlob(fileName + '.json', JSON.stringify(feature, null, 2), 'application/json;charset=utf-8');
-          showToast('JSON exported', 'success');
-          return;
-        }
-        if (kind === 'pdf') {
-          window.print();
-          showToast('Print dialog opened for PDF export', 'info');
-        }
-      });
-    });
-
+  function wireTableInteractions(root) {
     root.querySelectorAll('.builder-table-sort').forEach(function (th) {
       th.addEventListener('click', function () {
         var idx = Number(th.getAttribute('data-sort-index'));
@@ -389,12 +323,20 @@
       + feature.widgets.map(function (widget) {
         var span = widget.layout && widget.layout.colSpan ? widget.layout.colSpan : 4;
         var rowSpan = widget.layout && widget.layout.rowSpan ? widget.layout.rowSpan : 1;
-        return '<div class="builder-runtime-item" style="grid-column:span ' + span + ';grid-row:span ' + rowSpan + '">' + renderWidget(widget, mountEl) + '</div>';
+        return '<div class="builder-runtime-item" data-widget-slot="' + esc(widget.id) + '" style="grid-column:span ' + span + ';grid-row:span ' + rowSpan + '">'
+          + loadingState('Preparing component...')
+          + '</div>';
       }).join('')
       + '</div>';
 
     mountEl.innerHTML = html;
-    wireRuntime(mountEl, feature, options);
+    feature.widgets.forEach(function (widget) {
+      var slot = mountEl.querySelector('[data-widget-slot="' + widget.id + '"]');
+      if (!slot) return;
+      hydrateWidget(slot, widget, options);
+    });
+    wireTableInteractions(mountEl);
+    if (options.mode === 'runtime') bindFormSubmit(mountEl, feature);
   }
 
   window.FeatureRenderer = {

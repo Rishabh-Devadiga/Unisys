@@ -1848,9 +1848,16 @@ function smEmailMeAsDefaulter(toEmail, dept, threshold) {
 
 function hodEmailDefaulters() {
   console.log('🚀 hodEmailDefaulters clicked');
+  var dept = smMyDept();
+  var threshold = hodGetThreshold();
+  
   fetch('http://localhost:3001/send-emails', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      threshold: threshold,
+      department: dept
+    })
   })
     .then(res => {
       console.log('Response received:', res);
@@ -2448,9 +2455,16 @@ function facExportDefaulters() {
 
 function facEmailDefaulters() {
   console.log('🚀 facEmailDefaulters clicked');
+  var dept = smMyDept();
+  var threshold = facGetThreshold();
+  
   fetch('http://localhost:3001/send-emails', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      threshold: threshold,
+      department: dept
+    })
   })
     .then(res => {
       console.log('Response received:', res);
