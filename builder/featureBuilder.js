@@ -1,6 +1,10 @@
 (function () {
   var mounted = false;
   var unSub = null;
+  var schemaCache = null;
+  var schemaLoading = false;
+  var schemaError = '';
+  var dataSourceModalWidgetId = null;
 
   function esc(value) {
     return String(value == null ? '' : value)
@@ -17,6 +21,10 @@
     } else {
       console.log(msg);
     }
+  }
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
   }
 
   function getStore() {
@@ -37,6 +45,39 @@
 
   function getFeaturePreviewMountId(featureId) {
     return 'feature-runtime-' + featureId;
+  }
+
+  function ensureSchemaLoaded() {
+    if (schemaCache || schemaLoading || !window.FeatureDataClient) return;
+    schemaLoading = true;
+    schemaError = '';
+    window.FeatureDataClient.getSchema().then(function (schema) {
+      schemaCache = schema;
+      schemaLoading = false;
+      mountBuilder();
+    }).catch(function (err) {
+      schemaLoading = false;
+      schemaError = err && err.message ? err.message : 'Failed to load schema';
+      mountBuilder();
+    });
+  }
+
+  function schemaTables() {
+    return schemaCache && Array.isArray(schemaCache.tables) ? schemaCache.tables : [];
+  }
+
+  function tableColumns(table) {
+    var item = schemaTables().find(function (t) { return t.name === table; });
+    return item && Array.isArray(item.columns) ? item.columns.map(function (c) { return c.name; }) : [];
+  }
+
+  function ensureBinding(widget) {
+    var cfg = widget.config || {};
+    var binding = cfg.dataBinding || {};
+    if (!binding.sourceType) binding.sourceType = 'database';
+    if (!Array.isArray(binding.filters)) binding.filters = [];
+    if (!binding.aggregation) binding.aggregation = 'sum';
+    return binding;
   }
 
   function navigateToModule(moduleId) {
@@ -95,12 +136,14 @@
   function renderWidgetCard(widget, selected) {
     var span = Math.min(12, Math.max(1, Number(widget.layout && widget.layout.colSpan || 4)));
     var rowSpan = Math.min(6, Math.max(1, Number(widget.layout && widget.layout.rowSpan || 1)));
+    var sourceType = widget.config && widget.config.dataBinding ? widget.config.dataBinding.sourceType : '';
     return '<div class="builder-widget ' + (selected ? 'selected' : '') + '"'
       + ' data-widget-id="' + esc(widget.id) + '" draggable="true"'
       + ' style="grid-column:span ' + span + ';grid-row:span ' + rowSpan + '">'
       + '<div class="builder-widget-toolbar">'
       + '<button class="builder-drag-handle" title="Drag to reorder">::</button>'
       + '<span class="builder-widget-title">' + esc(widget.type) + '</span>'
+      + '<span class="badge badge-blue">' + esc(sourceType || 'No Source') + '</span>'
       + '<div style="display:flex;gap:6px">'
       + '<button class="btn btn-sm" data-select-widget="' + esc(widget.id) + '">Edit</button>'
       + '<button class="btn btn-sm btn-danger" data-remove-widget="' + esc(widget.id) + '">Delete</button>'
@@ -113,8 +156,8 @@
   function renderCanvas(feature, selectedId) {
     if (!feature.widgets.length) {
       return '<div class="builder-empty-state" id="builder-canvas-drop">'
-        + '<h3>Drop components here</h3>'
-        + '<p>Drag from the left palette or use Add buttons. Components snap to a 12-column grid.</p>'
+        + '<h3>What data do you want to visualize?</h3>'
+        + '<p>Add a component to start the guided data flow.</p>'
         + '</div>';
     }
 
@@ -123,37 +166,100 @@
       + '</div>';
   }
 
-  function toInputControl(key, value, widgetId) {
-    var inputId = 'cfg-' + widgetId + '-' + key;
-    if (typeof value === 'boolean') {
-      return '<label class="builder-config-field"><span>' + esc(key) + '</span><input type="checkbox" id="' + esc(inputId) + '" data-config-key="' + esc(key) + '" ' + (value ? 'checked' : '') + '></label>';
+  function renderSelectOptions(list, selected, placeholder) {
+    var options = (list || []).map(function (item) {
+      return '<option value="' + esc(item) + '" ' + (item === selected ? 'selected' : '') + '>' + esc(item) + '</option>';
+    }).join('');
+    return '<option value="">' + esc(placeholder || 'Select') + '</option>' + options;
+  }
+
+  function renderFilterBuilder(widget, columns) {
+    var binding = ensureBinding(widget);
+    var operators = (schemaCache && schemaCache.operators) || ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'in', 'between'];
+    var chips = (binding.filters || []).map(function (filter, index) {
+      return '<span class="builder-filter-chip">' + esc(filter.field) + ' ' + esc(filter.operator) + ' ' + esc(filter.value)
+        + '<button class="btn btn-sm" data-remove-filter="' + esc(widget.id) + '" data-filter-index="' + index + '">x</button></span>';
+    }).join('');
+    return '<div class="builder-step"><div class="builder-step-title">5. Filters (Optional)</div>'
+      + '<div class="builder-filter-list">' + (chips || '<span class="builder-filter-empty">No filters</span>') + '</div>'
+      + '<div class="builder-filter-builder">'
+      + '<select class="form-select" data-new-filter-field="' + esc(widget.id) + '">' + renderSelectOptions(columns, '', 'Field') + '</select>'
+      + '<select class="form-select" data-new-filter-operator="' + esc(widget.id) + '">' + renderSelectOptions(operators, 'eq', 'Operator') + '</select>'
+      + '<input class="form-input" data-new-filter-value="' + esc(widget.id) + '" placeholder="Value" />'
+      + '<button class="btn btn-sm" data-add-filter="' + esc(widget.id) + '">Add</button>'
+      + '</div></div>';
+  }
+
+  function renderDataFlow(widget) {
+    var binding = ensureBinding(widget);
+    var tables = schemaTables().map(function (t) { return t.name; });
+    var endpoints = (schemaCache && schemaCache.apiEndpoints ? schemaCache.apiEndpoints : []).map(function (ep) { return ep.id; });
+    var cols = tableColumns(binding.table);
+    var aggs = (schemaCache && schemaCache.aggregations) || ['sum', 'avg', 'count'];
+    var html = '<div class="builder-step"><div class="builder-step-title">1. Select Data Source</div>'
+      + '<select class="form-select" data-binding-key="sourceType">' + renderSelectOptions(['database', 'api_endpoint', 'custom_query'], binding.sourceType, 'Source') + '</select>';
+
+    if (binding.sourceType === 'database' || binding.sourceType === 'custom_query') {
+      html += '<select class="form-select" data-binding-key="table">' + renderSelectOptions(tables, binding.table || '', 'Table') + '</select>';
+    } else if (binding.sourceType === 'api_endpoint') {
+      html += '<select class="form-select" data-binding-key="endpoint">' + renderSelectOptions(endpoints, binding.endpoint || '', 'API endpoint') + '</select>';
     }
-    if (typeof value === 'number') {
-      return '<label class="builder-config-field"><span>' + esc(key) + '</span><input class="form-input" type="number" id="' + esc(inputId) + '" data-config-key="' + esc(key) + '" value="' + esc(value) + '"></label>';
+    html += '</div>';
+
+    if (['bar_chart', 'line_chart', 'area_chart', 'pie_chart'].indexOf(widget.type) > -1) {
+      html += '<div class="builder-step"><div class="builder-step-title">2. Select X-axis</div>'
+        + '<select class="form-select" data-binding-key="xField">' + renderSelectOptions(cols, binding.xField || '', 'X-axis') + '</select></div>'
+        + '<div class="builder-step"><div class="builder-step-title">3. Select Y-axis</div>'
+        + '<select class="form-select" data-binding-key="yField">' + renderSelectOptions(cols, binding.yField || '', 'Y-axis') + '</select></div>'
+        + '<div class="builder-step"><div class="builder-step-title">4. Aggregation</div>'
+        + '<select class="form-select" data-binding-key="aggregation">' + renderSelectOptions(aggs, binding.aggregation || 'sum', 'Aggregation') + '</select></div>'
+        + renderFilterBuilder(widget, cols);
+    } else if (['kpi_card', 'counter', 'summary_card'].indexOf(widget.type) > -1) {
+      html += '<div class="builder-step"><div class="builder-step-title">2. Metric Field</div>'
+        + '<select class="form-select" data-binding-key="metricField">' + renderSelectOptions(cols, binding.metricField || '', 'Metric') + '</select></div>'
+        + '<div class="builder-step"><div class="builder-step-title">3. Aggregation</div>'
+        + '<select class="form-select" data-binding-key="aggregation">' + renderSelectOptions(aggs, binding.aggregation || 'sum', 'Aggregation') + '</select></div>'
+        + renderFilterBuilder(widget, cols);
+    } else if (widget.type === 'table') {
+      var columnChoices = cols.map(function (col) {
+        var checked = (binding.columns || []).indexOf(col) > -1;
+        return '<label class="builder-column-check"><input type="checkbox" data-binding-column="' + esc(col) + '" ' + (checked ? 'checked' : '') + '> ' + esc(col) + '</label>';
+      }).join('');
+      html += '<div class="builder-step"><div class="builder-step-title">2. Select Columns</div><div class="builder-column-grid">'
+        + (columnChoices || '<span class="builder-filter-empty">Pick a table first.</span>') + '</div></div>'
+        + renderFilterBuilder(widget, cols);
+    } else if (['form_input', 'form_select', 'form_checkbox', 'form_date', 'form_textarea'].indexOf(widget.type) > -1) {
+      var key = widget.type === 'form_select' ? 'optionField' : 'field';
+      html += '<div class="builder-step"><div class="builder-step-title">2. Bind Field</div>'
+        + '<select class="form-select" data-binding-key="' + key + '">' + renderSelectOptions(cols, binding[key] || '', 'Field') + '</select></div>'
+        + '<div class="builder-step"><div class="builder-step-title">3. Submit Target</div>'
+        + '<select class="form-select" data-binding-key="submitTable">' + renderSelectOptions(tables, binding.submitTable || '', 'Submit table') + '</select></div>';
+      if (widget.type === 'form_select') html += renderFilterBuilder(widget, cols);
     }
-    if (Array.isArray(value) || (value && typeof value === 'object')) {
-      return '<label class="builder-config-field"><span>' + esc(key) + ' (JSON)</span><textarea class="form-textarea" rows="4" id="' + esc(inputId) + '" data-config-key="' + esc(key) + '">' + esc(JSON.stringify(value, null, 2)) + '</textarea></label>';
-    }
-    return '<label class="builder-config-field"><span>' + esc(key) + '</span><input class="form-input" id="' + esc(inputId) + '" data-config-key="' + esc(key) + '" value="' + esc(value == null ? '' : value) + '"></label>';
+
+    return html;
+  }
+
+  function renderDisplayControls(widget) {
+    var keys = ['title', 'label', 'placeholder', 'prefix', 'suffix', 'color'];
+    var cfg = widget.config || {};
+    return keys.filter(function (k) { return typeof cfg[k] !== 'undefined'; }).map(function (k) {
+      return '<label class="builder-config-field"><span>' + esc(k) + '</span><input class="form-input" data-config-key="' + esc(k) + '" value="' + esc(cfg[k]) + '"></label>';
+    }).join('');
   }
 
   function renderConfigPanel(feature, selectedWidgetId) {
     var widget = feature.widgets.find(function (w) { return w.id === selectedWidgetId; });
     if (!widget) {
-      return '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:8px">Configuration</h3><p style="color:var(--text2);font-size:13px">Select a component in canvas to edit labels, data binding, styling, and behavior.</p></div>';
+      return '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:8px">Configuration</h3><p style="color:var(--text2);font-size:13px">Select a component in canvas to edit data binding.</p></div>';
     }
-
-    var controls = Object.keys(widget.config || {}).map(function (key) {
-      return toInputControl(key, widget.config[key], widget.id);
-    }).join('');
 
     return '<div class="panel">'
       + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Configure: ' + esc(widget.type) + '</h3>'
       + '<div class="builder-config-field"><span>colSpan</span><input class="form-input" type="number" min="1" max="12" data-layout-key="colSpan" value="' + esc(widget.layout && widget.layout.colSpan || 4) + '"></div>'
       + '<div class="builder-config-field"><span>rowSpan</span><input class="form-input" type="number" min="1" max="6" data-layout-key="rowSpan" value="' + esc(widget.layout && widget.layout.rowSpan || 1) + '"></div>'
-      + '<div class="builder-config-field"><span>sourceType</span><select class="form-select" data-config-key="sourceType"><option value="static" ' + ((widget.config && widget.config.sourceType === 'static') ? 'selected' : '') + '>static</option><option value="api" ' + ((widget.config && widget.config.sourceType === 'api') ? 'selected' : '') + '>api</option></select></div>'
-      + controls
-      + '<button class="btn btn-primary" data-save-widget="' + esc(widget.id) + '">Apply Changes</button>'
+      + renderDisplayControls(widget)
+      + renderDataFlow(widget)
       + '</div>';
   }
 
@@ -167,6 +273,8 @@
     }).join('');
 
     var attached = state.attachedFeatureIds.indexOf(feature.id) > -1;
+
+    var schemaNote = schemaLoading ? 'Loading schema...' : (schemaError ? 'Schema error' : 'Schema connected');
 
     return '<div class="builder-shell">'
       + '<div class="builder-header panel">'
@@ -185,13 +293,14 @@
       + '<label class="form-label" style="margin:0">Load Existing</label>'
       + '<select id="builder-feature-load" class="form-select"><option value="">Select saved feature</option>' + options + '</select>'
       + '<button class="btn" id="builder-load-btn">Load</button>'
+      + '<span class="badge badge-blue">' + esc(schemaNote) + '</span>'
       + '</div>'
       + '</div>'
 
       + '<div class="builder-layout">'
       + '<aside class="builder-palette panel"><h3>Component Palette</h3>' + renderPalette() + '</aside>'
       + '<main class="builder-canvas-wrap panel">'
-      + '<div class="builder-canvas-head"><h3>Canvas Workspace</h3><span class="badge badge-blue">Grid snap 12 cols</span></div>'
+      + '<div class="builder-canvas-head"><h3>Canvas Workspace</h3><span class="badge badge-blue">Choose data first, then visualize</span></div>'
       + renderCanvas(feature, state.selectedWidgetId)
       + '<div class="builder-preview"><h3>Live Preview</h3><div id="builder-live-preview"></div></div>'
       + '</main>'
@@ -200,7 +309,22 @@
       + renderRegistrySummary()
       + '</aside>'
       + '</div>'
+      + renderDataSourceModal()
       + '</div>';
+  }
+
+  function renderDataSourceModal() {
+    if (!dataSourceModalWidgetId) return '';
+    return '<div class="builder-modal-overlay"><div class="builder-modal">'
+      + '<h3>Select Data Source</h3>'
+      + '<p>Choose where this component should fetch data from.</p>'
+      + '<div class="builder-modal-options">'
+      + '<button class="btn btn-primary" data-modal-source="database">Database Tables</button>'
+      + '<button class="btn" data-modal-source="api_endpoint">API Endpoints</button>'
+      + '<button class="btn" data-modal-source="custom_query">Custom Query</button>'
+      + '</div>'
+      + '<button class="btn" data-modal-close="1">Skip</button>'
+      + '</div></div>';
   }
 
   function renderWidgetPreviews(root) {
@@ -270,6 +394,14 @@
     var store = getStore();
     var registry = getRegistry();
 
+    function addWidgetAndSelectSource(type) {
+      var def = registry.get(type);
+      if (!def) return;
+      var widget = store.addWidget(def);
+      dataSourceModalWidgetId = widget.id;
+      mountBuilder();
+    }
+
     root.querySelectorAll('.builder-palette-item').forEach(function (item) {
       item.addEventListener('dragstart', function (e) {
         item.classList.add('dragging');
@@ -284,9 +416,7 @@
       btn.addEventListener('click', function (e) {
         e.preventDefault();
         var type = btn.getAttribute('data-add-type');
-        var def = registry.get(type);
-        if (!def) return;
-        store.addWidget(def);
+        addWidgetAndSelectSource(type);
       });
     });
 
@@ -304,8 +434,7 @@
       canvas.classList.remove('drag-over');
       var type = e.dataTransfer.getData('application/x-builder-palette');
       if (type) {
-        var def = registry.get(type);
-        if (def) store.addWidget(def);
+        addWidgetAndSelectSource(type);
       }
       var widgetId = e.dataTransfer.getData('application/x-builder-widget');
       var over = e.target.closest('.builder-widget');
@@ -390,42 +519,72 @@
 
   function bindConfig(root) {
     var store = getStore();
+    var selectedId = store.getState().selectedWidgetId;
+    if (!selectedId) return;
+    var widget = store.getState().currentFeature.widgets.find(function (w) { return w.id === selectedId; });
+    if (!widget) return;
 
-    var saveBtn = root.querySelector('[data-save-widget]');
-    if (!saveBtn) return;
+    function updateBinding(key, value) {
+      var nextBinding = clone(ensureBinding(widget));
+      nextBinding[key] = value;
+      store.updateWidget(selectedId, { config: { dataBinding: nextBinding } });
+    }
 
-    saveBtn.addEventListener('click', function () {
-      var widgetId = saveBtn.getAttribute('data-save-widget');
-      var nextConfig = {};
+    root.querySelectorAll('[data-binding-key]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        updateBinding(input.getAttribute('data-binding-key'), input.value);
+      });
+    });
 
-      root.querySelectorAll('[data-config-key]').forEach(function (input) {
+    root.querySelectorAll('[data-binding-column]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var nextBinding = clone(ensureBinding(widget));
+        var set = new Set(nextBinding.columns || []);
+        var col = input.getAttribute('data-binding-column');
+        if (input.checked) set.add(col);
+        else set.delete(col);
+        nextBinding.columns = Array.from(set);
+        store.updateWidget(selectedId, { config: { dataBinding: nextBinding } });
+      });
+    });
+
+    root.querySelectorAll('[data-add-filter]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var fieldEl = root.querySelector('[data-new-filter-field="' + selectedId + '"]');
+        var opEl = root.querySelector('[data-new-filter-operator="' + selectedId + '"]');
+        var valueEl = root.querySelector('[data-new-filter-value="' + selectedId + '"]');
+        if (!fieldEl || !fieldEl.value || !opEl || !valueEl) return;
+        var nextBinding = clone(ensureBinding(widget));
+        nextBinding.filters = clone(nextBinding.filters || []);
+        nextBinding.filters.push({ field: fieldEl.value, operator: opEl.value, value: valueEl.value });
+        store.updateWidget(selectedId, { config: { dataBinding: nextBinding } });
+      });
+    });
+
+    root.querySelectorAll('[data-remove-filter]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = Number(btn.getAttribute('data-filter-index'));
+        var nextBinding = clone(ensureBinding(widget));
+        nextBinding.filters = clone(nextBinding.filters || []).filter(function (_, i) { return i !== idx; });
+        store.updateWidget(selectedId, { config: { dataBinding: nextBinding } });
+      });
+    });
+
+    root.querySelectorAll('[data-config-key]').forEach(function (input) {
+      input.addEventListener('input', function () {
         var key = input.getAttribute('data-config-key');
-        var value;
-        if (input.type === 'checkbox') {
-          value = input.checked;
-        } else if (input.tagName === 'TEXTAREA') {
-          var raw = input.value;
-          try {
-            value = JSON.parse(raw);
-          } catch (e) {
-            value = raw;
-          }
-        } else if (input.type === 'number') {
-          value = Number(input.value);
-        } else {
-          value = input.value;
-        }
-        nextConfig[key] = value;
+        var patch = {};
+        patch[key] = input.value;
+        store.updateWidget(selectedId, { config: patch });
       });
+    });
 
-      var nextLayout = {};
-      root.querySelectorAll('[data-layout-key]').forEach(function (input) {
-        var key = input.getAttribute('data-layout-key');
-        nextLayout[key] = Number(input.value);
+    root.querySelectorAll('[data-layout-key]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var layoutPatch = {};
+        layoutPatch[input.getAttribute('data-layout-key')] = Number(input.value);
+        store.updateWidget(selectedId, { layout: layoutPatch });
       });
-
-      store.updateWidget(widgetId, { config: nextConfig, layout: nextLayout });
-      showToastSafe('Widget configuration updated', 'success');
     });
   }
 
@@ -503,6 +662,31 @@
     }
   }
 
+  function bindDataSourceModal(root) {
+    var store = getStore();
+    root.querySelectorAll('[data-modal-source]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var source = btn.getAttribute('data-modal-source');
+        var widgetId = dataSourceModalWidgetId;
+        if (!widgetId) return;
+        var widget = store.getState().currentFeature.widgets.find(function (w) { return w.id === widgetId; });
+        if (!widget) return;
+        var nextBinding = clone(ensureBinding(widget));
+        nextBinding.sourceType = source;
+        store.updateWidget(widgetId, { config: { dataBinding: nextBinding } });
+        store.selectWidget(widgetId);
+        dataSourceModalWidgetId = null;
+      });
+    });
+    var closeBtn = root.querySelector('[data-modal-close]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () {
+        dataSourceModalWidgetId = null;
+        mountBuilder();
+      });
+    }
+  }
+
   function bindRouteSync() {
     var nav = document.getElementById('module-nav');
     if (!nav || nav.__builderRouteBound) return;
@@ -531,6 +715,7 @@
     var root = getRoot();
     var store = getStore();
     if (!root || !store || !getRegistry() || !window.FeatureRenderer) return;
+    ensureSchemaLoaded();
 
     root.innerHTML = renderBuilderShell();
 
@@ -539,6 +724,7 @@
     bindWidgetActions(root);
     bindResizeHandles(root);
     bindConfig(root);
+    bindDataSourceModal(root);
 
     renderWidgetPreviews(root);
     attachFeatureSections();
