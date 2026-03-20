@@ -1554,7 +1554,7 @@ function buildPrincipalAccounts() {
 
     + '<span class="badge badge-yellow">' + pending.length + ' pending</span></div>'
 
-    + widgetTable(['Name','Email','Dept','Role','Requested On','Action'], pendingRows, 'No pending requests')
+    + widgetTable(['Name','Email','Dept','Role','Requested On','Decision'], pendingRows, 'No pending requests')
 
     + '</div>'
 
@@ -1564,7 +1564,7 @@ function buildPrincipalAccounts() {
 
     + '<span class="badge badge-green">' + active.length + ' active</span></div>'
 
-    + widgetTable(['Name','Email','Dept','Role','Status','Action'], activeRows, 'No active accounts')
+    + widgetTable(['Name','Email','Dept','Role','Status','Manage'], activeRows, 'No active accounts')
 
     + '</div>';
 
@@ -3149,9 +3149,9 @@ function showRoleBadge(sess) {
 
   wrap.style.cssText = 'display:flex;align-items:center;gap:8px;flex-shrink:0;margin-right:4px';
 
-  wrap.innerHTML = '<div style="text-align:right"><div style="font-size:12px;font-weight:600;color:var(--text)">'
+  wrap.innerHTML = '<div class="role-user"><div class="role-user-name">'
 
-    + sess.name + '</div><div style="font-size:10px;color:var(--text2)">' + sess.title + '</div></div>'
+    + sess.name + '</div></div>'
 
     + '<span class="badge badge-' + (colors[sess.role]||'gray') + '">' + sess.role + '</span>';
 
@@ -3179,9 +3179,11 @@ function showRoleBadge(sess) {
 
     logoutBtn.className = 'btn btn-sm btn-danger logout-btn';
 
-    logoutBtn.innerHTML = '<svg class="power-svg" viewBox="0 0 24 24" aria-label="Logout" role="img">'
-      + '<path d="M12 3.5v6" stroke="#ef4444" stroke-width="2.6" stroke-linecap="round" />'
-      + '<path d="M17.5 6.5a7.5 7.5 0 1 1-11 0" stroke="#ef4444" stroke-width="2.6" stroke-linecap="round" fill="none" />'
+    logoutBtn.innerHTML = '<svg class="logout-svg" viewBox="0 0 24 24" aria-label="Logout" role="img">'
+      + '<path d="M4.5 4.5h8v15h-8z" stroke="#ef4444" stroke-width="2" stroke-linejoin="round" fill="none" />'
+      + '<path d="M12.5 12h7" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" />'
+      + '<path d="M16.5 9l3 3-3 3" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />'
+      + '<circle cx="9.5" cy="12" r="0.9" fill="#ef4444" />'
       + '</svg>';
 
     logoutBtn.addEventListener('click', authLogout);
