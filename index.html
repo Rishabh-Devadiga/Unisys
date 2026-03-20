@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>UniSys | Unified Campus OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css?v=2026-03-20-6"/>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon"></div>
+  <span class="toast-msg"></span>
+</div>
+
+<!-- JOIN MODAL -->
+<div class="modal-overlay" id="join-modal">
+  <div class="modal-box">
+    <h2>Join UniSys for free</h2>
+    <p class="modal-sub">Get your campus ERP set up within 24 hours. No credit card required.</p>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="jf-name" placeholder="Dr. Sharma"/></div>
+      <div class="form-group"><label class="form-label">College Email</label><input class="form-input" id="jf-email" type="email" placeholder="principal@college.edu"/></div>
+      <div class="form-group"><label class="form-label">College Name</label><input class="form-input" id="jf-college" placeholder="Northstar University"/></div>
+      <div class="form-group"><label class="form-label">Your Role</label>
+        <select class="form-select" id="jf-role"><option>Principal / Head</option><option>Registrar</option><option>IT Admin</option><option>IQAC Lead</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('join-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitJoin()">Get Started &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAN MODAL -->
+<div class="modal-overlay" id="plan-modal">
+  <div class="modal-box">
+    <h2 id="plan-title">Start Plan</h2>
+    <p class="modal-sub" id="plan-desc">Subscribe to EduSys.</p>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr">
+      <div class="form-group"><label class="form-label">College Name</label><input class="form-input" id="pm-college" placeholder="Northstar University"/></div>
+      <div class="form-group"><label class="form-label">Contact Email</label><input class="form-input" id="pm-email" type="email" placeholder="admin@college.edu"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('plan-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitPlan()">Confirm &amp; Continue &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LANDING PAGE ===== -->
+<div id="landing" class="page active">
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="logo" onclick="showPage('landing')"><div class="logo-badge">U</div><span>UniSys</span></div>
+      <nav class="nav-links">
+        <a href="#" onclick="smoothTo('lib-section');return false">Library</a>
+        <a href="#" onclick="smoothTo('flow-section');return false">Flows</a>
+        <a href="#" onclick="smoothTo('feat-section');return false">Features</a>
+        <a href="#" onclick="smoothTo('story-section');return false">Stories</a>
+        <a href="#" onclick="smoothTo('faq-section');return false">FAQ</a>
+        <a href="#" onclick="smoothTo('pricing-section');return false">Pricing</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="btn btn-icon theme-btn" onclick="toggleTheme()" title="Toggle theme">&#127763;</button>
+        <button class="btn" onclick="showPage('edusys-access')">Open EduSys</button>
+        <button class="btn btn-primary" onclick="openModal('join-modal')">Join for free</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <div class="pill">&#128640; Now live &mdash; EduSys v2</div>
+        <h1 class="reveal">UniSys builds category-defining campus solutions.</h1>
+        <p class="reveal">The parent company that identifies one major operational problem per sector and builds the best-in-class product. EduSys &mdash; our first product &mdash; solves college attendance with geofencing and a full 24-module ERP suite.</p>
+        <div class="hero-cta reveal">
+          <button class="btn btn-primary" onclick="openModal('join-modal')">Join for free &rarr;</button>
+          <button class="btn" onclick="smoothTo('pricing-section')">See pricing</button>
+          <button class="btn" onclick="showPage('edusys-access')">Open EduSys</button>
+        </div>
+        <div class="trust-row reveal">
+          <span>Trusted by</span>
+          <div class="marquee">
+            <div class="marquee-track">
+              <span>Northstar Univ.</span><span>Nova College</span><span>Axis Institute</span><span>Summit Tech</span><span>Riverdale Uni</span><span>Brighton Inst.</span><span>Kiran Academy</span>
+            </div>
+            <div class="marquee-track" aria-hidden="true">
+              <span>Northstar Univ.</span><span>Nova College</span><span>Axis Institute</span><span>Summit Tech</span><span>Riverdale Uni</span><span>Brighton Inst.</span><span>Kiran Academy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="reveal">
+          <div class="preview-card"><img src="edusys-preview.png" alt="EduSys Admin ERP preview"/></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="border-top:1px solid var(--border)">
+    <div class="container">
+      <h2 class="section-title reveal">UniSys mission</h2>
+      <p class="section-sub reveal">One critical problem per sector. One best-in-class solution. EduSys is transforming how colleges operate.</p>
+      <div class="grid grid-3">
+        <div class="card reveal"><div style="font-size:28px;margin-bottom:10px">&#127963;</div><h3 style="font-family:var(--font-head);margin-bottom:8px">Parent company</h3><p style="color:var(--text2);font-size:14px">UniSys drives strategy, research, and platform standards across all product verticals.</p></div>
+        <div class="card reveal"><div style="font-size:28px;margin-bottom:10px">&#127891;</div><h3 style="font-family:var(--font-head);margin-bottom:8px">First product: EduSys</h3><p style="color:var(--text2);font-size:14px">College ERP with geofenced attendance, role-based governance, and full audit trails.</p></div>
+        <div class="card reveal"><div style="font-size:28px;margin-bottom:10px">&#128301;</div><h3 style="font-family:var(--font-head);margin-bottom:8px">Next sectors</h3><p style="color:var(--text2);font-size:14px">Hospitals, hotels, and offices &mdash; one critical operational problem solved at a time.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="lib-section" class="section" style="border-top:1px solid var(--border)">
+    <div class="container">
+      <div class="stat-strip reveal">
+        <div class="stat-item"><h3>1,150+</h3><p>Campus workflows</p></div>
+        <div class="stat-item"><h3>600k+</h3><p>Operational records</p></div>
+        <div class="stat-item"><h3>320k+</h3><p>Process flows</p></div>
+        <div class="stat-item"><h3>24</h3><p>ERP modules</p></div>
+      </div>
+      <h2 class="section-title reveal">Find patterns in seconds.</h2>
+      <p class="section-sub reveal">Admissions, attendance, exams, finance, HR, compliance &mdash; across real workflows, forms, and outputs.</p>
+      <div class="tab-row reveal" id="landing-tabs">
+        <button class="tab-btn active" data-tab="admissions" onclick="setLandingTab('admissions',this)">Admissions</button>
+        <button class="tab-btn" data-tab="attendance" onclick="setLandingTab('attendance',this)">Attendance</button>
+        <button class="tab-btn" data-tab="exams" onclick="setLandingTab('exams',this)">Exams</button>
+        <button class="tab-btn" data-tab="finance" onclick="setLandingTab('finance',this)">Finance</button>
+        <button class="tab-btn" data-tab="hr" onclick="setLandingTab('hr',this)">HR</button>
+      </div>
+      <div class="pattern-grid reveal" id="landing-patterns">
+        <div class="pattern-card" data-tab="admissions">&#128203; Application Form</div>
+        <div class="pattern-card" data-tab="admissions">&#9989; Document Verify</div>
+        <div class="pattern-card" data-tab="admissions">&#127891; Enrollment</div>
+        <div class="pattern-card" data-tab="admissions">&#128202; Merit List</div>
+        <div class="pattern-card" data-tab="attendance">&#128205; Geofence Check-in</div>
+        <div class="pattern-card" data-tab="attendance">&#128276; Absence Alerts</div>
+        <div class="pattern-card" data-tab="attendance">&#128241; Device Validation</div>
+        <div class="pattern-card" data-tab="attendance">&#128200; Compliance Report</div>
+        <div class="pattern-card" data-tab="exams">&#127903; Hall Ticket</div>
+        <div class="pattern-card" data-tab="exams">&#128221; Mark Entry</div>
+        <div class="pattern-card" data-tab="exams">&#128196; Result Sheet</div>
+        <div class="pattern-card" data-tab="exams">&#127942; Grade Cards</div>
+        <div class="pattern-card" data-tab="finance">&#129534; Fee Receipt</div>
+        <div class="pattern-card" data-tab="finance">&#127384; Scholarship</div>
+        <div class="pattern-card" data-tab="finance">&#128179; Payment Log</div>
+        <div class="pattern-card" data-tab="finance">&#128202; Budget Report</div>
+        <div class="pattern-card" data-tab="hr">&#127958; Leave Request</div>
+        <div class="pattern-card" data-tab="hr">&#128176; Payroll Slip</div>
+        <div class="pattern-card" data-tab="hr">&#128100; Staff Profile</div>
+        <div class="pattern-card" data-tab="hr">&#128203; Appraisal Form</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="flow-section" class="section" style="border-top:1px solid var(--border)">
+    <div class="container flow-grid">
+      <div class="reveal">
+        <h2 class="section-title">EduSys onboarding &mdash; designed for governance.</h2>
+        <p class="section-sub">The college head registers first, creates the institution, configures the ERP, and assigns roles. No admin or staff can access until setup is complete.</p>
+        <div class="feat-list">
+          <div class="feat-item">Guided approvals &amp; escalation paths</div>
+          <div class="feat-item">Prototype mode for walkthroughs</div>
+          <div class="feat-item">Live annotations and evidence capture</div>
+          <div class="feat-item">Geofenced attendance from day one</div>
+        </div>
+      </div>
+      <div class="flow-steps reveal">
+        <div class="flow-step"><div class="flow-step-num" style="background:rgba(109,139,255,0.2);color:var(--accent)">1</div><div><div style="font-weight:600;font-size:14px">Head Registers College</div><div style="color:var(--text2);font-size:12px">Creates institution profile &amp; credentials</div></div></div>
+        <div class="flow-step"><div class="flow-step-num" style="background:rgba(110,231,255,0.2);color:var(--accent2)">2</div><div><div style="font-weight:600;font-size:14px">ERP Setup &amp; Policies</div><div style="color:var(--text2);font-size:12px">Configures departments, rules, calendars</div></div></div>
+        <div class="flow-step"><div class="flow-step-num" style="background:rgba(155,123,255,0.2);color:var(--accent3)">3</div><div><div style="font-weight:600;font-size:14px">Role Assignment</div><div style="color:var(--text2);font-size:12px">Assigns admins, HODs, faculty, staff</div></div></div>
+        <div class="flow-step"><div class="flow-step-num" style="background:rgba(52,211,153,0.2);color:var(--green)">4</div><div><div style="font-weight:600;font-size:14px">Admin Access Granted</div><div style="color:var(--text2);font-size:12px">Role-based ERP access unlocks</div></div></div>
+        <div class="flow-step"><div class="flow-step-num" style="background:rgba(251,191,36,0.2);color:var(--yellow)">5</div><div><div style="font-weight:600;font-size:14px">Geofenced Attendance Live</div><div style="color:var(--text2);font-size:12px">Real-time verified attendance begins</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="feat-section" class="section" style="border-top:1px solid var(--border)">
+    <div class="container">
+      <h2 class="section-title reveal">EduSys solves attendance with geofencing.</h2>
+      <p class="section-sub reveal">GPS-verified check-ins, tied to timetables, audited across roles &mdash; eliminating proxy attendance completely.</p>
+      <div class="grid grid-3">
+        <div class="card reveal">
+          <div class="geo-demo" style="height:130px;margin-bottom:14px">
+            <div class="geo-ring"></div><div class="geo-ring"></div><div class="geo-ring"></div>
+            <div class="geo-dot"></div>
+            <span class="geo-label">Campus geofence boundary</span>
+          </div>
+          <h3 style="font-family:var(--font-head);margin-bottom:6px">Geofenced attendance</h3>
+          <p style="color:var(--text2);font-size:14px">GPS-verified check-ins tied to class schedules. No location, no attendance.</p>
+        </div>
+        <div class="card reveal">
+          <div style="font-size:32px;margin-bottom:12px">&#128272;</div>
+          <h3 style="font-family:var(--font-head);margin-bottom:6px">Role-based ERP</h3>
+          <p style="color:var(--text2);font-size:14px;margin-bottom:12px">Head sets policy, assigns roles, governs access from day one.</p>
+          <div class="feat-list"><div class="feat-item">Head / Principal</div><div class="feat-item">Admin / HOD</div><div class="feat-item">Faculty / Staff</div></div>
+        </div>
+        <div class="card reveal">
+          <div style="font-size:32px;margin-bottom:12px">&#128220;</div>
+          <h3 style="font-family:var(--font-head);margin-bottom:6px">Audit-ready trails</h3>
+          <p style="color:var(--text2);font-size:14px;margin-bottom:12px">Every event logged. NAAC/NBA compliant evidence always ready.</p>
+          <div class="feat-list"><div class="feat-item">NAAC / NBA ready</div><div class="feat-item">Full audit log</div><div class="feat-item">Evidence packs</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="story-section" class="section" style="border-top:1px solid var(--border)">
+    <div class="container">
+      <h2 class="section-title reveal">What campus leaders say.</h2>
+      <div class="testimonial-grid reveal">
+        <div class="testimonial"><div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"UniSys helped us standardize every workflow across campuses without losing autonomy. The audit trails are incredible."</p><div class="testimonial-author">&mdash; Registrar, Axis Institute</div></div>
+        <div class="testimonial"><div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"Report prep time cut in half. Evidence packs for NAAC are now always ready and up to date."</p><div class="testimonial-author">&mdash; IQAC Lead, Nova College</div></div>
+        <div class="testimonial"><div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"Finally one system for academics, HR, finance, and compliance. Remarkable depth and usability."</p><div class="testimonial-author">&mdash; COO, Summit Tech</div></div>
+        <div class="testimonial"><div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"Geofencing eliminated proxy attendance overnight. Students can't game the system anymore."</p><div class="testimonial-author">&mdash; HOD CSE, Riverdale Uni</div></div>
+        <div class="testimonial"><div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"Our admin team was fully live with all 24 modules in under a week. Onboarding was seamless."</p><div class="testimonial-author">&mdash; IT Head, Northstar Univ.</div></div>
+        <div class="testimonial"><div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"Compliance documentation used to take weeks before accreditation. Now it's fully automated."</p><div class="testimonial-author">&mdash; Principal, Brighton Inst.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq-section" class="section" style="border-top:1px solid var(--border)">
+    <div class="container" style="max-width:760px">
+      <h2 class="section-title reveal">Frequently asked questions.</h2>
+      <div class="reveal">
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What is EduSys? <span class="faq-chevron">&#8964;</span></button><div class="faq-a">EduSys is UniSys's first product &mdash; a college ERP that solves attendance accuracy with geofencing. It covers 24+ modules: admissions, students, academics, exams, finance, HR, library, hostel, transport, placements, research, facilities, compliance, and more.</div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How does geofenced attendance work? <span class="faq-chevron">&#8964;</span></button><div class="faq-a">Students mark attendance via mobile. The system verifies their GPS location is within the college geofence boundary before accepting the check-in. Proxy attendance is impossible because physical presence at the correct location is required.</div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Who sets up the ERP? <span class="faq-chevron">&#8964;</span></button><div class="faq-a">The college head (Principal or Director) registers first and creates the system. This generates a unique System Key. Admins and faculty can only access after the head completes the setup &mdash; ensuring governance from day one.</div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Is EduSys NAAC and NBA compliant? <span class="faq-chevron">&#8964;</span></button><div class="faq-a">Yes. EduSys maintains audit trails, evidence logs, and documentation workflows mapped to NAAC Criteria and NBA Program Outcomes. SSR/SAR/AQAR documentation workflows are built in, making accreditation straightforward.</div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I try it for free? <span class="faq-chevron">&#8964;</span></button><div class="faq-a">Yes &mdash; use the demo credentials on the Access page (Key: EDU-DEMO-2026, Password: demo123) to explore all 24 ERP modules instantly without registration.</div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What integrations are supported? <span class="faq-chevron">&#8964;</span></button><div class="faq-a">EduSys integrates with biometric devices, LMS platforms, payment gateways, SMS/email providers, HRMS systems, library APIs, geofence APIs, and analytics engines &mdash; configurable from the Integration Hub module.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="border-top:1px solid var(--border)">
+    <div class="container">
+      <div class="cta-box reveal">
+        <div class="pill" style="margin-bottom:16px">&#127919; Start today</div>
+        <h2 class="section-title" style="margin-bottom:12px">Launch EduSys, powered by UniSys.</h2>
+        <p style="color:var(--text2);max-width:480px;margin:0 auto 28px;font-size:15px">Start with geofenced attendance and expand into full ERP governance. First product. Best-in-class.</p>
+        <div class="hero-cta" style="justify-content:center">
+          <button class="btn btn-primary" onclick="openModal('join-modal')">Join for free &rarr;</button>
+          <button class="btn" onclick="smoothTo('pricing-section')">See pricing</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing-section" class="section" style="border-top:1px solid var(--border)">
+    <div class="container">
+      <h2 class="section-title reveal">Plans for every college.</h2>
+      <p class="section-sub reveal">Billed per institution. All plans include all 24 modules. Upgrade or cancel anytime.</p>
+      <div class="pricing-grid reveal">
+        <div class="pricing-card">
+          <h3>Monthly</h3><p style="color:var(--text2);font-size:13px">Flexible start for new campuses</p>
+          <div class="price">&#8377;7,999</div><div class="price-period">per college / month</div>
+          <ul class="pricing-features"><li>All 24 modules</li><li>Geofenced attendance</li><li>Up to 2,000 students</li><li>Email support</li></ul>
+          <button class="btn btn-primary" onclick="openPlan('Monthly','&#8377;7,999/month')">Start monthly &rarr;</button>
+        </div>
+        <div class="pricing-card featured">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><h3>Quarterly</h3><span class="badge badge-blue">Most popular</span></div>
+          <p style="color:var(--text2);font-size:13px">Best for pilot + rollout</p>
+          <div class="price">&#8377;19,999</div><div class="price-period">per college / quarter</div>
+          <ul class="pricing-features"><li>All 24 modules</li><li>Geofenced attendance</li><li>Unlimited students</li><li>Priority support</li><li>NAAC/NBA evidence packs</li></ul>
+          <button class="btn btn-primary" onclick="openPlan('Quarterly','&#8377;19,999/quarter')">Start quarterly &rarr;</button>
+        </div>
+        <div class="pricing-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><h3>Annual</h3><span class="badge badge-green">Save 11%</span></div>
+          <p style="color:var(--text2);font-size:13px">Best value for institutions</p>
+          <div class="price">&#8377;84,999</div><div class="price-period">per college / year</div>
+          <ul class="pricing-features"><li>All 24 modules</li><li>Geofenced attendance</li><li>Unlimited students</li><li>Dedicated support</li><li>NAAC/NBA evidence packs</li><li>Custom integrations</li></ul>
+          <button class="btn btn-primary" onclick="openPlan('Annual','&#8377;84,999/year')">Start annual &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div class="logo" onclick="showPage('landing')"><div class="logo-badge">U</div><span>UniSys</span></div>
+      <div><p style="margin-bottom:4px;font-weight:600">Unified campus operating system.</p><p style="color:var(--text2);font-size:13px">Contact: <a href="mailto:hello@unisyshq.com" style="color:var(--accent)">hello@unisyshq.com</a></p></div>
+      <div style="color:var(--text2);font-size:13px"><p>&copy; 2026 UniSys. All rights reserved.</p><p style="margin-top:4px">EduSys is a UniSys product.</p></div>
+    </div>
+  </footer>
+</div><!-- /landing -->
+
+<!-- ===== EDUSYS ACCESS ===== -->
+<div id="edusys-access" class="page">
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="logo" onclick="showPage('edusys-access')"><div class="logo-badge">E</div><span>EduSys</span></div>
+      <div class="nav-actions">
+        <button class="btn btn-icon theme-btn" onclick="toggleTheme()">&#127763;</button>
+        <button class="btn" onclick="showPage('landing')">&larr; UniSys</button>
+        <button class="btn btn-primary" onclick="showPage('create-system')">Create System</button>
+      </div>
+    </div>
+  </header>
+  <div style="max-width:680px;margin:0 auto;padding:50px 20px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div class="logo-badge" style="width:52px;height:52px;font-size:22px;margin:0 auto 14px">E</div>
+      <h1 style="font-family:var(--font-head);font-size:32px;margin-bottom:8px">Access EduSys</h1>
+      <p style="color:var(--text2);font-size:15px">Enter your college system credentials. Admins need the System Key created by the Head.</p>
+    </div>
+    <div class="panel">
+      <div class="form-section-title">Access EduSys</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn btn-sm btn-primary" id="access-toggle-signup" onclick="setAccessMode('signup')">New User Sign Up</button>
+        <button class="btn btn-sm" id="access-toggle-login" onclick="setAccessMode('login')">Existing User Login</button>
+      </div>
+
+      <div id="access-signup">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="signup-name" placeholder="Prof. Asha Menon"/></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signup-email" type="email" placeholder="faculty@college.edu"/></div>
+          <div class="form-group"><label class="form-label">Create Password</label><input class="form-input" id="signup-password" type="password" placeholder="Min. 8 characters"/></div>
+          <div class="form-group"><label class="form-label">Desired Role</label><select class="form-select" id="signup-role"><option>Faculty</option><option>HOD</option><option>Account</option><option>Admissions</option><option>Railway Concession</option><option>Admin</option></select></div>
+          <div class="form-group"><label class="form-label">Department</label><input class="form-input" id="signup-dept" placeholder="CSE / Finance / Admissions"/></div>
+          <div class="form-group"><label class="form-label">Institute / College</label><input class="form-input" id="signup-institute" placeholder="Northstar University"/></div>
+          <div class="form-group"><label class="form-label">System Key</label><input class="form-input" id="signup-key" placeholder="EDU-XXXX-XXXX"/></div>
+        </div>
+        <div style="color:var(--text2);font-size:12px;margin-top:10px">Your request is sent to the Principal for approval before access is granted.</div>
+        <div id="access-signup-error" style="display:none;color:var(--red);font-size:13px;margin-top:10px;padding:10px 14px;background:rgba(248,113,113,0.1);border-radius:var(--r-sm);border:1px solid rgba(248,113,113,0.2)">&#9888; </div>
+        <div id="access-signup-success" style="display:none;color:#155724;font-size:13px;margin-top:10px;padding:10px 14px;background:rgba(212,237,218,1);border-radius:var(--r-sm);border:1px solid rgba(195,230,203,1)"></div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="requestAccess()">Request Access &rarr;</button>
+          <button class="btn" onclick="setAccessMode('login')">Go to Login</button>
+        </div>
+      </div>
+
+      <div id="access-login">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">System Key</label><input class="form-input" id="access-key" placeholder="EDU-XXXX-XXXX"/></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="access-email" type="email" placeholder="admin@college.edu"/></div>
+          <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="access-password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"/></div>
+          <div class="form-group"><label class="form-label">Role</label><select class="form-select" id="access-role"><option>Admin</option><option>HOD</option><option>Faculty</option><option>Principal</option></select></div>
+        </div>
+        <div id="access-error" style="display:none;color:var(--red);font-size:13px;margin-top:10px;padding:10px 14px;background:rgba(248,113,113,0.1);border-radius:var(--r-sm);border:1px solid rgba(248,113,113,0.2)">&#9888; Invalid System Key. Use demo credentials below or create a new system.</div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="enterERP()">Enter ERP &rarr;</button>
+          <button class="btn" onclick="showPage('create-system')">Create New System</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="form-section-title">&#127918; Demo Access &mdash; Explore all 24 modules instantly</div>
+      <div class="demo-creds">
+        <span>System Key</span><strong>EDU-DEMO-2026</strong>
+        <span>Email</span><strong>demo@edusys.in</strong>
+        <span>Password</span><strong>demo123</strong>
+        <span>Role</span><strong>Admin (full access)</strong>
+      </div>
+      <div class="form-actions" style="margin-top:14px">
+        <button class="btn btn-primary" onclick="enterERPDemo()">Enter Demo ERP &rarr;</button>
+        <button class="btn" onclick="fillDemo()">Fill credentials</button>
+      </div>
+    </div>
+  </div>
+</div><!-- /edusys-access -->
+
+<!-- ===== CREATE SYSTEM ===== -->
+<div id="create-system" class="page">
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="logo"><div class="logo-badge">E</div><span>EduSys</span></div>
+      <div class="nav-actions">
+        <button class="btn btn-icon theme-btn" onclick="toggleTheme()">&#127763;</button>
+        <button class="btn" onclick="showPage('edusys-access')">Access &rarr;</button>
+        <button class="btn" onclick="showPage('landing')">UniSys Home</button>
+      </div>
+    </div>
+  </header>
+  <div style="max-width:740px;margin:0 auto;padding:50px 20px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div class="logo-badge" style="width:52px;height:52px;font-size:22px;margin:0 auto 14px">E</div>
+      <h1 style="font-family:var(--font-head);font-size:32px;margin-bottom:8px">Create Your EduSys</h1>
+      <p style="color:var(--text2);font-size:15px">The Head registers the college first. This generates a unique System Key for all admin access.</p>
+    </div>
+    <div class="panel" id="create-form-panel">
+      <div class="form-section-title">Institution Registration</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">College Name</label><input class="form-input" id="cs-college" placeholder="Northstar University"/></div>
+        <div class="form-group"><label class="form-label">Official Email</label><input class="form-input" id="cs-email" type="email" placeholder="principal@college.edu"/></div>
+        <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="cs-phone" type="tel" placeholder="+91 98765 43210"/></div>
+        <div class="form-group"><label class="form-label">Head / Principal Name</label><input class="form-input" id="cs-head" placeholder="Dr. Rao"/></div>
+        <div class="form-group"><label class="form-label">Your Role</label><input class="form-input" id="cs-role" placeholder="Principal / Director"/></div>
+        <div class="form-group"><label class="form-label">Create Password</label><input class="form-input" id="cs-password" type="password" placeholder="Min. 8 characters"/></div>
+      </div>
+      <div id="cs-error" style="display:none;color:var(--red);font-size:13px;margin-bottom:12px;padding:10px 14px;background:rgba(248,113,113,0.1);border-radius:var(--r-sm);border:1px solid rgba(248,113,113,0.2)">&#9888; </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="sendOtpForSignup()">Register College &rarr;</button>
+        <button class="btn" onclick="showPage('edusys-access')">Back to Access</button>
+      </div>
+    </div>
+    <div class="panel" id="otp-verify-panel" style="display:none">
+      <div class="form-section-title">📧 Email Verification Required</div>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:16px">We've sent a verification code to <strong id="otp-email-display"></strong>. Please enter it below.</p>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Verification Code (OTP)</label><input class="form-input" id="cs-otp" placeholder="000000" maxlength="6"/></div>
+      </div>
+      <div id="otp-error" style="display:none;color:var(--red);font-size:13px;margin-bottom:12px;padding:10px 14px;background:rgba(248,113,113,0.1);border-radius:var(--r-sm);border:1px solid rgba(248,113,113,0.2)">&#9888; </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="verifyOtpForSignup()">Verify & Create Account &rarr;</button>
+        <button class="btn" onclick="backToFormFromOtp()">Back to Form</button>
+      </div>
+    </div>
+    <div class="panel" id="key-panel" style="display:none">
+      <div style="text-align:center">
+        <div style="font-size:40px;margin-bottom:12px">&#127881;</div>
+        <h3 style="font-family:var(--font-head);font-size:22px;margin-bottom:6px">System Created!</h3>
+        <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Share this key with your admins. Store it securely.</p>
+        <div class="key-display" id="generated-key">EDU-XXXX-XXXX</div>
+        <div class="form-actions" style="justify-content:center;margin-top:20px">
+          <button class="btn btn-primary" onclick="enterERPDemo()">Open Demo ERP &rarr;</button>
+          <button class="btn" onclick="copyKey()">&#128203; Copy Key</button>
+          <button class="btn" onclick="showPage('edusys-access')">Access Page</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /create-system -->
+
+<!-- ===== ERP PAGE ===== -->
+<div id="erp" class="page">
+<div class="app-shell">
+  <aside class="sidebar" id="module-nav">
+    <div class="sidebar-logo" onclick="showPage('landing')">
+      <div class="logo-badge" style="width:32px;height:32px;font-size:14px">E</div>
+      <div><div class="sidebar-logo-text">EduSys ERP</div><div class="sidebar-logo-sub">Admin Panel</div></div>
+    </div>
+    <span class="sidebar-section-label">Main</span>
+    <button class="nav-item active" data-module="overview"><span class="nav-icon"></span>Overview</button>
+    <button class="nav-item" data-module="admissions"><span class="nav-icon"></span>Admissions<span class="nav-badge nav-badge-blue" id="nb-admissions">2</span></button>
+    <button class="nav-item" data-module="students"><span class="nav-icon"></span>Students</button>
+    <button class="nav-item" data-module="academics"><span class="nav-icon"></span>Academics</button>
+    <button class="nav-item" data-module="attendance"><span class="nav-icon"></span>Attendance</button>
+    <button class="nav-item" data-module="exams"><span class="nav-icon"></span>Exams</button>
+    <span class="sidebar-section-label">Administration</span>
+    <button class="nav-item" data-module="faculty"><span class="nav-icon"></span>Faculty</button>
+    <button class="nav-item" data-module="finance"><span class="nav-icon"></span>Finance<span class="nav-badge" id="nb-finance">1</span></button>
+    <button class="nav-item" data-module="hr"><span class="nav-icon"></span>HR &amp; Payroll</button>
+    <button class="nav-item" data-module="library"><span class="nav-icon"></span>Library</button>
+    <button class="nav-item" data-module="hostel"><span class="nav-icon"></span>Hostel</button>
+    <button class="nav-item" data-module="transport"><span class="nav-icon"></span>Transport</button>
+    <span class="sidebar-section-label">Operations</span>
+    <button class="nav-item" data-module="placements"><span class="nav-icon"></span>Placements</button>
+    <button class="nav-item" data-module="research"><span class="nav-icon"></span>Research</button>
+    <button class="nav-item" data-module="facilities"><span class="nav-icon"></span>Facilities</button>
+    <button class="nav-item" data-module="inventory"><span class="nav-icon"></span>Inventory</button>
+    <button class="nav-item" data-module="procurement"><span class="nav-icon"></span>Procurement</button>
+    <button class="nav-item" data-module="service"><span class="nav-icon"></span>Service Desk<span class="nav-badge" id="nb-service">3</span></button>
+    <span class="sidebar-section-label">Governance</span>
+    <button class="nav-item" data-module="communications"><span class="nav-icon"></span>Communications</button>
+    <button class="nav-item" data-module="compliance"><span class="nav-icon"></span>Compliance</button>
+    <button class="nav-item" data-module="integrations"><span class="nav-icon"></span>Integrations</button>
+    <button class="nav-item" data-module="analytics"><span class="nav-icon"></span>Analytics</button>
+    <button class="nav-item" data-module="attainment"><span class="nav-icon"></span>Attainment</button>
+    <button class="nav-item" data-module="coverage"><span class="nav-icon"></span>ERP Coverage</button>
+  </aside>
+
+  <div class="erp-content">
+    <div class="topbar">
+      <div class="search-box">
+        <span style="color:var(--text3)">🔍</span>
+        <input id="global-search" placeholder="Search students, tickets, invoices, exams..." oninput="handleSearch(this.value)"/>
+        <button id="search-clear" style="display:none;background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px" onclick="clearSearch()">✕</button>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-icon theme-btn" onclick="toggleTheme()">☀️</button>
+        <div class="notif-btn">
+          <button class="btn btn-icon" onclick="showToast('3 pending approvals require attention','warning')">🔔</button>
+          <div class="notif-dot"></div>
+        </div>
+        <button class="btn btn-primary" onclick="showCreateRecord()">+ Create Record</button>
+      </div>
+    </div>
+
+    <div id="search-results" style="display:none;margin:16px 24px 0">
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h3 style="font-family:var(--font-head);font-size:16px">Search Results</h3>
+          <button class="btn btn-sm" onclick="clearSearch()">Clear</button>
+        </div>
+        <div id="search-results-body"></div>
+      </div>
+    </div>
+
+    <div class="module-wrap">
+
+      <!-- OVERVIEW -->
+      <section class="module-section active" id="overview">
+        <div class="panel">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start">
+            <div>
+              <div class="pill">ERP Control Center</div>
+              <h1 style="font-family:var(--font-head);font-size:28px;margin-bottom:8px">Unified command for college operations.</h1>
+              <p style="color:var(--text2);font-size:14px;max-width:520px">Manage academics, administration, finance, HR, compliance, facilities, and student services with real-time visibility.</p>
+              <div class="form-actions" style="margin-top:16px">
+                <button class="btn btn-primary" data-module-jump="admissions">Open Admissions</button>
+                <button class="btn" data-module-jump="finance">Review Finance</button>
+                <button class="btn" data-module-jump="analytics">Analytics</button>
+              </div>
+            </div>
+            <div class="canvas-wrap" style="width:260px"><canvas id="admin-canvas"></canvas></div>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-label">Active Students</div><div class="kpi-value" id="kpi-students">1,842</div><span class="kpi-sub kpi-up">↑ +3.1% MoM</span></div>
+          <div class="kpi-card"><div class="kpi-icon">📍</div><div class="kpi-label">Attendance Compliance</div><div class="kpi-value">94%</div><span class="kpi-sub kpi-up">↑ On track</span></div>
+          <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-label">Fees Collected</div><div class="kpi-value">₹4.8Cr</div><span class="kpi-sub kpi-neutral">₹32L pending</span></div>
+          <div class="kpi-card"><div class="kpi-icon">🎫</div><div class="kpi-label">Open Tickets</div><div class="kpi-value" id="kpi-tickets">131</div><span class="kpi-sub kpi-down">12 high priority</span></div>
+        </div>
+        <div class="grid grid-2">
+          <div class="panel">
+            <h3 style="font-family:var(--font-head);margin-bottom:16px">Operational health</h3>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div><div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span>Admissions funnel</span><strong>72%</strong></div><div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span>Exam readiness</span><strong>86%</strong></div><div class="progress-bar"><div class="progress-fill progress-fill-green" style="width:86%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span>Accreditation evidence</span><strong>64%</strong></div><div class="progress-bar"><div class="progress-fill progress-fill-yellow" style="width:64%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span>Fee collection rate</span><strong>82%</strong></div><div class="progress-bar"><div class="progress-fill" style="width:82%"></div></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3 style="font-family:var(--font-head);margin-bottom:14px">Quick approvals</h3>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Type</th><th>Owner</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                  <tr><td>Leave Request</td><td>Dr. Rao</td><td><span class="badge badge-yellow">Pending</span></td><td><button class="btn btn-sm btn-success" onclick="approveItem(this,'Leave Request')">Approve</button></td></tr>
+                  <tr><td>Purchase Order</td><td>Library</td><td><span class="badge badge-orange">Review</span></td><td><button class="btn btn-sm btn-success" onclick="approveItem(this,'Purchase Order')">Approve</button></td></tr>
+                  <tr><td>Result Moderation</td><td>COE</td><td><span class="badge badge-red">Due today</span></td><td><button class="btn btn-sm btn-success" onclick="approveItem(this,'Result Moderation')">Approve</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:0">
+          <h3 style="font-family:var(--font-head);margin-bottom:16px">Monthly student intake</h3>
+          <div class="bar-chart-wrap">
+            <div class="bar-row"><span class="bar-label">Oct</span><div class="bar-track"><div class="bar-fill" style="width:58%">82</div></div></div>
+            <div class="bar-row"><span class="bar-label">Nov</span><div class="bar-track"><div class="bar-fill" style="width:67%">95</div></div></div>
+            <div class="bar-row"><span class="bar-label">Dec</span><div class="bar-track"><div class="bar-fill bar-fill-green" style="width:78%">110</div></div></div>
+            <div class="bar-row"><span class="bar-label">Jan</span><div class="bar-track"><div class="bar-fill" style="width:62%">88</div></div></div>
+            <div class="bar-row"><span class="bar-label">Feb</span><div class="bar-track"><div class="bar-fill bar-fill-green" style="width:85%">120</div></div></div>
+            <div class="bar-row"><span class="bar-label">Mar</span><div class="bar-track"><div class="bar-fill" style="width:100%">142</div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ADMISSIONS -->
+      <section class="module-section" id="admissions">
+        <div class="module-header"><div class="module-title">Admissions CRM</div><div class="module-sub">Capture leads, manage applications, and convert prospects to enrolled students.</div></div>
+        <div class="panel"><div class="form-section-title">Add Applicant</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Applicant Name</label><input class="form-input" id="admission-name" placeholder="Riya Patel"/></div>
+            <div class="form-group"><label class="form-label">Program</label><select class="form-select" id="admission-program"><option>B.Tech CSE</option><option>MBA</option><option>BBA</option><option>B.Tech ECE</option><option>M.Tech</option></select></div>
+            <div class="form-group"><label class="form-label">Stage</label><select class="form-select" id="admission-stage"><option>Lead</option><option>Applied</option><option>Verified</option><option>Offered</option><option>Enrolled</option></select></div>
+            <div class="form-group"><label class="form-label">Score</label><input class="form-input" id="admission-score" type="number" value="78"/></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" data-action="add-admission">+ Add Applicant</button>
+            <button class="btn btn-success" data-action="convert-student">Convert to Student</button>
+          </div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Admission Pipeline</h3><span class="badge badge-blue" id="adm-count">2 applicants</span></div><div class="table-wrap"><table class="table" id="admission-table"></table></div></div>
+      </section>
+
+      <!-- STUDENTS -->
+      <section class="module-section" id="students">
+        <div class="module-header"><div class="module-title">Student Registry</div><div class="module-sub">Manage the complete student lifecycle from enrollment to alumni.</div></div>
+        <div class="panel"><div class="form-section-title">Register Student</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="student-name" placeholder="Priya Sharma"/></div>
+            <div class="form-group"><label class="form-label">Roll Number</label><input class="form-input" id="student-roll" placeholder="CSE-101"/></div>
+            <div class="form-group"><label class="form-label">Department</label><select class="form-select" id="student-dept"><option>CSE</option><option>ECE</option><option>ME</option><option>Civil</option><option>MBA</option></select></div>
+            <div class="form-group"><label class="form-label">Year</label><select class="form-select" id="student-year"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="student-status"><option>Active</option><option>On Hold</option><option>Alumni</option></select></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="student-email" type="email" placeholder="student@college.edu"/></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" data-action="add-student">+ Add Student</button>
+            <button class="btn btn-danger" data-action="delete-student">Remove Last</button>
+          </div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Student List</h3><span class="badge badge-blue" id="stu-count">3 students</span></div><div class="table-wrap"><table class="table" id="student-table"></table></div></div>
+      </section>
+
+      <!-- ACADEMICS -->
+      <section class="module-section" id="academics">
+        <div class="module-header"><div class="module-title">Academic Planning</div><div class="module-sub">Manage course registry, curriculum, certificates, and bulk CSV imports.</div></div>
+        <div class="panel"><div class="form-section-title">Course Management</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Course Code</label><input class="form-input" id="course-code" placeholder="CSE301"/></div>
+            <div class="form-group"><label class="form-label">Course Name</label><input class="form-input" id="course-name" placeholder="Data Structures"/></div>
+            <div class="form-group"><label class="form-label">Credits</label><input class="form-input" id="course-credits" type="number" value="3"/></div>
+            <div class="form-group"><label class="form-label">Faculty</label><select class="form-select" id="course-faculty"><option>Dr. Rao</option><option>Prof. Singh</option><option>Dr. Iyer</option><option>Dr. Kumar</option></select></div>
+            <div class="form-group"><label class="form-label">Semester</label><select class="form-select" id="course-sem"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="form-group"><label class="form-label">Certificate Name</label><input class="form-input" id="course-cert" placeholder="e.g. Data Structures Certificate"/></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" data-action="add-course">+ Add</button>
+            <button class="btn" data-action="update-course">Update</button>
+            <button class="btn btn-danger" data-action="delete-course">Delete</button>
+            <button class="btn" data-action="issue-course-cert">🎓 Issue Cert</button>
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+            <label style="font-size:12px;color:var(--text2)">Bulk import:</label>
+            <input id="course-upload" type="file" accept=".csv" class="btn btn-sm"/>
+            <span class="badge badge-blue">CSV: code, name, credits, faculty, sem, cert</span>
+          </div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Course Registry</h3><span class="badge badge-blue" id="crs-count">2 courses</span></div><div class="table-wrap"><table class="table" id="course-table"></table></div></div>
+      </section>
+
+      <!-- ATTENDANCE -->
+      <section class="module-section" id="attendance">
+        <div class="module-header"><div class="module-title">Attendance Management</div><div class="module-sub">Geofence-verified attendance records with timetable integration and audit trails.</div></div>
+        <div class="panel">
+          <div class="geo-demo" style="margin-bottom:18px"><div class="geo-ring"></div><div class="geo-ring"></div><div class="geo-ring"></div><div class="geo-dot"></div><span class="geo-label">Live geofence zone — campus verified</span></div>
+          <div class="form-section-title">Record Attendance</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Class</label><select class="form-select" id="att-class"><option>CSE A</option><option>CSE B</option><option>ECE A</option><option>ME A</option><option>MBA A</option></select></div>
+            <div class="form-group"><label class="form-label">Course</label><select class="form-select" id="att-course"><option>DSA</option><option>Thermodynamics</option><option>DBMS</option><option>Networks</option><option>OS</option></select></div>
+            <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="att-date" type="date"/></div>
+            <div class="form-group"><label class="form-label">Present %</label><input class="form-input" id="att-present" type="number" value="86" min="0" max="100"/></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="mark-attendance">✓ Record Attendance</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Attendance Logs</h3><span class="badge badge-green" id="att-count">2 records</span></div><div class="table-wrap"><table class="table" id="attendance-table"></table></div></div>
+      </section>
+
+      <!-- EXAMS -->
+      <section class="module-section" id="exams">
+        <div class="module-header"><div class="module-title">Examinations</div><div class="module-sub">Schedule exams, manage hall tickets, enter marks, and publish results.</div></div>
+        <div class="panel"><div class="form-section-title">Schedule Exam</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Exam Type</label><select class="form-select" id="exam-name"><option>Mid Semester</option><option>End Semester</option><option>Unit Test 1</option><option>Unit Test 2</option><option>Practical</option></select></div>
+            <div class="form-group"><label class="form-label">Course Code</label><input class="form-input" id="exam-course" placeholder="CSE301"/></div>
+            <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="exam-date" type="date"/></div>
+            <div class="form-group"><label class="form-label">Hall</label><input class="form-input" id="exam-hall" placeholder="H1 / Lab-A"/></div>
+            <div class="form-group"><label class="form-label">Max Marks</label><input class="form-input" id="exam-marks" type="number" value="100"/></div>
+            <div class="form-group"><label class="form-label">Invigilator</label><input class="form-input" id="exam-inv" placeholder="Dr. Rao"/></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" data-action="schedule-exam">+ Schedule Exam</button>
+            <button class="btn btn-success" data-action="publish-results">📢 Publish Results</button>
+          </div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Exam Schedule</h3><span class="badge badge-blue" id="exam-count">2 exams</span></div><div class="table-wrap"><table class="table" id="exam-table"></table></div></div>
+      </section>
+
+      <!-- FACULTY -->
+      <section class="module-section" id="faculty">
+        <div class="module-header"><div class="module-title">Faculty Management</div><div class="module-sub">Manage faculty roster, workload, qualifications, and department assignments.</div></div>
+        <div class="panel"><div class="form-section-title">Add Faculty</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="faculty-name" placeholder="Dr. Rao"/></div>
+            <div class="form-group"><label class="form-label">Department</label><select class="form-select" id="faculty-dept"><option>CSE</option><option>ECE</option><option>ME</option><option>Civil</option><option>MBA</option><option>Maths</option></select></div>
+            <div class="form-group"><label class="form-label">Designation</label><select class="form-select" id="faculty-desig"><option>Professor</option><option>Associate Professor</option><option>Assistant Professor</option><option>HOD</option><option>Lecturer</option></select></div>
+            <div class="form-group"><label class="form-label">Teaching Load (hrs/wk)</label><input class="form-input" id="faculty-load" type="number" value="12"/></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="faculty-email" type="email" placeholder="faculty@college.edu"/></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="faculty-status"><option>Active</option><option>On Leave</option><option>Contract</option></select></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="add-faculty">+ Add Faculty</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Faculty Roster</h3><span class="badge badge-blue" id="fac-count">2 faculty</span></div><div class="table-wrap"><table class="table" id="faculty-table"></table></div></div>
+      </section>
+
+      <!-- FINANCE -->
+      <section class="module-section" id="finance">
+        <div class="module-header"><div class="module-title">Finance &amp; Fees</div><div class="module-sub">Invoice students, record payments, track scholarships, and generate financial reports.</div></div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">Total Collected</div><div class="kpi-value">₹4.8Cr</div><span class="kpi-sub kpi-up">This semester</span></div>
+          <div class="kpi-card"><div class="kpi-label">Pending Fees</div><div class="kpi-value">₹32L</div><span class="kpi-sub kpi-down">Overdue: ₹8L</span></div>
+          <div class="kpi-card"><div class="kpi-label">Scholarships</div><div class="kpi-value">₹12L</div><span class="kpi-sub kpi-neutral">42 students</span></div>
+          <div class="kpi-card"><div class="kpi-label">Collection Rate</div><div class="kpi-value">82%</div><span class="kpi-sub kpi-up">↑ 4% MoM</span></div>
+        </div>
+        <div class="panel"><div class="form-section-title">Create Invoice</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Student Name</label><input class="form-input" id="fee-student" placeholder="Priya Sharma"/></div>
+            <div class="form-group"><label class="form-label">Fee Type</label><select class="form-select" id="fee-type"><option>Tuition Fee</option><option>Hostel Fee</option><option>Library Fee</option><option>Exam Fee</option><option>Transport Fee</option></select></div>
+            <div class="form-group"><label class="form-label">Amount (₹)</label><input class="form-input" id="fee-amount" type="number" value="45000"/></div>
+            <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="fee-due" type="date"/></div>
+            <div class="form-group"><label class="form-label">Payment Mode</label><select class="form-select" id="fee-mode"><option>Online</option><option>Cheque</option><option>DD</option><option>Cash</option></select></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="fee-status"><option>Pending</option><option>Paid</option><option>Overdue</option></select></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" data-action="add-invoice">+ Create Invoice</button>
+            <button class="btn btn-success" data-action="record-payment">✓ Record Payment</button>
+          </div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Invoices</h3><span class="badge badge-blue" id="fee-count">2 invoices</span></div><div class="table-wrap"><table class="table" id="fee-table"></table></div></div>
+      </section>
+
+      <!-- HR -->
+      <section class="module-section" id="hr">
+        <div class="module-header"><div class="module-title">HR &amp; Payroll</div><div class="module-sub">Employee lifecycle, payroll processing, leave management, and appraisals.</div></div>
+        <div class="panel"><div class="form-section-title">Add Employee</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Employee Name</label><input class="form-input" id="hr-name" placeholder="Rohit Jain"/></div>
+            <div class="form-group"><label class="form-label">Role</label><input class="form-input" id="hr-role" placeholder="Accountant"/></div>
+            <div class="form-group"><label class="form-label">Department</label><select class="form-select" id="hr-dept"><option>Finance</option><option>Administration</option><option>IT</option><option>Library</option><option>Facilities</option></select></div>
+            <div class="form-group"><label class="form-label">Salary (₹)</label><input class="form-input" id="hr-salary" type="number" value="65000"/></div>
+            <div class="form-group"><label class="form-label">Shift</label><select class="form-select" id="hr-shift"><option>Day</option><option>Evening</option><option>Night</option></select></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="hr-status"><option>Active</option><option>On Leave</option><option>Resigned</option></select></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" data-action="add-employee">+ Add Employee</button>
+            <button class="btn btn-success" data-action="run-payroll">▶ Run Payroll</button>
+          </div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Staff Directory</h3><span class="badge badge-blue" id="hr-count">2 employees</span></div><div class="table-wrap"><table class="table" id="hr-table"></table></div></div>
+      </section>
+
+      <!-- LIBRARY -->
+      <section class="module-section" id="library">
+        <div class="module-header"><div class="module-title">Library</div><div class="module-sub">Catalog management, book circulation, fine tracking, and e-resource management.</div></div>
+        <div class="panel"><div class="form-section-title">Add Book</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Book Title</label><input class="form-input" id="lib-title" placeholder="Operating Systems"/></div>
+            <div class="form-group"><label class="form-label">Author</label><input class="form-input" id="lib-author" placeholder="Tanenbaum"/></div>
+            <div class="form-group"><label class="form-label">ISBN</label><input class="form-input" id="lib-isbn" placeholder="978-0-13-..."/></div>
+            <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="lib-category"><option>Engineering</option><option>Management</option><option>Science</option><option>Humanities</option><option>Reference</option></select></div>
+            <div class="form-group"><label class="form-label">Copies</label><input class="form-input" id="lib-copies" type="number" value="5"/></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="lib-status"><option>Available</option><option>Issued</option><option>Lost</option></select></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" data-action="add-book">+ Add Book</button>
+            <button class="btn btn-success" data-action="issue-book">📤 Issue Book</button>
+          </div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Library Catalog</h3><span class="badge badge-blue" id="lib-count">2 books</span></div><div class="table-wrap"><table class="table" id="library-table"></table></div></div>
+      </section>
+
+      <!-- HOSTEL -->
+      <section class="module-section" id="hostel">
+        <div class="module-header"><div class="module-title">Hostel Management</div><div class="module-sub">Room allocation, occupancy tracking, visitor logs, mess plans, and safety checks.</div></div>
+        <div class="panel"><div class="form-section-title">Room Allocation</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Room Number</label><input class="form-input" id="hostel-room" placeholder="B-210"/></div>
+            <div class="form-group"><label class="form-label">Block</label><select class="form-select" id="hostel-block"><option>Block A</option><option>Block B</option><option>Block C</option><option>Girls Hostel</option></select></div>
+            <div class="form-group"><label class="form-label">Student Name</label><input class="form-input" id="hostel-student" placeholder="Dev Malhotra"/></div>
+            <div class="form-group"><label class="form-label">Capacity</label><input class="form-input" id="hostel-capacity" type="number" value="2"/></div>
+            <div class="form-group"><label class="form-label">Mess Plan</label><select class="form-select" id="hostel-mess"><option>Full Board</option><option>Breakfast Only</option><option>No Mess</option></select></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="hostel-status"><option>Occupied</option><option>Vacant</option><option>Maintenance</option></select></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="allocate-room">+ Allocate Room</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Room Allocation</h3><span class="badge badge-blue" id="hos-count">2 rooms</span></div><div class="table-wrap"><table class="table" id="hostel-table"></table></div></div>
+      </section>
+
+      <!-- TRANSPORT -->
+      <section class="module-section" id="transport">
+        <div class="module-header"><div class="module-title">Transport Management</div><div class="module-sub">Routes, vehicles, drivers, GPS tracking, and student passes.</div></div>
+        <div class="panel"><div class="form-section-title">Add Route</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Route Name</label><input class="form-input" id="transport-route" placeholder="North Loop"/></div>
+            <div class="form-group"><label class="form-label">Vehicle / Reg. No.</label><input class="form-input" id="transport-vehicle" placeholder="Bus 4 / KA-01-AB-1234"/></div>
+            <div class="form-group"><label class="form-label">Driver</label><input class="form-input" id="transport-driver" placeholder="Mahesh"/></div>
+            <div class="form-group"><label class="form-label">Capacity</label><input class="form-input" id="transport-capacity" type="number" value="40"/></div>
+            <div class="form-group"><label class="form-label">Departure Time</label><input class="form-input" id="transport-time" type="time" value="07:30"/></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="transport-status"><option>Active</option><option>Inactive</option><option>Maintenance</option></select></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="add-route">+ Add Route</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Transport Routes</h3><span class="badge badge-blue" id="trn-count">1 route</span></div><div class="table-wrap"><table class="table" id="transport-table"></table></div></div>
+      </section>
+
+      <!-- PLACEMENTS -->
+      <section class="module-section" id="placements">
+        <div class="module-header"><div class="module-title">Placements &amp; Career</div><div class="module-sub">Placement drives, internships, company pipelines, offers, and alumni tracking.</div></div>
+        <div class="panel"><div class="form-section-title">Add Placement Drive</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Company Name</label><input class="form-input" id="place-company" placeholder="TCS / Infosys"/></div>
+            <div class="form-group"><label class="form-label">Role Offered</label><input class="form-input" id="place-role" placeholder="Software Analyst"/></div>
+            <div class="form-group"><label class="form-label">Package (LPA)</label><input class="form-input" id="place-package" type="number" placeholder="6" step="0.5"/></div>
+            <div class="form-group"><label class="form-label">Drive Date</label><input class="form-input" id="place-date" type="date"/></div>
+            <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="place-type"><option>Full Time</option><option>Internship</option><option>Contract</option></select></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="place-status"><option>Scheduled</option><option>Completed</option><option>Cancelled</option></select></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="add-placement">+ Add Drive</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Placement Drives</h3><span class="badge badge-blue" id="plc-count">2 drives</span></div><div class="table-wrap"><table class="table" id="placement-table"></table></div></div>
+      </section>
+
+      <!-- RESEARCH -->
+      <section class="module-section" id="research">
+        <div class="module-header"><div class="module-title">Research &amp; Projects</div><div class="module-sub">Track funded research, publications, patents, and grant utilization.</div></div>
+        <div class="panel"><div class="form-section-title">Add Research Project</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Project Title</label><input class="form-input" id="res-project" placeholder="AI Lab Research"/></div>
+            <div class="form-group"><label class="form-label">Principal Investigator</label><input class="form-input" id="res-pi" placeholder="Dr. Iyer"/></div>
+            <div class="form-group"><label class="form-label">Funding Agency</label><input class="form-input" id="res-agency" placeholder="DST / AICTE / Internal"/></div>
+            <div class="form-group"><label class="form-label">Grant Amount (₹)</label><input class="form-input" id="res-fund" type="number" value="250000"/></div>
+            <div class="form-group"><label class="form-label">Start Date</label><input class="form-input" id="res-start" type="date"/></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="res-status"><option>Active</option><option>Completed</option><option>Pending Approval</option><option>On Hold</option></select></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="add-research">+ Add Project</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Research Projects</h3><span class="badge badge-blue" id="res-count">1 project</span></div><div class="table-wrap"><table class="table" id="research-table"></table></div></div>
+      </section>
+
+      <!-- FACILITIES -->
+      <section class="module-section" id="facilities">
+        <div class="module-header"><div class="module-title">Facilities Management</div><div class="module-sub">Asset tracking, AMC schedules, maintenance tickets, and energy usage.</div></div>
+        <div class="panel"><div class="form-section-title">Log Asset</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Asset Name</label><input class="form-input" id="fac-asset" placeholder="Generator / AC Unit"/></div>
+            <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="fac-location" placeholder="Block A / Lab 2"/></div>
+            <div class="form-group"><label class="form-label">Asset Tag</label><input class="form-input" id="fac-tag" placeholder="ASSET-001"/></div>
+            <div class="form-group"><label class="form-label">Condition</label><select class="form-select" id="fac-condition"><option>Good</option><option>Fair</option><option>Poor</option><option>Under Repair</option></select></div>
+            <div class="form-group"><label class="form-label">Last Serviced</label><input class="form-input" id="fac-service" type="date"/></div>
+            <div class="form-group"><label class="form-label">Ticket #</label><input class="form-input" id="fac-ticket" placeholder="TK-001 (optional)"/></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" data-action="add-asset">+ Add Asset</button>
+            <button class="btn btn-danger" data-action="raise-ticket">🚨 Raise Ticket</button>
+          </div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Asset Log</h3><span class="badge badge-blue" id="fac-asset-count">1 asset</span></div><div class="table-wrap"><table class="table" id="facility-table"></table></div></div>
+      </section>
+
+      <!-- INVENTORY -->
+      <section class="module-section" id="inventory">
+        <div class="module-header"><div class="module-title">Inventory &amp; Stores</div><div class="module-sub">Stock levels, issue/return tracking, reorder alerts, store management.</div></div>
+        <div class="panel"><div class="form-section-title">Add Stock Item</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Item Name</label><input class="form-input" id="inv-item" placeholder="Projectors / Chairs"/></div>
+            <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="inv-qty" type="number" value="10"/></div>
+            <div class="form-group"><label class="form-label">Unit</label><select class="form-select" id="inv-unit"><option>Pieces</option><option>Sets</option><option>Boxes</option><option>Kg</option></select></div>
+            <div class="form-group"><label class="form-label">Store Location</label><select class="form-select" id="inv-store"><option>Main Store</option><option>Lab Store</option><option>Sports Store</option><option>IT Store</option></select></div>
+            <div class="form-group"><label class="form-label">Reorder Level</label><input class="form-input" id="inv-reorder" type="number" value="2"/></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="inv-status"><option>In Stock</option><option>Low Stock</option><option>Out of Stock</option></select></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" data-action="add-inventory">+ Add Item</button>
+            <button class="btn" data-action="issue-inventory">📤 Issue Item</button>
+          </div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Stock Register</h3><span class="badge badge-blue" id="inv-count">2 items</span></div><div class="table-wrap"><table class="table" id="inventory-table"></table></div></div>
+      </section>
+
+      <!-- PROCUREMENT -->
+      <section class="module-section" id="procurement">
+        <div class="module-header"><div class="module-title">Procurement</div><div class="module-sub">Purchase orders, vendor management, approval workflows, and budget tracking.</div></div>
+        <div class="panel"><div class="form-section-title">Create Purchase Order</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Vendor Name</label><input class="form-input" id="proc-vendor" placeholder="Tech Supplies Ltd."/></div>
+            <div class="form-group"><label class="form-label">Item / Service</label><input class="form-input" id="proc-item" placeholder="Laptops / Lab Equipment"/></div>
+            <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="proc-qty" type="number" value="5"/></div>
+            <div class="form-group"><label class="form-label">Total Amount (₹)</label><input class="form-input" id="proc-amount" type="number" value="25000"/></div>
+            <div class="form-group"><label class="form-label">Required By</label><input class="form-input" id="proc-date" type="date"/></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="proc-status"><option>Requested</option><option>Approved</option><option>Ordered</option><option>Received</option></select></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="add-procurement">+ Create PO</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Purchase Orders</h3><span class="badge badge-blue" id="proc-count">1 PO</span></div><div class="table-wrap"><table class="table" id="procurement-table"></table></div></div>
+      </section>
+
+      <!-- SERVICE DESK -->
+      <section class="module-section" id="service">
+        <div class="module-header"><div class="module-title">Service Desk</div><div class="module-sub">IT, facilities, academic, and HR support tickets with priority and SLA tracking.</div></div>
+        <div class="panel"><div class="form-section-title">Raise Ticket</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Requester</label><input class="form-input" id="svc-requester" placeholder="Library / Block C"/></div>
+            <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="svc-category"><option>IT Support</option><option>Facilities</option><option>Academic</option><option>HR</option><option>Finance</option></select></div>
+            <div class="form-group"><label class="form-label">Subject</label><input class="form-input" id="svc-subject" placeholder="Brief description"/></div>
+            <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="svc-priority"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></div>
+            <div class="form-group"><label class="form-label">Assigned To</label><input class="form-input" id="svc-assigned" placeholder="IT Team / Maintenance"/></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="svc-status"><option>Open</option><option>In Progress</option><option>Resolved</option><option>Closed</option></select></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="add-ticket">+ Create Ticket</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Active Tickets</h3><span class="badge badge-red" id="svc-count">3 open</span></div><div class="table-wrap"><table class="table" id="service-table"></table></div></div>
+      </section>
+
+      <!-- COMMUNICATIONS -->
+      <section class="module-section" id="communications">
+        <div class="module-header"><div class="module-title">Communications</div><div class="module-sub">Send broadcast messages to students, faculty, or parents via email, SMS, or app.</div></div>
+        <div class="panel"><div class="form-section-title">New Broadcast</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Audience</label><select class="form-select" id="comm-audience"><option>All</option><option>Students</option><option>Faculty</option><option>Parents</option><option>Staff</option></select></div>
+            <div class="form-group"><label class="form-label">Channel</label><select class="form-select" id="comm-channel"><option>Email</option><option>SMS</option><option>App Notification</option><option>Notice Board</option></select></div>
+            <div class="form-group"><label class="form-label">Subject</label><input class="form-input" id="comm-subject" placeholder="Subject line"/></div>
+            <div class="form-group"><label class="form-label">Scheduled At</label><input class="form-input" id="comm-date" type="datetime-local"/></div>
+            <div class="form-group" style="grid-column:1/-1"><label class="form-label">Message</label><textarea class="form-textarea" id="comm-message" rows="3" placeholder="Type your announcement here..."></textarea></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="send-broadcast">📣 Send Broadcast</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Broadcast History</h3><span class="badge badge-blue" id="com-count">1 sent</span></div><div class="table-wrap"><table class="table" id="comm-table"></table></div></div>
+      </section>
+
+      <!-- COMPLIANCE -->
+      <section class="module-section" id="compliance">
+        <div class="module-header"><div class="module-title">Compliance &amp; Accreditation</div><div class="module-sub">NAAC/NBA/AICTE/UGC evidence management, SSR workflows, and audit trails.</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+          <span class="badge badge-blue" style="font-size:13px;padding:6px 14px">🏛 NAAC</span>
+          <span class="badge badge-green" style="font-size:13px;padding:6px 14px">🏆 NBA</span>
+          <span class="badge badge-purple" style="font-size:13px;padding:6px 14px">📋 AICTE</span>
+          <span class="badge badge-accent" style="font-size:13px;padding:6px 14px">🎓 UGC</span>
+        </div>
+        <div class="panel"><div class="form-section-title">Add Evidence</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Evidence Title</label><input class="form-input" id="comp-title" placeholder="Criterion 1 Report"/></div>
+            <div class="form-group"><label class="form-label">Criterion</label><select class="form-select" id="comp-criterion"><option>Criterion 1 — Curricular Aspects</option><option>Criterion 2 — Teaching &amp; Learning</option><option>Criterion 3 — Research</option><option>Criterion 4 — Infrastructure</option><option>Criterion 5 — Student Support</option><option>Criterion 6 — Governance</option><option>Criterion 7 — Institutional Values</option></select></div>
+            <div class="form-group"><label class="form-label">Owner</label><input class="form-input" id="comp-owner" placeholder="IQAC / Finance / Academic"/></div>
+            <div class="form-group"><label class="form-label">Evidence Type</label><select class="form-select" id="comp-type"><option>Document</option><option>Report</option><option>Photo Evidence</option><option>Data Sheet</option><option>Certificate</option></select></div>
+            <div class="form-group"><label class="form-label">Upload File</label><input id="comp-file" type="file" class="form-input" style="padding:7px"/></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="comp-status"><option>Draft</option><option>Submitted</option><option>Verified</option><option>Approved</option></select></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" data-action="add-evidence">+ Add Evidence</button></div>
+        </div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Evidence Tracker</h3><span class="badge badge-blue" id="comp-count">1 item</span></div><div class="table-wrap"><table class="table" id="compliance-table"></table></div></div>
+      </section>
+
+      <!-- INTEGRATIONS -->
+      <section class="module-section" id="integrations">
+        <div class="module-header"><div class="module-title">Integration Hub</div><div class="module-sub">Connect EduSys with your existing tools, devices, and third-party services.</div></div>
+        <div class="grid grid-3">
+          <div class="integration-card active-card"><div class="integration-info"><div class="integration-icon" style="background:rgba(52,211,153,0.12)">🖐</div><div><div class="integration-name">Biometric Devices</div><div class="integration-status">Attendance sync active</div></div></div><label class="toggle"><input type="checkbox" checked onchange="toggleIntegration(this,'Biometric Devices')"/><span class="toggle-track"></span></label></div>
+          <div class="integration-card active-card"><div class="integration-info"><div class="integration-icon" style="background:rgba(109,139,255,0.12)">📚</div><div><div class="integration-name">LMS Platform</div><div class="integration-status">Course sync enabled</div></div></div><label class="toggle"><input type="checkbox" checked onchange="toggleIntegration(this,'LMS')"/><span class="toggle-track"></span></label></div>
+          <div class="integration-card active-card"><div class="integration-info"><div class="integration-icon" style="background:rgba(251,191,36,0.12)">💳</div><div><div class="integration-name">Payment Gateway</div><div class="integration-status">Fee collection live</div></div></div><label class="toggle"><input type="checkbox" checked onchange="toggleIntegration(this,'Payment Gateway')"/><span class="toggle-track"></span></label></div>
+          <div class="integration-card"><div class="integration-info"><div class="integration-icon" style="background:rgba(148,163,184,0.1)">📧</div><div><div class="integration-name">Email / SMS</div><div class="integration-status">Paused — configure SMTP</div></div></div><label class="toggle"><input type="checkbox" onchange="toggleIntegration(this,'Email/SMS')"/><span class="toggle-track"></span></label></div>
+          <div class="integration-card active-card"><div class="integration-info"><div class="integration-icon" style="background:rgba(110,231,255,0.12)">👤</div><div><div class="integration-name">HRMS</div><div class="integration-status">Payroll sync active</div></div></div><label class="toggle"><input type="checkbox" checked onchange="toggleIntegration(this,'HRMS')"/><span class="toggle-track"></span></label></div>
+          <div class="integration-card"><div class="integration-info"><div class="integration-icon" style="background:rgba(148,163,184,0.1)">📖</div><div><div class="integration-name">Library API</div><div class="integration-status">Paused — awaiting key</div></div></div><label class="toggle"><input type="checkbox" onchange="toggleIntegration(this,'Library API')"/><span class="toggle-track"></span></label></div>
+          <div class="integration-card active-card"><div class="integration-info"><div class="integration-icon" style="background:rgba(109,139,255,0.12)">📍</div><div><div class="integration-name">Geofence API</div><div class="integration-status">Location services active</div></div></div><label class="toggle"><input type="checkbox" checked onchange="toggleIntegration(this,'Geofence API')"/><span class="toggle-track"></span></label></div>
+          <div class="integration-card active-card"><div class="integration-info"><div class="integration-icon" style="background:rgba(155,123,255,0.12)">📊</div><div><div class="integration-name">Analytics Engine</div><div class="integration-status">Reporting active</div></div></div><label class="toggle"><input type="checkbox" checked onchange="toggleIntegration(this,'Analytics')"/><span class="toggle-track"></span></label></div>
+          <div class="integration-card"><div class="integration-info"><div class="integration-icon" style="background:rgba(148,163,184,0.1)">🎓</div><div><div class="integration-name">Alumni Portal</div><div class="integration-status">Not configured</div></div></div><label class="toggle"><input type="checkbox" onchange="toggleIntegration(this,'Alumni Portal')"/><span class="toggle-track"></span></label></div>
+        </div>
+      </section>
+
+      <!-- ANALYTICS -->
+      <section class="module-section" id="analytics">
+        <div class="module-header"><div class="module-title">Analytics &amp; KPIs</div><div class="module-sub">Institution-wide performance metrics, trends, and actionable insights.</div></div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">Enrollment Yield</div><div class="kpi-value">68%</div><span class="kpi-sub kpi-up">applicants enrolled</span></div>
+          <div class="kpi-card"><div class="kpi-label">Placement Rate</div><div class="kpi-value">76%</div><span class="kpi-sub kpi-up">placed in 6 months</span></div>
+          <div class="kpi-card"><div class="kpi-label">Fee Collection</div><div class="kpi-value">82%</div><span class="kpi-sub kpi-up">collected on time</span></div>
+          <div class="kpi-card"><div class="kpi-label">Attendance Rate</div><div class="kpi-value">94%</div><span class="kpi-sub kpi-up">geofence verified</span></div>
+          <div class="kpi-card"><div class="kpi-label">Research Output</div><div class="kpi-value">55%</div><span class="kpi-sub kpi-neutral">of target</span></div>
+          <div class="kpi-card"><div class="kpi-label">NAAC Progress</div><div class="kpi-value">64%</div><span class="kpi-sub kpi-neutral">evidence gathered</span></div>
+        </div>
+        <div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:18px">Department-wise Attendance</h3>
+          <div class="bar-chart-wrap">
+            <div class="bar-row"><span class="bar-label">CSE</span><div class="bar-track"><div class="bar-fill bar-fill-green" style="width:92%">92%</div></div></div>
+            <div class="bar-row"><span class="bar-label">ECE</span><div class="bar-track"><div class="bar-fill" style="width:88%">88%</div></div></div>
+            <div class="bar-row"><span class="bar-label">ME</span><div class="bar-track"><div class="bar-fill" style="width:85%">85%</div></div></div>
+            <div class="bar-row"><span class="bar-label">Civil</span><div class="bar-track"><div class="bar-fill bar-fill-green" style="width:90%">90%</div></div></div>
+            <div class="bar-row"><span class="bar-label">MBA</span><div class="bar-track"><div class="bar-fill" style="width:79%">79%</div></div></div>
+          </div>
+        </div>
+        <div class="grid grid-2">
+          <div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:16px">Placement by Branch</h3>
+            <div class="bar-chart-wrap">
+              <div class="bar-row"><span class="bar-label">CSE</span><div class="bar-track"><div class="bar-fill bar-fill-green" style="width:85%">85%</div></div></div>
+              <div class="bar-row"><span class="bar-label">ECE</span><div class="bar-track"><div class="bar-fill" style="width:72%">72%</div></div></div>
+              <div class="bar-row"><span class="bar-label">ME</span><div class="bar-track"><div class="bar-fill" style="width:61%">61%</div></div></div>
+              <div class="bar-row"><span class="bar-label">MBA</span><div class="bar-track"><div class="bar-fill bar-fill-green" style="width:90%">90%</div></div></div>
+            </div>
+          </div>
+          <div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:16px">Fee Collection by Dept</h3>
+            <div class="bar-chart-wrap">
+              <div class="bar-row"><span class="bar-label">CSE</span><div class="bar-track"><div class="bar-fill" style="width:88%">88%</div></div></div>
+              <div class="bar-row"><span class="bar-label">ECE</span><div class="bar-track"><div class="bar-fill" style="width:80%">80%</div></div></div>
+              <div class="bar-row"><span class="bar-label">ME</span><div class="bar-track"><div class="bar-fill" style="width:76%">76%</div></div></div>
+              <div class="bar-row"><span class="bar-label">MBA</span><div class="bar-track"><div class="bar-fill bar-fill-green" style="width:92%">92%</div></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ATTAINMENT -->
+      <section class="module-section" id="attainment">
+        <div class="module-header"><div class="module-title">Attainment Calculator</div><div class="module-sub">CO/PO attainment with weighted calculations, live gap tracking, and NBA reporting.</div></div>
+        <div class="panel">
+          <div class="form-grid" style="margin-bottom:18px">
+            <div class="form-group"><label class="form-label">Program</label><select class="form-select" id="att-program"><option>UG Engineering</option><option>UG Management</option><option>PG Engineering</option></select></div>
+            <div class="form-group"><label class="form-label">Batch</label><select class="form-select" id="att-batch"><option>2026</option><option>2025</option><option>2024</option></select></div>
+            <div class="form-group"><label class="form-label">Target Attainment (%)</label><input class="form-input" id="target" type="number" value="70" min="1" max="100"/></div>
+            <div class="form-group"><label class="form-label">Weighting Method</label><select class="form-select" id="weight"><option value="equal">Equal weight</option><option value="weighted">Weighted by credits</option></select></div>
+          </div>
+          <div class="table-wrap" style="margin-bottom:16px">
+            <table class="calc-table">
+              <thead><tr><th>CO</th><th>Target (%)</th><th>Achieved (%)</th><th>Credits</th><th>Gap</th></tr></thead>
+              <tbody>
+                <tr><td>CO1</td><td><input class="co-target" type="number" value="70"/></td><td><input class="co-achieved" type="number" value="78"/></td><td><input class="co-credits" type="number" value="3"/></td><td class="co-gap-cell" style="color:var(--green)">+8%</td></tr>
+                <tr><td>CO2</td><td><input class="co-target" type="number" value="70"/></td><td><input class="co-achieved" type="number" value="72"/></td><td><input class="co-credits" type="number" value="4"/></td><td class="co-gap-cell" style="color:var(--green)">+2%</td></tr>
+                <tr><td>CO3</td><td><input class="co-target" type="number" value="70"/></td><td><input class="co-achieved" type="number" value="66"/></td><td><input class="co-credits" type="number" value="3"/></td><td class="co-gap-cell" style="color:var(--red)">-4%</td></tr>
+                <tr><td>CO4</td><td><input class="co-target" type="number" value="70"/></td><td><input class="co-achieved" type="number" value="80"/></td><td><input class="co-credits" type="number" value="4"/></td><td class="co-gap-cell" style="color:var(--green)">+10%</td></tr>
+                <tr><td>CO5</td><td><input class="co-target" type="number" value="70"/></td><td><input class="co-achieved" type="number" value="68"/></td><td><input class="co-credits" type="number" value="3"/></td><td class="co-gap-cell" style="color:var(--red)">-2%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="calc-result-strip">
+            <button id="calc-btn" class="btn btn-primary">Calculate Attainment</button>
+            <span class="calc-pill" id="calc-score">Overall: --%</span>
+            <span class="calc-pill" id="calc-status">Status: --</span>
+            <span class="calc-pill" id="calc-gap">Gap: --%</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- COVERAGE -->
+      <section class="module-section" id="coverage">
+        <div class="module-header"><div class="module-title">ERP Coverage</div><div class="module-sub">Complete feature coverage across all 24 EduSys modules.</div></div>
+        <div class="coverage-grid">
+          <div class="coverage-card"><h3><span>🎓</span>Admissions &amp; Registrar</h3><ul><li>Lead capture, counseling, applications, merit lists</li><li>SIS, student ID generation, profile lifecycle</li><li>Academic calendar, course registration, add/drop</li><li>Document verification, eligibility checks</li></ul></div>
+          <div class="coverage-card"><h3><span>📍</span>Attendance (Geofenced)</h3><ul><li>Geofenced check-in, timetable-mapped attendance</li><li>Proxy detection, device validation, thresholds</li><li>Parent/student shortage alerts, remedial flags</li><li>Full audit trails for every attendance event</li></ul></div>
+          <div class="coverage-card"><h3><span>📝</span>Exams &amp; Results</h3><ul><li>Exam schedules, hall tickets, invigilator allocation</li><li>Mark entry, moderation, revaluation, transcripts</li><li>CO/PO attainment mapping and reports</li><li>Result publishing, grade sheets, certificates</li></ul></div>
+          <div class="coverage-card"><h3><span>💰</span>Finance &amp; Fees</h3><ul><li>Fee structures, scholarships, concessions, fines</li><li>Invoicing, payment gateways, reconciliation</li><li>Budgeting, cost centers, fund tracking</li><li>Audit-ready financial reports</li></ul></div>
+          <div class="coverage-card"><h3><span>👤</span>HR &amp; Payroll</h3><ul><li>Recruitment, onboarding, workload, appraisals</li><li>Payroll, benefits, TDS, leave, attendance sync</li><li>Faculty CAS workflows, promotions, training</li><li>Role-based access control</li></ul></div>
+          <div class="coverage-card"><h3><span>📖</span>Library &amp; Resources</h3><ul><li>Cataloging, circulation, overdue fines</li><li>Interlibrary loans, usage analytics</li><li>Research repository, plagiarism check</li><li>Asset tagging and procurement tracking</li></ul></div>
+          <div class="coverage-card"><h3><span>🏠</span>Hostel &amp; Transport</h3><ul><li>Room allocation, occupancy, visitor logs</li><li>Mess plans, attendance, safety checks</li><li>Transport routes, GPS tracking, passes</li><li>Maintenance schedules and incident logs</li></ul></div>
+          <div class="coverage-card"><h3><span>💼</span>Placements &amp; Alumni</h3><ul><li>Company pipeline, drives, offers, internships</li><li>Alumni engagement, mentorship, fundraising</li><li>Career readiness tracking and analytics</li><li>Placement compliance reports</li></ul></div>
+          <div class="coverage-card"><h3><span>🏗</span>Facilities &amp; Inventory</h3><ul><li>Asset inventory, AMC schedules, tickets</li><li>Energy usage, space utilization, audits</li><li>Procurement workflows, vendor management</li><li>Stores, stock levels, issue/return</li></ul></div>
+          <div class="coverage-card"><h3><span>🏛</span>Compliance &amp; Accreditation</h3><ul><li>NAAC/NBA/AICTE/UGC evidence mapping</li><li>SSR/SAR/AQAR documentation workflows</li><li>Audit trails, policy versioning, approvals</li><li>Ranking packs and regulatory reporting</li></ul></div>
+        </div>
+      </section>
+
+    </div><!-- /module-wrap -->
+  </div><!-- /erp-content -->
+</div><!-- /app-shell -->
+</div><!-- /erp page -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
+<script src="firebase-config.js?v=2026-03-17-9"></script>
+<script>
+  (function () {
+    var isFile = window.location && window.location.protocol === "file:";
+    if (isFile) {
+      // Disable email in file:// mode to avoid module/CORS issues.
+      window.firebaseMailReady = function () { return false; };
+      window.firebaseMailStatus = function () { return "disabled_file"; };
+      window.queueEmail = async function () {
+        throw new Error("Email disabled in file:// mode. Use a local server to enable.");
+      };
+      return;
+    }
+    var s = document.createElement("script");
+    s.type = "module";
+    s.src = "firebase-email.js?v=2026-03-17-9";
+    document.head.appendChild(s);
+  })();
+</script>
+<!-- Supabase Auth Library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Initialize Supabase directly after the library loads
+  console.log('1️⃣ Initializing Supabase client...');
+  
+  const SUPABASE_URL = 'https://lavpauiiehixxebjxdej.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_OG6wuzlkm-7GFP1dRDENew_nDBe2x-E';
+  
+  // Check if library is available
+  let supabaseClient = null;
+  if (window.supabase && window.supabase.createClient) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Make it globally available
+    window.supabase_client = supabaseClient;
+    console.log('✓ Supabase initialized successfully');
+  } else {
+    console.warn('⚠️ Supabase library not found. Will retry...');
+    // Retry after a short delay
+    setTimeout(() => {
+      if (window.supabase && window.supabase.createClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase_client = supabaseClient;
+        console.log('✓ Supabase initialized successfully (after retry)');
+      } else {
+        console.error('✕ Supabase library failed to load');
+      }
+    }, 500);
+  }
+</script>
+<!-- Supabase Configuration (minimal) -->
+<script src="supabase-config.js?v=2026-03-17-9"></script>
+<!-- OTP Verification Functions -->
+<script src="otp.js?v=2026-03-17-9"></script>
+<script>
+  console.log('2️⃣ All scripts loaded');
+  console.log('  supabase_client:', typeof window.supabase_client !== 'undefined' ? '✓ Available' : '✗ Not available');
+  console.log('  sendOtpForSignup:', typeof sendOtpForSignup === 'function' ? '✓ Available' : '✗ Not available');
+</script>
+<script src="main.js?v=2026-03-17-9"></script>
+<script src="roles.js?v=2026-03-20-9"></script>
+<script src="features.js?v=2026-03-20-2"></script>
+</body>
+</html>
