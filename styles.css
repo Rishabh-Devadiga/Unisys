@@ -323,3 +323,55 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
   .logout-btn { font-size: 11px; padding: 5px 8px; }
   .search-box { flex: 1; max-width: none; }
 }
+
+/* FEATURE BUILDER */
+.builder-shell{display:flex;flex-direction:column;gap:14px}
+.builder-header-row{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.builder-title-stack{display:grid;gap:8px;min-width:280px;flex:1}
+.builder-header-actions{display:flex;gap:8px;flex-wrap:wrap}
+.builder-load-row{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.builder-load-row .form-select{max-width:320px}
+.builder-layout{display:grid;grid-template-columns:280px minmax(0,1fr) 320px;gap:12px;align-items:start}
+.builder-palette,.builder-canvas-wrap,.builder-config{min-height:200px}
+.builder-palette h3,.builder-canvas-wrap h3,.builder-config h3{font-family:var(--font-head);font-size:16px;margin-bottom:10px}
+.builder-palette-group{border-top:1px solid var(--border);padding-top:10px;margin-top:10px}
+.builder-palette-title{font-size:10px;color:var(--text3);letter-spacing:.08em;font-weight:700;margin-bottom:8px}
+.builder-palette-item{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;padding:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:8px;cursor:grab}
+.builder-palette-item.dragging{opacity:.6}
+.builder-palette-icon{width:28px;height:28px;border-radius:8px;background:rgba(109,139,255,.14);display:grid;place-items:center;font-size:10px;color:var(--accent);font-weight:700}
+.builder-palette-name{font-size:12px;font-weight:600}
+.builder-palette-sub{font-size:10px;color:var(--text3);line-height:1.4}
+.builder-canvas-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.builder-canvas-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px;min-height:180px;padding:8px;border:1px dashed var(--border);border-radius:12px;background:rgba(109,139,255,.03)}
+.builder-empty-state{border:1px dashed var(--border);border-radius:12px;padding:28px;text-align:center;background:rgba(109,139,255,.03)}
+.builder-empty-state h3{font-family:var(--font-head);font-size:18px;margin-bottom:6px}
+.builder-empty-state p{font-size:13px;color:var(--text2)}
+#builder-canvas-drop.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
+.builder-widget{position:relative;border:1px solid var(--border);border-radius:12px;background:var(--surface2);overflow:hidden;min-height:120px}
+.builder-widget.selected{box-shadow:0 0 0 2px rgba(109,139,255,.35)}
+.builder-widget-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid var(--border);background:rgba(109,139,255,.05)}
+.builder-widget-title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.builder-drag-handle{border:none;background:transparent;color:var(--text3);cursor:grab;font-size:14px}
+.builder-widget-body{padding:8px}
+.builder-resize-handle{position:absolute;right:6px;bottom:6px;width:12px;height:12px;border-right:2px solid var(--text3);border-bottom:2px solid var(--text3);cursor:nwse-resize;opacity:.8}
+.builder-preview{margin-top:12px;border-top:1px solid var(--border);padding-top:12px}
+.builder-runtime-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}
+.builder-runtime-item{min-width:0}
+.builder-config-field{display:grid;gap:6px;margin-bottom:10px}
+.builder-config-field span{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.builder-registry-panel{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.builder-registry-panel h4{font-family:var(--font-head);font-size:14px;margin-bottom:4px}
+.builder-registry-panel p{font-size:12px;color:var(--text2);line-height:1.5}
+.builder-registry-group{margin-top:8px}
+.builder-registry-group-title{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.07em;margin-bottom:6px}
+.builder-registry-items{display:flex;flex-wrap:wrap;gap:6px}
+.builder-registry-pill{font-size:10px;padding:4px 8px;border-radius:999px;background:rgba(109,139,255,.1);border:1px solid rgba(109,139,255,.18)}
+.builder-registry-modules{margin-top:10px}
+.builder-table-sort{cursor:pointer}
+.builder-table-sort:hover{color:var(--accent)}
+
+@media (max-width: 1200px) {
+  .builder-layout{grid-template-columns:1fr}
+  .builder-palette,.builder-config{order:2}
+  .builder-canvas-wrap{order:1}
+}
