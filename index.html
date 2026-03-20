@@ -1,13 +1,16 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!doctype html>
+<html lang="en">
+<head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>UniSys | Unified Campus OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="styles.css"/>
+<link rel="stylesheet" href="styles.css?v=111"/>
 </head>
 <body>
 
@@ -452,7 +455,6 @@
           <button class="btn btn-icon" onclick="showToast('3 pending approvals require attention','warning')">🔔</button>
           <div class="notif-dot"></div>
         </div>
-        <button class="btn" onclick="showPage('landing')">&larr; Exit ERP</button>
         <button class="btn btn-primary" onclick="showCreateRecord()">+ Create Record</button>
       </div>
     </div>
@@ -1005,7 +1007,7 @@
 </div><!-- /erp page -->
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
-<script src="firebase-config.js?v=2026-03-17-9"></script>
+<script src="firebase-config.js?v=111"></script>
 <script>
   (function () {
     var isFile = window.location && window.location.protocol === "file:";
@@ -1020,7 +1022,7 @@
     }
     var s = document.createElement("script");
     s.type = "module";
-    s.src = "firebase-email.js?v=2026-03-17-9";
+    s.src = "firebase-email.js?v=111";
     document.head.appendChild(s);
   })();
 </script>
@@ -1055,16 +1057,16 @@
   }
 </script>
 <!-- Supabase Configuration (minimal) -->
-<script src="supabase-config.js?v=2026-03-17-9"></script>
+<script src="supabase-config.js?v=111"></script>
 <!-- OTP Verification Functions -->
-<script src="otp.js?v=2026-03-17-9"></script>
+<script src="otp.js?v=111"></script>
 <script>
   console.log('2️⃣ All scripts loaded');
   console.log('  supabase_client:', typeof window.supabase_client !== 'undefined' ? '✓ Available' : '✗ Not available');
   console.log('  sendOtpForSignup:', typeof sendOtpForSignup === 'function' ? '✓ Available' : '✗ Not available');
 </script>
-<script src="main.js?v=2026-03-17-9"></script>
-<script src="roles.js?v=2026-03-17-9"></script>
-<script src="features.js?v=2026-03-17-9"></script>
+<script src="main.js?v=111"></script>
+<script src="roles.js?v=111"></script>
+<script src="features.js?v=111"></script>
 </body>
 </html>
