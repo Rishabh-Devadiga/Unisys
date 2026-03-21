@@ -296,6 +296,19 @@ app.get('/api/schema', async (req, res) => {
   }
 });
 
+app.get('/api/tables', async (req, res) => {
+  try {
+    const schema = await db.getSchema();
+    const tables = schema.map((table) => ({
+      name: table.name,
+      columns: (table.columns || []).map((col) => col.name)
+    }));
+    res.json(tables);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message || 'Failed to load tables' });
+  }
+});
+
 app.post('/api/query/execute', async (req, res) => {
   try {
     const payload = req.body || {};
