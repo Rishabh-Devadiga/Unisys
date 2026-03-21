@@ -21,7 +21,8 @@ function initSignaling(io) {
       socket.emit('join-success', {
         meetingId,
         userId,
-        participants: meetingStore.listParticipants(meetingId)
+        participants: meetingStore.listParticipants(meetingId),
+        screenShareUserId: meetingStore.getScreenShareUserId(meetingId)
       });
     });
 
@@ -67,10 +68,35 @@ function initSignaling(io) {
       });
     });
 
+    socket.on('screen-share-started', (payload) => {
+      const data = payload || {};
+      const meetingId = String(data.meetingId || '').trim();
+      const userId = String(data.userId || '').trim();
+      if (!meetingId || !userId || !meetingStore.hasMeeting(meetingId)) return;
+      meetingStore.setScreenShare(meetingId, userId);
+      socket.to(meetingId).emit('screen-share-started', { userId });
+    });
+
+    socket.on('screen-share-stopped', (payload) => {
+      const data = payload || {};
+      const meetingId = String(data.meetingId || '').trim();
+      const userId = String(data.userId || '').trim();
+      if (!meetingId || !meetingStore.hasMeeting(meetingId)) return;
+      const current = meetingStore.getScreenShareUserId(meetingId);
+      if (!userId || current === userId) {
+        meetingStore.setScreenShare(meetingId, null);
+        socket.to(meetingId).emit('screen-share-stopped', { userId: current });
+      }
+    });
+
     socket.on('leave-room', () => {
       const meetingId = socket.data.meetingId;
       if (!meetingId) return;
       const removed = meetingStore.removeParticipant(meetingId, socket.id);
+      if (removed && meetingStore.getScreenShareUserId(meetingId) === removed.userId) {
+        meetingStore.setScreenShare(meetingId, null);
+        socket.to(meetingId).emit('screen-share-stopped', { userId: removed.userId });
+      }
       if (removed) socket.to(meetingId).emit('user-left', { userId: removed.userId });
       socket.leave(meetingId);
     });
@@ -79,6 +105,10 @@ function initSignaling(io) {
       const meetingId = socket.data.meetingId;
       if (!meetingId) return;
       const removed = meetingStore.removeParticipant(meetingId, socket.id);
+      if (removed && meetingStore.getScreenShareUserId(meetingId) === removed.userId) {
+        meetingStore.setScreenShare(meetingId, null);
+        socket.to(meetingId).emit('screen-share-stopped', { userId: removed.userId });
+      }
       if (removed) socket.to(meetingId).emit('user-left', { userId: removed.userId });
     });
   });

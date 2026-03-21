@@ -9,7 +9,8 @@ function createMeeting(options) {
     meetingId,
     hostId: opts.hostId || null,
     createdAt: new Date().toISOString(),
-    participants: []
+    participants: [],
+    screenShareUserId: null
   };
   meetings.set(meetingId, meeting);
   return meeting;
@@ -65,6 +66,18 @@ function listParticipants(meetingId) {
   return meeting ? meeting.participants.slice() : [];
 }
 
+function setScreenShare(meetingId, userId) {
+  const meeting = getMeeting(meetingId);
+  if (!meeting) return null;
+  meeting.screenShareUserId = userId || null;
+  return meeting.screenShareUserId;
+}
+
+function getScreenShareUserId(meetingId) {
+  const meeting = getMeeting(meetingId);
+  return meeting ? meeting.screenShareUserId : null;
+}
+
 module.exports = {
   createMeeting,
   getMeeting,
@@ -73,5 +86,7 @@ module.exports = {
   removeParticipant,
   getParticipantSocketId,
   countParticipants,
-  listParticipants
+  listParticipants,
+  setScreenShare,
+  getScreenShareUserId
 };

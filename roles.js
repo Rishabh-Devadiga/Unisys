@@ -2643,7 +2643,16 @@ if (typeof window !== 'undefined') {
 */
 
 var MEETING_UI_STATE = { mic:true, cam:true, screen:false };
-var MEETING_MEDIA = { stream:null, error:null };
+var MEETING_MEDIA = { stream:null, error:null, screenStream:null };
+var MEETING_RTC = {
+  socket: null,
+  peers: {},
+  userId: null,
+  meetingId: null,
+  pinnedId: null,
+  pinAuto: false,
+  localStream: null
+};
 
 function meetingsGetRoutePath() {
   var base = '/meetings';
@@ -2709,17 +2718,37 @@ function sanitizeMeetingId(raw) {
 }
 
 function meetingStart() {
-  var id = generateMeetingId();
   MEETING_UI_STATE = { mic:true, cam:true, screen:false };
-  openMeetingWindow(id);
-  showToast('Meeting started in a new window. You are the host.');
+  fetch('/api/meetings/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  }).then(function(res){
+    if (!res.ok) throw new Error('create failed');
+    return res.json();
+  }).then(function(data){
+    var id = data && data.meetingId ? data.meetingId : generateMeetingId();
+    openMeetingWindow(id);
+    showToast('Meeting started in a new window. You are the host.');
+  }).catch(function(){
+    var id = generateMeetingId();
+    openMeetingWindow(id);
+    showToast('Meeting started (offline mode).', 'warning');
+  });
 }
 
 function meetingJoin() {
   var id = sanitizeMeetingId(gv('meeting-join-id'));
   if (!id) { showToast('Enter a valid meeting ID', 'error'); return; }
   MEETING_UI_STATE = { mic:true, cam:true, screen:false };
-  openMeetingWindow(id);
+  fetch('/api/meetings/' + id).then(function(res){
+    if (!res.ok) throw new Error('not found');
+    return res.json();
+  }).then(function(){
+    openMeetingWindow(id);
+  }).catch(function(){
+    showToast('Meeting not found', 'error');
+  });
 }
 
 function meetingToggle(type) {
@@ -2735,42 +2764,63 @@ function meetingToggle(type) {
     document.body.classList.toggle('meeting-cam-off', !MEETING_UI_STATE.cam);
   }
   var icon = btn.querySelector('.meet-control-icon');
-  var label = btn.querySelector('.meet-control-label');
   if (type === 'mic') {
-    if (icon) icon.textContent = 'MIC';
-    if (label) label.textContent = MEETING_UI_STATE.mic ? 'Mic On' : 'Mic Off';
+    if (icon) icon.innerHTML = MEETING_UI_STATE.mic ? meetIconMicOn() : meetIconMicOff();
     if (MEETING_MEDIA.stream) {
       MEETING_MEDIA.stream.getAudioTracks().forEach(function(t){ t.enabled = MEETING_UI_STATE.mic; });
     }
   }
   if (type === 'cam') {
-    if (icon) icon.textContent = 'CAM';
-    if (label) label.textContent = MEETING_UI_STATE.cam ? 'Camera On' : 'Camera Off';
+    if (icon) icon.innerHTML = MEETING_UI_STATE.cam ? meetIconCamOn() : meetIconCamOff();
     if (MEETING_MEDIA.stream) {
       MEETING_MEDIA.stream.getVideoTracks().forEach(function(t){ t.enabled = MEETING_UI_STATE.cam; });
     }
   }
   if (type === 'screen') {
-    if (icon) icon.textContent = 'SCR';
-    if (label) label.textContent = MEETING_UI_STATE.screen ? 'Sharing' : 'Share Screen';
-    if (MEETING_UI_STATE.screen && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-      navigator.mediaDevices.getDisplayMedia({ video:true }).then(function(){
-        showToast('Screen sharing started');
-      }).catch(function(){
+    if (icon) icon.innerHTML = meetIconScreenShare();
+    if (MEETING_UI_STATE.screen) {
+      startScreenShare().catch(function(){
         MEETING_UI_STATE.screen = false;
         btn.classList.add('is-off');
-        if (label) label.textContent = 'Share Screen';
         showToast('Screen share cancelled', 'warning');
       });
+    } else {
+      stopScreenShare();
     }
   }
 }
 
 function meetingLeave() {
+  cleanupMeeting();
   if (isMeetingOnlyWindow()) {
     try { window.close(); return; } catch(e) { /* ignore */ }
   }
   meetingsNavigate('/meetings');
+}
+
+function cleanupMeeting() {
+  if (MEETING_RTC.socket) {
+    try { MEETING_RTC.socket.emit('leave-room'); } catch(e) {}
+    try { MEETING_RTC.socket.disconnect(); } catch(e) {}
+  }
+  Object.keys(MEETING_RTC.peers).forEach(function(id){
+    var pc = MEETING_RTC.peers[id];
+    if (pc) { try { pc.close(); } catch(e) {} }
+  });
+  MEETING_RTC.peers = {};
+  MEETING_RTC.socket = null;
+  MEETING_RTC.meetingId = null;
+  MEETING_RTC.pinnedId = null;
+  MEETING_RTC.pinAuto = false;
+  if (MEETING_MEDIA.screenStream) {
+    MEETING_MEDIA.screenStream.getTracks().forEach(function(t){ t.stop(); });
+    MEETING_MEDIA.screenStream = null;
+  }
+  if (MEETING_MEDIA.stream) {
+    MEETING_MEDIA.stream.getTracks().forEach(function(t){ t.stop(); });
+    MEETING_MEDIA.stream = null;
+  }
+  MEETING_RTC.localStream = null;
 }
 
 function openMeetingWindow(meetingId) {
@@ -2790,6 +2840,302 @@ function setMeetingOnlyMode(on) {
   document.body.classList.toggle('meeting-only', !!on);
 }
 
+function getMeetingUserId() {
+  var key = 'edusys_meet_user';
+  var existing = storeGet ? storeGet(key) : null;
+  if (existing) return existing;
+  var id = 'u' + Math.random().toString(36).slice(2, 10);
+  if (storeSet) storeSet(key, id);
+  return id;
+}
+
+function initMeetingRoom(meetingId) {
+  if (MEETING_RTC.meetingId === meetingId && MEETING_RTC.socket) return;
+  MEETING_RTC.meetingId = meetingId;
+  MEETING_RTC.userId = getMeetingUserId();
+  syncLocalTile();
+  initMeetingMedia();
+  setTimeout(function(){ initMeetingSocket(meetingId); }, 120);
+  if (!MEETING_RTC._boundUnload) {
+    window.addEventListener('beforeunload', cleanupMeeting);
+    MEETING_RTC._boundUnload = true;
+  }
+}
+
+function initMeetingSocket(meetingId) {
+  if (MEETING_RTC.socket || !window.io) return;
+  var socket = io({ transports: ['websocket', 'polling'] });
+  MEETING_RTC.socket = socket;
+
+  socket.on('connect', function() {
+    socket.emit('join-room', { meetingId: meetingId, userId: MEETING_RTC.userId });
+  });
+
+  socket.on('join-success', function(payload) {
+    var data = payload || {};
+    var list = Array.isArray(data.participants) ? data.participants : [];
+    list.forEach(function(p) {
+      if (!p || p.userId === MEETING_RTC.userId) return;
+      createPeerConnection(p.userId, true);
+    });
+    if (data.screenShareUserId) {
+      pinTile(data.screenShareUserId, true);
+    }
+  });
+
+  socket.on('user-joined', function(payload) {
+    var id = payload ? payload.userId : null;
+    if (!id || id === MEETING_RTC.userId) return;
+    createPeerConnection(id, true);
+  });
+
+  socket.on('offer', function(payload) {
+    handleOffer(payload || {});
+  });
+
+  socket.on('answer', function(payload) {
+    handleAnswer(payload || {});
+  });
+
+  socket.on('ice-candidate', function(payload) {
+    handleIce(payload || {});
+  });
+
+  socket.on('user-left', function(payload) {
+    var id = payload ? payload.userId : null;
+    if (id) removePeer(id);
+  });
+
+  socket.on('screen-share-started', function(payload) {
+    var id = payload ? payload.userId : null;
+    if (id) pinTile(id, true);
+  });
+
+  socket.on('screen-share-stopped', function(payload) {
+    var id = payload ? payload.userId : null;
+    if (id && MEETING_RTC.pinAuto && MEETING_RTC.pinnedId === id) {
+      clearPin();
+    }
+  });
+}
+
+function createPeerConnection(remoteId, isInitiator) {
+  if (!remoteId || MEETING_RTC.peers[remoteId]) return;
+  var pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+  });
+  MEETING_RTC.peers[remoteId] = pc;
+  addLocalTracks(pc);
+
+  pc.onicecandidate = function(e) {
+    if (e.candidate && MEETING_RTC.socket) {
+      MEETING_RTC.socket.emit('ice-candidate', {
+        meetingId: MEETING_RTC.meetingId,
+        targetId: remoteId,
+        candidate: e.candidate,
+        from: MEETING_RTC.userId
+      });
+    }
+  };
+
+  pc.ontrack = function(e) {
+    var stream = e.streams && e.streams[0] ? e.streams[0] : null;
+    if (stream) attachRemoteStream(remoteId, stream);
+  };
+
+  pc.onconnectionstatechange = function() {
+    var st = pc.connectionState;
+    if (st === 'failed' || st === 'disconnected' || st === 'closed') {
+      removePeer(remoteId);
+    }
+  };
+
+  if (isInitiator) {
+    ensureLocalStream(function() {
+      pc.createOffer().then(function(offer) {
+        return pc.setLocalDescription(offer).then(function() {
+          if (MEETING_RTC.socket) {
+            MEETING_RTC.socket.emit('offer', {
+              meetingId: MEETING_RTC.meetingId,
+              targetId: remoteId,
+              offer: offer,
+              from: MEETING_RTC.userId
+            });
+          }
+        });
+      }).catch(function(){});
+    });
+  }
+}
+
+function handleOffer(payload) {
+  var from = payload.from;
+  if (!from || from === MEETING_RTC.userId) return;
+  if (!MEETING_RTC.peers[from]) createPeerConnection(from, false);
+  var pc = MEETING_RTC.peers[from];
+  if (!pc) return;
+  pc.setRemoteDescription(new RTCSessionDescription(payload.offer)).then(function() {
+    return ensureLocalStream(function() {
+      pc.createAnswer().then(function(answer) {
+        pc.setLocalDescription(answer).then(function() {
+          if (MEETING_RTC.socket) {
+            MEETING_RTC.socket.emit('answer', {
+              meetingId: MEETING_RTC.meetingId,
+              targetId: from,
+              answer: answer,
+              from: MEETING_RTC.userId
+            });
+          }
+        });
+      });
+    });
+  }).catch(function(){});
+}
+
+function handleAnswer(payload) {
+  var from = payload.from;
+  var pc = from ? MEETING_RTC.peers[from] : null;
+  if (!pc) return;
+  pc.setRemoteDescription(new RTCSessionDescription(payload.answer)).catch(function(){});
+}
+
+function handleIce(payload) {
+  var from = payload.from;
+  var pc = from ? MEETING_RTC.peers[from] : null;
+  if (!pc || !payload.candidate) return;
+  pc.addIceCandidate(new RTCIceCandidate(payload.candidate)).catch(function(){});
+}
+
+function addLocalTracks(pc) {
+  if (!MEETING_RTC.localStream) return;
+  var senders = pc.getSenders().map(function(s){ return s.track; }).filter(Boolean);
+  var audioTracks = MEETING_RTC.localStream.getAudioTracks();
+  audioTracks.forEach(function(track) {
+    var exists = senders.some(function(t){ return t && t.kind === track.kind; });
+    if (!exists) pc.addTrack(track, MEETING_RTC.localStream);
+  });
+  var videoSource = MEETING_MEDIA.screenStream || MEETING_RTC.localStream;
+  var videoTracks = videoSource ? videoSource.getVideoTracks() : [];
+  if (videoTracks[0]) {
+    var vExists = senders.some(function(t){ return t && t.kind === 'video'; });
+    if (!vExists) pc.addTrack(videoTracks[0], videoSource);
+  }
+}
+
+function replaceVideoTrack(newTrack) {
+  Object.keys(MEETING_RTC.peers).forEach(function(id) {
+    var pc = MEETING_RTC.peers[id];
+    if (!pc) return;
+    var sender = pc.getSenders().find(function(s){ return s.track && s.track.kind === 'video'; });
+    if (sender && newTrack) {
+      sender.replaceTrack(newTrack).catch(function(){});
+    }
+  });
+}
+
+function ensureLocalStream(cb) {
+  if (MEETING_RTC.localStream) return cb();
+  var tries = 0;
+  (function wait() {
+    if (MEETING_RTC.localStream) return cb();
+    if (tries++ > 30) return;
+    setTimeout(wait, 100);
+  })();
+}
+
+function attachRemoteStream(userId, stream) {
+  var tile = ensureRemoteTile(userId);
+  if (!tile) return;
+  var video = tile.querySelector('video');
+  if (!video) return;
+  try {
+    video.srcObject = stream;
+  } catch(e) {
+    video.src = URL.createObjectURL(stream);
+  }
+  video.play().catch(function(){});
+}
+
+function ensureRemoteTile(userId) {
+  var grid = g('meet-grid');
+  if (!grid || !userId) return null;
+  var existing = grid.querySelector('.meet-tile[data-user-id=\"' + userId + '\"]');
+  if (existing) return existing;
+  var tile = document.createElement('div');
+  tile.className = 'meet-tile';
+  tile.setAttribute('data-user-id', userId);
+  tile.innerHTML =
+    '<video class=\"meet-video-el\" autoplay playsinline></video>' +
+    '<div class=\"meet-name\">' + formatParticipantLabel(userId) + '</div>';
+  grid.appendChild(tile);
+  applyPinLayout();
+  updateParticipantCount();
+  return tile;
+}
+
+function removePeer(userId) {
+  var pc = MEETING_RTC.peers[userId];
+  if (pc) {
+    try { pc.close(); } catch(e) {}
+    delete MEETING_RTC.peers[userId];
+  }
+  var grid = g('meet-grid');
+  if (grid) {
+    var tile = grid.querySelector('.meet-tile[data-user-id=\"' + userId + '\"]');
+    if (tile) tile.remove();
+  }
+  if (MEETING_RTC.pinnedId === userId && MEETING_RTC.pinAuto) {
+    clearPin();
+  } else {
+    applyPinLayout();
+  }
+  updateParticipantCount();
+}
+
+function formatParticipantLabel(userId) {
+  return 'Participant ' + String(userId).slice(-4).toUpperCase();
+}
+
+function syncLocalTile() {
+  var tile = document.querySelector('.meet-tile--local');
+  if (!tile) return;
+  tile.setAttribute('data-user-id', MEETING_RTC.userId);
+  var label = tile.querySelector('.meet-name');
+  if (label) label.textContent = 'You';
+  updateParticipantCount();
+}
+
+function updateParticipantCount() {
+  var el = g('meet-participant-count');
+  if (!el) return;
+  var grid = g('meet-grid');
+  var count = grid ? grid.querySelectorAll('.meet-tile').length : 1;
+  el.textContent = count;
+}
+
+function pinTile(userId, auto) {
+  MEETING_RTC.pinnedId = userId;
+  MEETING_RTC.pinAuto = !!auto;
+  applyPinLayout();
+}
+
+function clearPin() {
+  MEETING_RTC.pinnedId = null;
+  MEETING_RTC.pinAuto = false;
+  applyPinLayout();
+}
+
+function applyPinLayout() {
+  var grid = g('meet-grid');
+  if (!grid) return;
+  var pinned = MEETING_RTC.pinnedId;
+  grid.classList.toggle('meet-grid--pinned', !!pinned);
+  grid.querySelectorAll('.meet-tile').forEach(function(tile) {
+    var id = tile.getAttribute('data-user-id');
+    tile.classList.toggle('meet-tile--pinned', !!pinned && id === pinned);
+  });
+}
+
 function initMeetingMedia() {
   if (window.__meetingMediaInit) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -2802,14 +3148,11 @@ function initMeetingMedia() {
   navigator.mediaDevices.getUserMedia({ video:true, audio:true }).then(function(stream){
     MEETING_MEDIA.stream = stream;
     MEETING_MEDIA.error = null;
-    document.querySelectorAll('.meet-video-el[data-local=\"1\"], .meet-self-video').forEach(function(el){
-      try {
-        el.srcObject = stream;
-      } catch(e) {
-        el.src = URL.createObjectURL(stream);
-      }
-      el.muted = true;
-      el.play().catch(function(){ /* autoplay may be blocked */ });
+    MEETING_RTC.localStream = stream;
+    attachLocalStream(stream);
+    Object.keys(MEETING_RTC.peers).forEach(function(id){
+      var pc = MEETING_RTC.peers[id];
+      if (pc) addLocalTracks(pc);
     });
     // Apply current toggle state to tracks
     stream.getAudioTracks().forEach(function(t){ t.enabled = MEETING_UI_STATE.mic; });
@@ -2834,12 +3177,77 @@ function renderMeetingMediaFallback(message) {
   existing.textContent = message || 'Unable to access media devices';
 }
 
+function attachLocalStream(stream) {
+  document.querySelectorAll('.meet-video-el[data-local=\"1\"], .meet-self-video').forEach(function(el){
+    try {
+      el.srcObject = stream;
+    } catch(e) {
+      el.src = URL.createObjectURL(stream);
+    }
+    el.muted = true;
+    el.play().catch(function(){ /* autoplay may be blocked */ });
+  });
+}
+
+function startScreenShare() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    return Promise.reject(new Error('Screen share not supported'));
+  }
+  return navigator.mediaDevices.getDisplayMedia({ video:true, audio:false }).then(function(stream){
+    MEETING_MEDIA.screenStream = stream;
+    attachLocalStream(stream);
+    var track = stream.getVideoTracks()[0];
+    if (track) replaceVideoTrack(track);
+    pinTile(MEETING_RTC.userId, true);
+    if (MEETING_RTC.socket) {
+      MEETING_RTC.socket.emit('screen-share-started', {
+        meetingId: MEETING_RTC.meetingId,
+        userId: MEETING_RTC.userId
+      });
+    }
+    if (track) {
+      track.onended = function() {
+        MEETING_UI_STATE.screen = false;
+        var btn = g('meeting-screen-btn');
+        if (btn) btn.classList.add('is-off');
+        stopScreenShare();
+        showToast('Screen sharing stopped');
+      };
+    }
+    showToast('Screen sharing started');
+  });
+}
+
+function stopScreenShare() {
+  if (MEETING_MEDIA.screenStream) {
+    MEETING_MEDIA.screenStream.getTracks().forEach(function(t){ t.stop(); });
+    MEETING_MEDIA.screenStream = null;
+  }
+  if (MEETING_RTC.pinAuto && MEETING_RTC.pinnedId === MEETING_RTC.userId) {
+    clearPin();
+  }
+  if (MEETING_RTC.socket) {
+    MEETING_RTC.socket.emit('screen-share-stopped', {
+      meetingId: MEETING_RTC.meetingId,
+      userId: MEETING_RTC.userId
+    });
+  }
+  if (MEETING_MEDIA.stream) {
+    var camTrack = MEETING_MEDIA.stream.getVideoTracks()[0];
+    if (camTrack) replaceVideoTrack(camTrack);
+    attachLocalStream(MEETING_MEDIA.stream);
+  }
+}
+
 function buildVideoGrid(participants) {
-  return '<div class="meet-grid">'
+  return '<div class="meet-grid" id="meet-grid">'
     + participants.map(function(p){
         var active = p.active ? ' meet-tile--active' : '';
         var localAttr = p.local ? ' data-local="1"' : '';
-        return '<div class="meet-tile' + active + '">'
+        var localClass = p.local ? ' meet-tile--local' : '';
+        var pid = p.id ? String(p.id) : '';
+        var dataId = pid ? ' data-user-id="' + pid + '"' : '';
+        return '<div class="meet-tile' + active + localClass + '"' + dataId + '>'
           + '<video class="meet-video-el"' + localAttr + ' autoplay playsinline muted></video>'
           + '<div class="meet-name">' + p.label + '</div>'
           + '</div>';
@@ -2849,21 +3257,17 @@ function buildVideoGrid(participants) {
 
 function buildMeetingControls() {
   return '<div class="meeting-controls-bar">'
-    + '<button class="meet-control" id="meeting-mic-btn" onclick="meetingToggle(\'mic\')">'
-    + '<span class="meet-control-icon">MIC</span>'
-    + '<span class="meet-control-label">' + (MEETING_UI_STATE.mic ? 'Mic On' : 'Mic Off') + '</span>'
+    + '<button class="meet-control" id="meeting-mic-btn" onclick="meetingToggle(\'mic\')" aria-label="Toggle microphone" title="Microphone">'
+    + '<span class="meet-control-icon">' + meetIconMicOn() + '</span>'
     + '</button>'
-    + '<button class="meet-control" id="meeting-cam-btn" onclick="meetingToggle(\'cam\')">'
-    + '<span class="meet-control-icon">CAM</span>'
-    + '<span class="meet-control-label">' + (MEETING_UI_STATE.cam ? 'Camera On' : 'Camera Off') + '</span>'
+    + '<button class="meet-control" id="meeting-cam-btn" onclick="meetingToggle(\'cam\')" aria-label="Toggle camera" title="Camera">'
+    + '<span class="meet-control-icon">' + meetIconCamOn() + '</span>'
     + '</button>'
-    + '<button class="meet-control" id="meeting-screen-btn" onclick="meetingToggle(\'screen\')">'
-    + '<span class="meet-control-icon">SCR</span>'
-    + '<span class="meet-control-label">' + (MEETING_UI_STATE.screen ? 'Sharing' : 'Share Screen') + '</span>'
+    + '<button class="meet-control" id="meeting-screen-btn" onclick="meetingToggle(\'screen\')" aria-label="Share screen" title="Share screen">'
+    + '<span class="meet-control-icon">' + meetIconScreenShare() + '</span>'
     + '</button>'
-    + '<button class="meet-control meet-control--danger" id="meeting-leave-btn" onclick="meetingLeave()">'
-    + '<span class="meet-control-icon">LEAVE</span>'
-    + '<span class="meet-control-label">Leave</span>'
+    + '<button class="meet-control meet-control--danger" id="meeting-leave-btn" onclick="meetingLeave()" aria-label="Leave meeting" title="Leave">'
+    + '<span class="meet-control-icon">' + meetIconLeave() + '</span>'
     + '</button>'
     + '</div>';
 }
@@ -2884,30 +3288,47 @@ function buildMeetingsDashboard() {
     + '</div>';
 }
 
+function meetIconMicOn() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.93V20h2v-2.07A7 7 0 0 0 19 11h-2Z"/></svg>';
+}
+
+function meetIconMicOff() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 11-2 0a5 5 0 0 1-7.06 4.58l-1.5 1.5A7 7 0 0 0 13 17.93V20h-2v-2.07A7 7 0 0 1 5 11h2a5 5 0 0 0 2.18 4.13l-1.42 1.42A7 7 0 0 1 3 11h2a7 7 0 0 0 1.11 3.73L3 17.84 4.41 19.25 20.59 3.07 19.17 1.66 15.5 5.33A3 3 0 0 0 9 6v5c0 .42.08.82.22 1.2l1.61-1.61V6a1 1 0 1 1 2 0v3.17l3.67-3.67L19 11Z"/></svg>';
+}
+
+function meetIconCamOn() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 10.5V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.5l4 4v-11l-4 4Z"/></svg>';
+}
+
+function meetIconCamOff() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 6.5-4 4V7a2 2 0 0 0-2-2H7.83l2 2H15v3.5l4-4Zm-2.21 13.21L3.29 4.21 4.7 2.8 20.2 18.3 18.79 19.71ZM7 17h8a2 2 0 0 0 2-2v-2.17l-8-8H5v10a2 2 0 0 0 2 2Z"/></svg>';
+}
+
+function meetIconScreenShare() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3H3a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h6v2H7v2h10v-2h-2v-2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 11H3V5h18v9Z"/></svg>';
+}
+
+function meetIconLeave() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17v-2h4v-2h-4v-2l-3 3 3 3Zm9-12h-8a2 2 0 0 0-2 2v3h2V7h8v10h-8v-3H9v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"/></svg>';
+}
+
 function buildMeetingRoom(meetingId) {
   var participants = [
-    { label:'You (Host)', local:true },
-    { label:'Participant 1', active:true },
-    { label:'Participant 2' },
-    { label:'Participant 3' }
+    { id:'local', label:'You', local:true }
   ];
-  var count = participants.length;
+  var count = 1;
   return '<div class="meeting-room">'
     + '<div class="meet-topbar">'
     + '<div class="meet-title">Meeting Room</div>'
     + '<div class="meet-meta">Meeting ID: <strong>' + meetingId + '</strong></div>'
     + '<div class="meet-actions">'
     + '<span class="meet-pill">Live</span>'
-    + '<span class="meet-pill meet-pill--neutral">' + count + ' Participants</span>'
+    + '<span class="meet-pill meet-pill--neutral"><span id="meet-participant-count">' + count + '</span> Participants</span>'
     + '<button class="meet-chip">Chat</button>'
     + '</div>'
     + '</div>'
     + '<div class="meet-stage">'
     + buildVideoGrid(participants)
-    + '<div class="meet-self-tile">'
-    + '<video class="meet-video-el meet-self-video" autoplay playsinline muted></video>'
-    + '<div class="meet-name">You</div>'
-    + '</div>'
     + '</div>'
     + buildMeetingControls()
     + '</div>';
@@ -2918,7 +3339,7 @@ function buildMeetingsRouter() {
   var state = meetingsGetState();
   setMeetingOnlyMode(isMeetingOnlyWindow() && !!state.meetingId);
   if (state.meetingId) {
-    setTimeout(initMeetingMedia, 60);
+    setTimeout(function(){ initMeetingRoom(state.meetingId); }, 60);
   }
   return state.meetingId ? buildMeetingRoom(state.meetingId) : buildMeetingsDashboard();
 }
