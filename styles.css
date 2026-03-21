@@ -117,7 +117,7 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .modal-sub{color:var(--text2);font-size:14px;margin-bottom:22px}
 .modal-footer{display:flex;gap:10px;margin-top:22px;justify-content:flex-end}
 /* ERP */
-.app-shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.app-shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh;height:100vh;overflow:hidden}
 .sidebar{background:var(--sidebar-bg);border-right:1px solid var(--border);padding:16px 12px;position:sticky;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;display:flex;flex-direction:column;gap:4px}
 .sidebar::-webkit-scrollbar{display:none}
 .sidebar-logo{display:flex;align-items:center;gap:9px;padding:8px 8px 14px;border-bottom:1px solid var(--border);margin-bottom:4px;cursor:pointer}
@@ -132,7 +132,7 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .nav-item.active .nav-icon{opacity:1}
 .nav-badge{margin-left:auto;background:rgba(248,113,113,0.2);color:var(--red);font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;flex-shrink:0}
 .nav-badge-blue{background:rgba(109,139,255,0.2);color:var(--accent)}
-.erp-content{display:flex;flex-direction:column;min-height:100vh}
+.erp-content{display:flex;flex-direction:column;min-height:100vh;height:100vh;overflow:hidden}
 .topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;padding:18px 28px;border-bottom:1px solid var(--border);background:var(--nav-bg);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;flex-shrink:0}
 .search-box{width:100%;max-width:340px;justify-self:start;display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-md);padding:10px 16px;transition:border-color 0.15s,box-shadow 0.15s}
 .search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,139,255,0.12)}
@@ -268,7 +268,7 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 @keyframes geoPulse{0%,100%{box-shadow:0 0 16px var(--accent),0 0 32px rgba(109,139,255,0.5)}50%{box-shadow:0 0 24px var(--accent),0 0 48px rgba(109,139,255,0.7)}}
 /* RESPONSIVE */
 @media(max-width:980px){
-  .app-shell{grid-template-columns:1fr}
+  .app-shell{grid-template-columns:1fr;height:auto;overflow:visible}
   .sidebar{position:relative;height:auto;overflow-x:auto;padding:10px}
   .sidebar-section-label,.sidebar-logo-sub{display:none}
   .nav-links{display:none}
