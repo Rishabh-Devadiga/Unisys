@@ -3131,16 +3131,23 @@ function injectRoleNav(role) {
 
 
 
-  /* Insert role features at the top of the sidebar (just below the logo). */
+  /* Insert role features after Main section (keep Overview + Main block at top). */
 
-  var insertAfter = sidebarNav.querySelector('.sidebar-logo');
+  var labels = sidebarNav.querySelectorAll('.sidebar-section-label');
+  var insertPoint = null;
+  labels.forEach(function(label) {
+    var text = (label.textContent || '').trim();
+    if (!insertPoint && text && text !== 'Main') insertPoint = label;
+  });
 
-  var insertPoint = insertAfter ? insertAfter.nextSibling : sidebarNav.firstChild;
+  if (!insertPoint) {
+    var insertAfter = sidebarNav.querySelector('.nav-item[data-module="overview"]')
+      || sidebarNav.querySelector('.sidebar-logo');
+    insertPoint = insertAfter ? insertAfter.nextSibling : sidebarNav.firstChild;
+  }
 
   function insertRoleEl(el) {
-
     sidebarNav.insertBefore(el, insertPoint);
-
   }
 
 
