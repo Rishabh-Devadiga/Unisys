@@ -5,6 +5,10 @@
   var schemaLoading = false;
   var schemaError = '';
   var dataSourceModalWidgetId = null;
+  var selectedDataSource = null;
+  var availableTables = [];
+  var tablesLoading = false;
+  var selectedTable = null;
 
   function esc(value) {
     return String(value == null ? '' : value)
@@ -315,15 +319,49 @@
 
   function renderDataSourceModal() {
     if (!dataSourceModalWidgetId) return '';
+    
+    /* If showing table selection */
+    if (selectedDataSource === 'database') {
+      var tableList = '';
+      if (tablesLoading) {
+        tableList = '<div class="builder-modal-loading">Loading tables...</div>';
+      } else if (!availableTables || availableTables.length === 0) {
+        tableList = '<div class="builder-modal-error">No tables available</div>';
+      } else {
+        tableList = '<div class="builder-table-selector">';
+        availableTables.forEach(function(table) {
+          var isSelected = selectedTable === table.name;
+          tableList += '<div class="builder-table-option ' + (isSelected ? 'selected' : '') + '" data-table="' + esc(table.name) + '">'
+            + '<input type="radio" name="table" value="' + esc(table.name) + '" ' + (isSelected ? 'checked' : '') + ' />'
+            + '<label>' + esc(table.name) + '</label>'
+            + '</div>';
+        });
+        tableList += '</div>';
+      }
+      
+      return '<div class="builder-modal-overlay"><div class="builder-modal">'
+        + '<h3>Which data do you want to use?</h3>'
+        + '<p>Select a table from your database</p>'
+        + tableList
+        + '<div class="builder-modal-actions">'
+        + '<button class="btn btn-secondary" data-modal-back="1">Back</button>'
+        + (selectedTable ? '<button class="btn btn-primary" data-modal-confirm="1">Confirm</button>' : '<button class="btn btn-primary" disabled>Select a Table</button>')
+        + '</div>'
+        + '</div></div>';
+    }
+    
+    /* Initial data source selection */
     return '<div class="builder-modal-overlay"><div class="builder-modal">'
-      + '<h3>Select Data Source</h3>'
+      + '<h3>Which data do you want to use?</h3>'
       + '<p>Choose where this component should fetch data from.</p>'
       + '<div class="builder-modal-options">'
-      + '<button class="btn btn-primary" data-modal-source="database">Database Tables</button>'
-      + '<button class="btn" data-modal-source="api_endpoint">API Endpoints</button>'
-      + '<button class="btn" data-modal-source="custom_query">Custom Query</button>'
+      + '<button class="btn ' + (selectedDataSource === 'database' ? 'btn-primary' : '') + '" data-modal-source="database">Database Tables</button>'
+      + '<button class="btn ' + (selectedDataSource === 'api_endpoint' ? 'btn-primary' : '') + '" data-modal-source="api_endpoint">API Endpoints</button>'
+      + '<button class="btn ' + (selectedDataSource === 'custom_query' ? 'btn-primary' : '') + '" data-modal-source="custom_query">Custom Query</button>'
       + '</div>'
-      + '<button class="btn" data-modal-close="1">Skip</button>'
+      + '<div class="builder-modal-actions">'
+      + '<button class="btn btn-secondary" data-modal-close="1">Skip</button>'
+      + '</div>'
       + '</div></div>';
   }
 
@@ -664,24 +702,85 @@
 
   function bindDataSourceModal(root) {
     var store = getStore();
+    
+    /* Handle source selection (load tables if database selected) */
     root.querySelectorAll('[data-modal-source]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var source = btn.getAttribute('data-modal-source');
+        selectedDataSource = source;
+        selectedTable = null;
+        
+        /* Load tables if database is selected */
+        if (source === 'database') {
+          tablesLoading = true;
+          fetch('/api/tables')
+            .then(function(res) { return res.json(); })
+            .then(function(tables) {
+              availableTables = tables || [];
+              tablesLoading = false;
+              mountBuilder();
+            })
+            .catch(function(err) {
+              console.error('Failed to load tables:', err);
+              tablesLoading = false;
+              availableTables = [];
+              mountBuilder();
+            });
+        }
+        
+        mountBuilder();
+      });
+    });
+    
+    /* Handle table selection */
+    root.querySelectorAll('[data-table]').forEach(function (option) {
+      option.addEventListener('click', function () {
+        selectedTable = option.getAttribute('data-table');
+        mountBuilder();
+      });
+    });
+    
+    /* Handle back button (go back to source selection) */
+    var backBtn = root.querySelector('[data-modal-back]');
+    if (backBtn) {
+      backBtn.addEventListener('click', function () {
+        selectedDataSource = null;
+        selectedTable = null;
+        availableTables = [];
+        mountBuilder();
+      });
+    }
+    
+    /* Handle confirm button */
+    var confirmBtn = root.querySelector('[data-modal-confirm]');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function () {
+        if (!selectedTable) return;
         var widgetId = dataSourceModalWidgetId;
         if (!widgetId) return;
         var widget = store.getState().currentFeature.widgets.find(function (w) { return w.id === widgetId; });
         if (!widget) return;
         var nextBinding = clone(ensureBinding(widget));
-        nextBinding.sourceType = source;
+        nextBinding.sourceType = 'database';
+        nextBinding.table = selectedTable;
         store.updateWidget(widgetId, { config: { dataBinding: nextBinding } });
         store.selectWidget(widgetId);
         dataSourceModalWidgetId = null;
+        selectedDataSource = null;
+        selectedTable = null;
+        availableTables = [];
+        mountBuilder();
       });
-    });
+    }
+    
+    /* Handle close/skip button */
     var closeBtn = root.querySelector('[data-modal-close]');
     if (closeBtn) {
       closeBtn.addEventListener('click', function () {
         dataSourceModalWidgetId = null;
+        selectedDataSource = null;
+        selectedTable = null;
+        availableTables = [];
         mountBuilder();
       });
     }
