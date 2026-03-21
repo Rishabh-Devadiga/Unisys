@@ -963,7 +963,7 @@ var ROLE_MODULES = {
     'overview','students','academics','exams','faculty',
     'compliance','analytics','communications','add-feature',
     /* HOD-only extras */
-    'role-dept','role-timetable','role-leave','role-marks','role-marks-viewer','role-hod-accounts'
+    'role-dept','role-timetable','role-leave','role-marks','role-marks-viewer','role-meetings','role-hod-accounts'
   ],
 
   Faculty: [
@@ -972,7 +972,7 @@ var ROLE_MODULES = {
 
     /* Faculty-only */
 
-    'role-mycourses','role-attendance','role-marks','role-marks-viewer','role-assignments',
+    'role-mycourses','role-attendance','role-marks','role-marks-viewer','role-meetings','role-assignments',
 
     'role-materials','role-schedule','role-announce'
 
@@ -1036,7 +1036,8 @@ var ROLE_NAV = {
     { id:'role-leave',     icon:'📅',  label:'Leave Requests',     section:'HOD Tools' },
 
     { id:'role-marks',     icon:'',  label:'Internal Marks',     section:'HOD Tools' },
-    { id:'role-marks-viewer', icon:'', label:'Marks Viewer',     section:'HOD Tools' }
+    { id:'role-marks-viewer', icon:'', label:'Marks Viewer',     section:'HOD Tools' },
+    { id:'role-meetings', icon:'', label:'Video Meetings',       section:'HOD Tools' }
 
   ],
 
@@ -1049,6 +1050,7 @@ var ROLE_NAV = {
     { id:'role-assignments',icon:'📋', label:'Assignments',        section:'My Dashboard' },
     { id:'role-marks',      icon:'', label:'Enter Marks',        section:'My Dashboard' },
     { id:'role-marks-viewer', icon:'', label:'Marks Viewer',     section:'My Dashboard' },
+    { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' },
     { id:'role-materials',  icon:'', label:'Study Materials',    section:'My Dashboard' },
 
     { id:'role-announce',   icon:'📣', label:'Post Announcement',  section:'My Dashboard' }
@@ -2635,6 +2637,319 @@ if (typeof window !== 'undefined') {
   }
 }
 
+/*
+   VIDEO MEETINGS (FRONTEND-ONLY)
+   Meetings dashboard + meeting room with mock video tiles.
+*/
+
+var MEETING_UI_STATE = { mic:true, cam:true, screen:false };
+var MEETING_MEDIA = { stream:null, error:null };
+
+function meetingsGetRoutePath() {
+  var base = '/meetings';
+  var path = (window.location && window.location.pathname) ? window.location.pathname : '';
+  if (path.indexOf(base) !== -1) {
+    return path.slice(path.indexOf(base));
+  }
+  var hash = (window.location && window.location.hash) ? window.location.hash : '';
+  if (hash.indexOf(base) !== -1) {
+    return hash.slice(hash.indexOf(base));
+  }
+  return base;
+}
+
+function meetingsNormalizePath(path) {
+  return String(path || '').split('?')[0].split('#')[0].replace(/\/+$/,'') || '/meetings';
+}
+
+function meetingsGetState() {
+  var base = '/meetings';
+  var clean = meetingsNormalizePath(meetingsGetRoutePath());
+  if (clean.indexOf(base) !== 0) clean = base;
+  var parts = clean.split('/').filter(Boolean);
+  var meetingId = parts[1] ? parts[1] : null;
+  return { meetingId: meetingId };
+}
+
+function meetingsEnsureRoute() {
+  var base = '/meetings';
+  var path = (window.location && window.location.pathname) ? window.location.pathname : '';
+  var hash = (window.location && window.location.hash) ? window.location.hash : '';
+  if (path.indexOf(base) !== -1 || hash.indexOf(base) !== -1) return;
+  try {
+    history.replaceState({ meetings:true }, '', base);
+  } catch(e) {
+    window.location.hash = '#' + base;
+  }
+}
+
+function meetingsNavigate(path, replace) {
+  var target = meetingsNormalizePath(path);
+  try {
+    if (replace) history.replaceState({ meetings:true }, '', target);
+    else history.pushState({ meetings:true }, '', target);
+  } catch(e) {
+    window.location.hash = '#' + target;
+  }
+  if (typeof renderRoleSection === 'function') renderRoleSection('role-meetings');
+}
+
+function generateMeetingId() {
+  var len = 8 + Math.floor(Math.random() * 3);
+  var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  var id = '';
+  for (var i = 0; i < len; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id;
+}
+
+function sanitizeMeetingId(raw) {
+  return String(raw || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
+}
+
+function meetingStart() {
+  var id = generateMeetingId();
+  MEETING_UI_STATE = { mic:true, cam:true, screen:false };
+  openMeetingWindow(id);
+  showToast('Meeting started in a new window. You are the host.');
+}
+
+function meetingJoin() {
+  var id = sanitizeMeetingId(gv('meeting-join-id'));
+  if (!id) { showToast('Enter a valid meeting ID', 'error'); return; }
+  MEETING_UI_STATE = { mic:true, cam:true, screen:false };
+  openMeetingWindow(id);
+}
+
+function meetingToggle(type) {
+  if (!MEETING_UI_STATE) MEETING_UI_STATE = { mic:true, cam:true, screen:false };
+  MEETING_UI_STATE[type] = !MEETING_UI_STATE[type];
+  var btn = g('meeting-' + type + '-btn');
+  if (!btn) return;
+  btn.classList.toggle('is-off', !MEETING_UI_STATE[type]);
+  if (type === 'mic') {
+    document.body.classList.toggle('meeting-mic-off', !MEETING_UI_STATE.mic);
+  }
+  if (type === 'cam') {
+    document.body.classList.toggle('meeting-cam-off', !MEETING_UI_STATE.cam);
+  }
+  var icon = btn.querySelector('.meet-control-icon');
+  var label = btn.querySelector('.meet-control-label');
+  if (type === 'mic') {
+    if (icon) icon.textContent = 'MIC';
+    if (label) label.textContent = MEETING_UI_STATE.mic ? 'Mic On' : 'Mic Off';
+    if (MEETING_MEDIA.stream) {
+      MEETING_MEDIA.stream.getAudioTracks().forEach(function(t){ t.enabled = MEETING_UI_STATE.mic; });
+    }
+  }
+  if (type === 'cam') {
+    if (icon) icon.textContent = 'CAM';
+    if (label) label.textContent = MEETING_UI_STATE.cam ? 'Camera On' : 'Camera Off';
+    if (MEETING_MEDIA.stream) {
+      MEETING_MEDIA.stream.getVideoTracks().forEach(function(t){ t.enabled = MEETING_UI_STATE.cam; });
+    }
+  }
+  if (type === 'screen') {
+    if (icon) icon.textContent = 'SCR';
+    if (label) label.textContent = MEETING_UI_STATE.screen ? 'Sharing' : 'Share Screen';
+    if (MEETING_UI_STATE.screen && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+      navigator.mediaDevices.getDisplayMedia({ video:true }).then(function(){
+        showToast('Screen sharing started');
+      }).catch(function(){
+        MEETING_UI_STATE.screen = false;
+        btn.classList.add('is-off');
+        if (label) label.textContent = 'Share Screen';
+        showToast('Screen share cancelled', 'warning');
+      });
+    }
+  }
+}
+
+function meetingLeave() {
+  if (isMeetingOnlyWindow()) {
+    try { window.close(); return; } catch(e) { /* ignore */ }
+  }
+  meetingsNavigate('/meetings');
+}
+
+function openMeetingWindow(meetingId) {
+  var base = String(window.location.href || '').split('#')[0].split('?')[0];
+  var url = base + '#/meetings/' + meetingId + '?meetingOnly=1';
+  window.open(url, '_blank', 'noopener');
+}
+
+function isMeetingOnlyWindow() {
+  var hash = (window.location && window.location.hash) ? window.location.hash : '';
+  var search = (window.location && window.location.search) ? window.location.search : '';
+  return hash.indexOf('meetingOnly=1') !== -1 || search.indexOf('meetingOnly=1') !== -1;
+}
+
+function setMeetingOnlyMode(on) {
+  if (!document || !document.body) return;
+  document.body.classList.toggle('meeting-only', !!on);
+}
+
+function initMeetingMedia() {
+  if (window.__meetingMediaInit) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    MEETING_MEDIA.error = 'Camera / mic not supported in this browser';
+    renderMeetingMediaFallback(MEETING_MEDIA.error);
+    showToast('Camera / mic not supported in this browser', 'warning');
+    return;
+  }
+  window.__meetingMediaInit = true;
+  navigator.mediaDevices.getUserMedia({ video:true, audio:true }).then(function(stream){
+    MEETING_MEDIA.stream = stream;
+    MEETING_MEDIA.error = null;
+    document.querySelectorAll('.meet-video-el[data-local=\"1\"], .meet-self-video').forEach(function(el){
+      try {
+        el.srcObject = stream;
+      } catch(e) {
+        el.src = URL.createObjectURL(stream);
+      }
+      el.muted = true;
+      el.play().catch(function(){ /* autoplay may be blocked */ });
+    });
+    // Apply current toggle state to tracks
+    stream.getAudioTracks().forEach(function(t){ t.enabled = MEETING_UI_STATE.mic; });
+    stream.getVideoTracks().forEach(function(t){ t.enabled = MEETING_UI_STATE.cam; });
+  }).catch(function(){
+    MEETING_MEDIA.error = 'Unable to access camera or microphone';
+    renderMeetingMediaFallback(MEETING_MEDIA.error);
+    showToast('Unable to access camera or microphone', 'warning');
+  });
+}
+
+function renderMeetingMediaFallback(message) {
+  var wrap = document.querySelector('.meeting-room');
+  if (!wrap) return;
+  var existing = document.getElementById('meeting-media-error');
+  if (!existing) {
+    existing = document.createElement('div');
+    existing.id = 'meeting-media-error';
+    existing.className = 'meet-media-error';
+    wrap.insertBefore(existing, wrap.firstChild);
+  }
+  existing.textContent = message || 'Unable to access media devices';
+}
+
+function buildVideoGrid(participants) {
+  return '<div class="meet-grid">'
+    + participants.map(function(p){
+        var active = p.active ? ' meet-tile--active' : '';
+        var localAttr = p.local ? ' data-local="1"' : '';
+        return '<div class="meet-tile' + active + '">'
+          + '<video class="meet-video-el"' + localAttr + ' autoplay playsinline muted></video>'
+          + '<div class="meet-name">' + p.label + '</div>'
+          + '</div>';
+      }).join('')
+    + '</div>';
+}
+
+function buildMeetingControls() {
+  return '<div class="meeting-controls-bar">'
+    + '<button class="meet-control" id="meeting-mic-btn" onclick="meetingToggle(\'mic\')">'
+    + '<span class="meet-control-icon">MIC</span>'
+    + '<span class="meet-control-label">' + (MEETING_UI_STATE.mic ? 'Mic On' : 'Mic Off') + '</span>'
+    + '</button>'
+    + '<button class="meet-control" id="meeting-cam-btn" onclick="meetingToggle(\'cam\')">'
+    + '<span class="meet-control-icon">CAM</span>'
+    + '<span class="meet-control-label">' + (MEETING_UI_STATE.cam ? 'Camera On' : 'Camera Off') + '</span>'
+    + '</button>'
+    + '<button class="meet-control" id="meeting-screen-btn" onclick="meetingToggle(\'screen\')">'
+    + '<span class="meet-control-icon">SCR</span>'
+    + '<span class="meet-control-label">' + (MEETING_UI_STATE.screen ? 'Sharing' : 'Share Screen') + '</span>'
+    + '</button>'
+    + '<button class="meet-control meet-control--danger" id="meeting-leave-btn" onclick="meetingLeave()">'
+    + '<span class="meet-control-icon">LEAVE</span>'
+    + '<span class="meet-control-label">Leave</span>'
+    + '</button>'
+    + '</div>';
+}
+
+function buildMeetingsDashboard() {
+  return '<div class="module-header"><div class="module-title">Video Meetings</div>'
+    + '<div class="module-sub">Start a new meeting or join an existing one using a meeting ID.</div></div>'
+    + '<div class="panel">'
+    + '<div class="form-section-title">Meetings Dashboard</div>'
+    + '<div class="form-actions">'
+    + '<button class="btn btn-primary" onclick="meetingStart()">Start Meeting</button>'
+    + '<button class="btn" onclick="meetingJoin()">Join Meeting</button>'
+    + '</div>'
+    + '<div class="form-grid" style="margin-top:10px">'
+    + '<div class="form-group"><label class="form-label">Enter Meeting ID</label><input class="form-input" id="meeting-join-id" placeholder="e.g. abc123xyz"/></div>'
+    + '</div>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="meetingJoin()">Join Meeting</button></div>'
+    + '</div>';
+}
+
+function buildMeetingRoom(meetingId) {
+  var participants = [
+    { label:'You (Host)', local:true },
+    { label:'Participant 1', active:true },
+    { label:'Participant 2' },
+    { label:'Participant 3' }
+  ];
+  var count = participants.length;
+  return '<div class="meeting-room">'
+    + '<div class="meet-topbar">'
+    + '<div class="meet-title">Meeting Room</div>'
+    + '<div class="meet-meta">Meeting ID: <strong>' + meetingId + '</strong></div>'
+    + '<div class="meet-actions">'
+    + '<span class="meet-pill">Live</span>'
+    + '<span class="meet-pill meet-pill--neutral">' + count + ' Participants</span>'
+    + '<button class="meet-chip">Chat</button>'
+    + '</div>'
+    + '</div>'
+    + '<div class="meet-stage">'
+    + buildVideoGrid(participants)
+    + '<div class="meet-self-tile">'
+    + '<video class="meet-video-el meet-self-video" autoplay playsinline muted></video>'
+    + '<div class="meet-name">You</div>'
+    + '</div>'
+    + '</div>'
+    + buildMeetingControls()
+    + '</div>';
+}
+
+function buildMeetingsRouter() {
+  meetingsEnsureRoute();
+  var state = meetingsGetState();
+  setMeetingOnlyMode(isMeetingOnlyWindow() && !!state.meetingId);
+  if (state.meetingId) {
+    setTimeout(initMeetingMedia, 60);
+  }
+  return state.meetingId ? buildMeetingRoom(state.meetingId) : buildMeetingsDashboard();
+}
+
+if (typeof window !== 'undefined') {
+  window.meetingsNavigate = meetingsNavigate;
+  if (!window.__meetingsPopstateBound) {
+    window.addEventListener('popstate', function() {
+      var active = document.querySelector('.module-section.active');
+      if (active && active.id === 'role-meetings' && typeof renderRoleSection === 'function') {
+        renderRoleSection('role-meetings');
+      }
+    });
+    window.__meetingsPopstateBound = true;
+  }
+}
+
+function maybeOpenMeetingsDeepLink() {
+  var base = '/meetings';
+  var path = (window.location && window.location.pathname) ? window.location.pathname : '';
+  var hash = (window.location && window.location.hash) ? window.location.hash : '';
+  if (path.indexOf(base) === -1 && hash.indexOf(base) === -1) return;
+  setMeetingOnlyMode(isMeetingOnlyWindow());
+  if (typeof showPage === 'function') showPage('erp');
+  setTimeout(function() {
+    if (typeof renderRoleSection === 'function') {
+      renderRoleSection('role-meetings');
+    }
+  }, 180);
+}
+
 function buildFacultyAssignments() {
 
   var db = dbGet();
@@ -3242,6 +3557,7 @@ var SECTION_BUILDERS = {
   'role-marks':     buildHODMarks,       /* HOD view */
   'role-hod-accounts': buildHODAccounts,
   'role-marks-viewer': buildMarksViewer,
+  'role-meetings': buildMeetingsRouter,
 
   /* Faculty extras */
 
@@ -3923,4 +4239,7 @@ function buildRoleCard(role, icon, email, pass, color, desc) {
     setTimeout(enhanceAccessPage, 50);
     setTimeout(initAccessMode, 60);
   }
+
+  /* Deep-link into meetings in a new window */
+  setTimeout(maybeOpenMeetingsDeepLink, 120);
 })();

@@ -1,7 +1,11 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const { Resend } = require('resend');
+const { Server } = require('socket.io');
 const db = require('./db/postgres');
+const meetingsRouter = require('./routes/meetings');
+const { initSignaling } = require('./socket/signaling');
 
 const app = express();
 const PORT = 3001;
@@ -16,6 +20,13 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
+app.use('/api/meetings', meetingsRouter);
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] }
+});
+initSignaling(io);
 
 const SAFE_OPERATORS = new Set(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'in', 'between']);
 const SAFE_AGGREGATIONS = new Set(['sum', 'avg', 'count', 'min', 'max']);
@@ -544,7 +555,7 @@ app.get('/health', async (req, res) => {
 async function startServer(port) {
   const usePort = port || PORT;
   await db.initDatabase();
-  return app.listen(usePort, () => {
+  return server.listen(usePort, () => {
     console.log(`Server is running on http://localhost:${usePort}`);
   });
 }
@@ -558,5 +569,7 @@ if (require.main === module) {
 
 module.exports = {
   app,
-  startServer
+  startServer,
+  io,
+  server
 };

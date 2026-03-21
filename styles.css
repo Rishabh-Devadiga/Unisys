@@ -152,6 +152,67 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .logout-svg,.logout-icon{width:22px;height:22px;display:block;filter:drop-shadow(0 0 6px rgba(239,68,68,0.5))}
 .logout-icon path{stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .module-wrap{padding:28px;flex:1;overflow-y:auto;display:flex;flex-direction:column}
+
+/* Meeting-only window (Google Meet style focus) */
+body.meeting-only #erp .sidebar,
+body.meeting-only #erp .topbar,
+body.meeting-only #erp #search-results { display:none !important; }
+body.meeting-only #erp .app-shell { grid-template-columns:1fr; }
+body.meeting-only #erp .erp-content { height:100vh; }
+body.meeting-only #erp .module-wrap { padding:0; background:#0f1115; }
+body.meeting-only #erp .module-wrap,
+body.meeting-only #erp .module-section { height:100%; }
+body.meeting-only #erp .meeting-room { height:100%; display:flex; flex-direction:column; gap:16px; padding:18px 22px 20px; color:#fff; }
+body.meeting-only #erp .meet-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+body.meeting-only #erp .meet-title { font-family:var(--font-head); font-size:18px; font-weight:700; }
+body.meeting-only #erp .meet-meta { font-size:12px; color:rgba(255,255,255,0.7); }
+body.meeting-only #erp .meet-actions { display:flex; align-items:center; gap:8px; }
+body.meeting-only #erp .meet-pill { background:rgba(52,211,153,0.18); color:#6ee7b7; border:1px solid rgba(52,211,153,0.35); font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; }
+body.meeting-only #erp .meet-pill--neutral { background:rgba(148,163,184,0.18); color:#cbd5f5; border-color:rgba(148,163,184,0.35); }
+body.meeting-only #erp .meet-chip { background:#20242d; color:#fff; border:1px solid rgba(255,255,255,0.12); padding:6px 12px; border-radius:999px; font-size:12px; cursor:pointer; }
+body.meeting-only #erp .meet-chip:hover { background:#2a2f3a; }
+body.meeting-only #erp .meet-stage { flex:1; display:flex; min-height:0; }
+body.meeting-only #erp .meet-grid { width:100%; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; align-content:start; }
+body.meeting-only #erp .meet-tile { background:#1a1d24; border:1px solid rgba(255,255,255,0.08); border-radius:16px; position:relative; overflow:hidden; min-height:180px; display:flex; align-items:center; justify-content:center; }
+body.meeting-only #erp .meet-tile--active { border-color:rgba(110,231,255,0.5); box-shadow:0 0 0 2px rgba(110,231,255,0.25), 0 12px 30px rgba(0,0,0,0.35); }
+body.meeting-only #erp .meet-video,
+body.meeting-only #erp .meet-video-el { width:100%; height:100%; background:linear-gradient(135deg,rgba(24,30,40,0.9),rgba(14,16,22,0.95)); object-fit:cover; display:block; }
+body.meeting-only #erp .meet-name { position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.55); padding:4px 10px; border-radius:12px; font-size:12px; }
+body.meeting-only #erp .meet-stage { position:relative; }
+body.meeting-only #erp .meet-self-tile { position:absolute; right:16px; bottom:16px; width:200px; height:130px; background:#1a1d24; border:1px solid rgba(255,255,255,0.12); border-radius:14px; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,0.45); }
+body.meeting-only #erp .meet-self-tile .meet-video { height:100%; }
+body.meeting-only #erp .meet-self-tile .meet-name { left:8px; bottom:8px; }
+body.meeting-only #erp .meeting-controls-bar { display:flex; justify-content:center; gap:12px; padding:12px 8px; background:rgba(12,14,18,0.85); border:1px solid rgba(255,255,255,0.08); border-radius:999px; margin:0 auto 4px; position:sticky; bottom:12px; max-width:640px; backdrop-filter:blur(12px); }
+body.meeting-only #erp .meet-control { background:#20242d; color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:10px 14px; display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; transition:all 0.15s; }
+body.meeting-only #erp .meet-control:hover { background:#2a2f3a; }
+body.meeting-only #erp .meet-control.is-off { background:#3a1f1f; border-color:rgba(248,113,113,0.4); color:#fecaca; }
+body.meeting-only #erp .meet-control--danger { background:#ef4444; border-color:#ef4444; color:#fff; }
+body.meeting-only #erp .meet-control--danger:hover { background:#dc2626; }
+body.meeting-only #erp .meet-control-icon { font-size:14px; }
+body.meeting-only #erp .meet-control-label { font-size:12px; }
+body.meeting-only.meeting-cam-off #erp .meet-tile::after,
+body.meeting-only.meeting-cam-off #erp .meet-self-tile::after {
+  content:'Camera Off';
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,0.45);
+  color:#fff;
+  font-size:13px;
+  letter-spacing:0.04em;
+}
+body.meeting-only.meeting-mic-off #erp .meet-pill { background:rgba(248,113,113,0.18); border-color:rgba(248,113,113,0.35); color:#fecaca; }
+body.meeting-only #erp .meet-media-error {
+  background:rgba(248,113,113,0.12);
+  border:1px solid rgba(248,113,113,0.35);
+  color:#fecaca;
+  padding:10px 14px;
+  border-radius:12px;
+  font-size:12px;
+  margin-bottom:10px;
+}
 .module-section{display:none;animation:fadeUp 0.3s ease}
 .module-section.active{display:flex;flex-direction:column;flex:1}
 #add-feature.active .builder-shell{height:100%}
