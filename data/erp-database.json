@@ -8,7 +8,9 @@
     { "id": 6, "name": "Saanvi Rao", "email": "saanvi.rao@unisys.edu", "class": "11A", "dept": "ME", "fees_due": 8000, "attendance": 79, "status": "Active", "created_at": "2026-02-05" },
     { "id": 7, "name": "Vivaan Nair", "email": "vivaan.nair@unisys.edu", "class": "11B", "dept": "CSE", "fees_due": 3000, "attendance": 86, "status": "Active", "created_at": "2026-02-10" },
     { "id": 8, "name": "Anaya Das", "email": "anaya.das@unisys.edu", "class": "11B", "dept": "ECE", "fees_due": 5000, "attendance": 82, "status": "Active", "created_at": "2026-02-11" },
-    { "id": 104, "name": "Karan Gupta", "email": "karan.gupta@unisys.edu", "class": "10A", "dept": "CSE", "fees_due": 15000, "attendance": 0, "status": "Warning", "created_at": "2026-01-14" }
+    { "id": 104, "name": "Rishabh Devadiga", "email": "rishabh.devadiga@unisys.edu", "class": "10A", "dept": "CSE", "fees_due": 15000, "attendance": 0, "status": "Warning", "created_at": "2026-01-14" },
+    { "id": 105, "name": "Gaurav Pawar", "email": "gaurav.pawar@unisys.edu", "class": "10B", "dept": "ME", "fees_due": 18000, "attendance": 5, "status": "Warning", "created_at": "2026-01-20" },
+    { "id": 106, "name": "Ajinkya Rokade", "email": "ajinkya.rokade@unisys.edu", "class": "11A", "dept": "ECE", "fees_due": 20000, "attendance": 8, "status": "Warning", "created_at": "2026-02-03" }
   ],
   "fees": [
     { "id": 101, "student_id": 1, "student_name": "Aarav Singh", "class": "10A", "month": "Jan", "amount": 4000, "status": "Paid", "due_date": "2026-01-10" },
@@ -20,7 +22,13 @@
     { "id": 107, "student_id": 7, "student_name": "Vivaan Nair", "class": "11B", "month": "Feb", "amount": 4200, "status": "Paid", "due_date": "2026-02-10" },
     { "id": 108, "student_id": 8, "student_name": "Anaya Das", "class": "11B", "month": "Feb", "amount": 4200, "status": "Pending", "due_date": "2026-02-10" },
     { "id": 109, "student_id": 1, "student_name": "Aarav Singh", "class": "10A", "month": "Mar", "amount": 4000, "status": "Pending", "due_date": "2026-03-10" },
-    { "id": 110, "student_id": 3, "student_name": "Kabir Khan", "class": "10B", "month": "Mar", "amount": 4500, "status": "Pending", "due_date": "2026-03-10" }
+    { "id": 110, "student_id": 3, "student_name": "Kabir Khan", "class": "10B", "month": "Mar", "amount": 4500, "status": "Pending", "due_date": "2026-03-10" },
+    { "id": 111, "student_id": 105, "student_name": "Gaurav Pawar", "class": "10B", "month": "Jan", "amount": 5000, "status": "Pending", "due_date": "2026-01-10" },
+    { "id": 112, "student_id": 105, "student_name": "Gaurav Pawar", "class": "10B", "month": "Feb", "amount": 5000, "status": "Pending", "due_date": "2026-02-10" },
+    { "id": 113, "student_id": 105, "student_name": "Gaurav Pawar", "class": "10B", "month": "Mar", "amount": 5000, "status": "Pending", "due_date": "2026-03-10" },
+    { "id": 114, "student_id": 106, "student_name": "Ajinkya Rokade", "class": "11A", "month": "Jan", "amount": 5500, "status": "Pending", "due_date": "2026-01-10" },
+    { "id": 115, "student_id": 106, "student_name": "Ajinkya Rokade", "class": "11A", "month": "Feb", "amount": 5500, "status": "Pending", "due_date": "2026-02-10" },
+    { "id": 116, "student_id": 106, "student_name": "Ajinkya Rokade", "class": "11A", "month": "Mar", "amount": 5500, "status": "Pending", "due_date": "2026-03-10" }
   ],
   "attendance": [
     { "id": 201, "student_id": 1, "student_name": "Aarav Singh", "class": "10A", "month": "Jan", "attendance_pct": 92, "present_days": 23, "total_days": 25 },
@@ -31,8 +39,12 @@
     { "id": 206, "student_id": 6, "student_name": "Saanvi Rao", "class": "11A", "month": "Feb", "attendance_pct": 81, "present_days": 19, "total_days": 24 },
     { "id": 207, "student_id": 7, "student_name": "Vivaan Nair", "class": "11B", "month": "Feb", "attendance_pct": 86, "present_days": 21, "total_days": 24 },
     { "id": 208, "student_id": 8, "student_name": "Anaya Das", "class": "11B", "month": "Feb", "attendance_pct": 83, "present_days": 20, "total_days": 24 },
-    { "id": 209, "student_id": 104, "student_name": "Karan Gupta", "class": "10A", "month": "Mar", "attendance_pct": 0, "present_days": 0, "total_days": 20 },
+    { "id": 209, "student_id": 104, "student_name": "Rishabh Devadiga", "class": "10A", "month": "Mar", "attendance_pct": 0, "present_days": 0, "total_days": 20 },
     { "id": 210, "student_id": 3, "student_name": "Kabir Khan", "class": "10B", "month": "Mar", "attendance_pct": 72, "present_days": 18, "total_days": 25 },
-    { "id": 211, "student_id": 5, "student_name": "Ishaan Gupta", "class": "11A", "month": "Mar", "attendance_pct": 66, "present_days": 16, "total_days": 24 }
+    { "id": 211, "student_id": 5, "student_name": "Ishaan Gupta", "class": "11A", "month": "Mar", "attendance_pct": 66, "present_days": 16, "total_days": 24 },
+    { "id": 212, "student_id": 105, "student_name": "Gaurav Pawar", "class": "10B", "month": "Jan", "attendance_pct": 8, "present_days": 2, "total_days": 25 },
+    { "id": 213, "student_id": 105, "student_name": "Gaurav Pawar", "class": "10B", "month": "Feb", "attendance_pct": 4, "present_days": 1, "total_days": 24 },
+    { "id": 214, "student_id": 106, "student_name": "Ajinkya Rokade", "class": "11A", "month": "Jan", "attendance_pct": 12, "present_days": 3, "total_days": 25 },
+    { "id": 215, "student_id": 106, "student_name": "Ajinkya Rokade", "class": "11A", "month": "Feb", "attendance_pct": 8, "present_days": 2, "total_days": 24 }
   ]
 }
