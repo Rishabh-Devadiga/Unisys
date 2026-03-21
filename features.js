@@ -734,7 +734,7 @@ function buildTimeSlotOptions(selected) {
     var label = formatTimeSlot(val);
     var sel = selected === val ? ' selected' : '';
     opts += '<option value="' + val + '"' + sel + '>' + label + '</option>';
-    if (h === 17 && m === 0) break;
+    if (h === 16 && m === 30) break;
     m += 30;
     if (m >= 60) { m = 0; h += 1; }
   }
