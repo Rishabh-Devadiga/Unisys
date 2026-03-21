@@ -632,7 +632,7 @@ function buildRailwayOverview() {
   var scheduled = reqs.filter(function(r){ return (r.appointmentDate || r.status === 'Scheduled'); });
   var pending = reqs.filter(function(r){ return !r.appointmentDate && r.status !== 'Scheduled'; });
   return '<div class="module-header"><div class="module-title">Railway Concession Dashboard</div>'
-    + '<div class="module-sub">Track concession requests and assign appointment dates and times.</div></div>'
+    + '<div class="module-sub">Track concession requests and assign appointment dates and time slots.</div></div>'
     + '<div class="kpi-grid">'
     + widgetKpi('Requests', reqs.length, 'Total submitted', 'up')
     + widgetKpi('Scheduled', scheduled.length, 'Appointments fixed', scheduled.length ? 'up' : 'neutral')
@@ -727,8 +727,8 @@ function buildRailwayConcessionAppointments() {
   });
 
   return '<div class="module-header"><div class="module-title">Railway Concession Scheduling</div>'
-    + '<div class="module-sub">Students request concessions; assign appointment date and time for verification.</div></div>'
-    + widgetTable(['Student','Roll','Route','Requested On','Status','Date','Time','Action'], rows);
+    + '<div class="module-sub">Students request concessions; assign appointment date and time slot for verification.</div></div>'
+    + widgetTable(['Student','Roll','Route','Requested On','Status','Date','Time Slot','Action'], rows);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1375,7 +1375,7 @@ function railwaySetAppointment(id) {
   var date = input ? input.value : '';
   var time = timeInput ? timeInput.value : '';
   if (!date) { showToast('Select appointment date', 'error'); return; }
-  if (!time) { showToast('Select appointment time', 'error'); return; }
+  if (!time) { showToast('Select appointment time slot', 'error'); return; }
   item.appointmentDate = date;
   item.appointmentTime = time;
   item.status = 'Scheduled';
