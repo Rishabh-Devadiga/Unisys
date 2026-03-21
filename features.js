@@ -701,6 +701,38 @@ function buildAdmissionsDocuments() {
     + widgetTable(['Student','Roll','Document','Status','Submitted On'], rows);
 }
 
+
+function formatTimeSlot(value) {
+  if (!value) return '—';
+  var parts = value.split(':');
+  if (parts.length < 2) return value;
+  var h = parseInt(parts[0], 10);
+  var m = parts[1];
+  if (isNaN(h)) return value;
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  var h12 = h % 12;
+  if (h12 === 0) h12 = 12;
+  return h12 + ':' + m + ' ' + ampm;
+}
+
+function buildTimeSlotOptions(selected) {
+  var opts = '<option value="">Select</option>';
+  var h = 9;
+  var m = 30;
+  while (true) {
+    var hh = (h < 10 ? '0' : '') + h;
+    var mm = (m < 10 ? '0' : '') + m;
+    var val = hh + ':' + mm;
+    var label = formatTimeSlot(val);
+    var sel = selected === val ? ' selected' : '';
+    opts += '<option value="' + val + '"' + sel + '>' + label + '</option>';
+    if (h === 17 && m === 0) break;
+    m += 30;
+    if (m >= 60) { m = 0; h += 1; }
+  }
+  return opts;
+}
+
 function buildRailwayConcessionAppointments() {
   var db = dbGet();
   var rows = (db.concessionRequests || []).map(function(r){
@@ -711,7 +743,7 @@ function buildRailwayConcessionAppointments() {
     var btnLabel = r.appointmentDate ? 'Update' : 'Set';
     var action = '<div style="display:flex;gap:6px;align-items:center">'
       + '<input type="date" class="form-input" id="'+inputId+'" value="'+(r.appointmentDate || '')+'"/>'
-      + '<input type="time" class="form-input" id="'+timeId+'" value="'+(r.appointmentTime || '')+'"/>'
+      + '<select class="form-select" id="'+timeId+'">'+buildTimeSlotOptions(r.appointmentTime)+'</select>'
       + '<button class="btn btn-sm btn-primary" onclick="railwaySetAppointment('+r.id+')">'+btnLabel+'</button>'
       + '</div>';
     return [
@@ -721,7 +753,7 @@ function buildRailwayConcessionAppointments() {
       r.requestDate || '—',
       sbadge(status),
       r.appointmentDate || '—',
-      r.appointmentTime || '—',
+      formatTimeSlot(r.appointmentTime),
       action
     ];
   });
