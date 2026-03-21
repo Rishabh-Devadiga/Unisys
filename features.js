@@ -185,9 +185,9 @@ var EXT_SEED = {
 
   /* Railway concession requests */
   concessionRequests: [
-    { id:1, studentId:2, route:'Bengaluru - Mysore',  requestDate:'2026-03-12', status:'Requested', appointmentDate:'' },
-    { id:2, studentId:4, route:'Mysore - Bengaluru',  requestDate:'2026-03-11', status:'Requested', appointmentDate:'' },
-    { id:3, studentId:9, route:'Bengaluru - Chennai', requestDate:'2026-03-08', status:'Scheduled', appointmentDate:'2026-03-18' }
+    { id:1, studentId:2, route:'Bengaluru - Mysore',  requestDate:'2026-03-12', status:'Requested', appointmentDate:'', appointmentTime:'' },
+    { id:2, studentId:4, route:'Mysore - Bengaluru',  requestDate:'2026-03-11', status:'Requested', appointmentDate:'', appointmentTime:'' },
+    { id:3, studentId:9, route:'Bengaluru - Chennai', requestDate:'2026-03-08', status:'Scheduled', appointmentDate:'2026-03-18', appointmentTime:'10:30' }
   ],
 
   /* Student behavior records */
@@ -632,7 +632,7 @@ function buildRailwayOverview() {
   var scheduled = reqs.filter(function(r){ return (r.appointmentDate || r.status === 'Scheduled'); });
   var pending = reqs.filter(function(r){ return !r.appointmentDate && r.status !== 'Scheduled'; });
   return '<div class="module-header"><div class="module-title">Railway Concession Dashboard</div>'
-    + '<div class="module-sub">Track concession requests and assign appointment dates.</div></div>'
+    + '<div class="module-sub">Track concession requests and assign appointment dates and times.</div></div>'
     + '<div class="kpi-grid">'
     + widgetKpi('Requests', reqs.length, 'Total submitted', 'up')
     + widgetKpi('Scheduled', scheduled.length, 'Appointments fixed', scheduled.length ? 'up' : 'neutral')
@@ -707,9 +707,11 @@ function buildRailwayConcessionAppointments() {
     var s = findStudentById(db, r.studentId);
     var status = r.appointmentDate ? 'Scheduled' : (r.status || 'Requested');
     var inputId = 'rc-appt-' + r.id;
+    var timeId = 'rc-time-' + r.id;
     var btnLabel = r.appointmentDate ? 'Update' : 'Set';
     var action = '<div style="display:flex;gap:6px;align-items:center">'
       + '<input type="date" class="form-input" id="'+inputId+'" value="'+(r.appointmentDate || '')+'"/>'
+      + '<input type="time" class="form-input" id="'+timeId+'" value="'+(r.appointmentTime || '')+'"/>'
       + '<button class="btn btn-sm btn-primary" onclick="railwaySetAppointment('+r.id+')">'+btnLabel+'</button>'
       + '</div>';
     return [
@@ -719,13 +721,14 @@ function buildRailwayConcessionAppointments() {
       r.requestDate || '—',
       sbadge(status),
       r.appointmentDate || '—',
+      r.appointmentTime || '—',
       action
     ];
   });
 
-  return '<div class="module-header"><div class="module-title">Railway Concession Appointments</div>'
-    + '<div class="module-sub">Students request concessions; assign an appointment date for verification.</div></div>'
-    + widgetTable(['Student','Roll','Route','Requested On','Status','Appointment','Action'], rows);
+  return '<div class="module-header"><div class="module-title">Railway Concession Scheduling</div>'
+    + '<div class="module-sub">Students request concessions; assign appointment date and time for verification.</div></div>'
+    + widgetTable(['Student','Roll','Route','Requested On','Status','Date','Time','Action'], rows);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1368,9 +1371,13 @@ function railwaySetAppointment(id) {
   var item = (db.concessionRequests || []).find(function(x){ return x.id === id; });
   if (!item) return;
   var input = g('rc-appt-' + id);
+  var timeInput = g('rc-time-' + id);
   var date = input ? input.value : '';
+  var time = timeInput ? timeInput.value : '';
   if (!date) { showToast('Select appointment date', 'error'); return; }
+  if (!time) { showToast('Select appointment time', 'error'); return; }
   item.appointmentDate = date;
+  item.appointmentTime = time;
   item.status = 'Scheduled';
   dbSave(db);
   showToast('Appointment scheduled');
@@ -3115,7 +3122,7 @@ ROLE_NAV.Admissions = (ROLE_NAV.Admissions || []).concat([
   { id:'role-admission-docs',  icon:'📁', label:'Student Documents', section:'Admissions — Students' }
 ]);
 ROLE_NAV['Railway Concession'] = (ROLE_NAV['Railway Concession'] || []).concat([
-  { id:'role-railway-concession', icon:'🚆', label:'Concession Appointments', section:'Railway — Concession' }
+  { id:'role-railway-concession', icon:'🚆', label:'Concession Scheduling', section:'Railway — Concession' }
 ]);
 
 /* Force re-apply role nav when ERP is already active (handles hot-load) */
