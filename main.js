@@ -640,6 +640,15 @@ function initERP() {
   if (window.FeatureBuilder && typeof window.FeatureBuilder.init === 'function') {
     window.FeatureBuilder.init();
   }
+
+  /* Debug: Verify Add Feature button exists */
+  var addFeatureBtn = document.querySelector('.nav-item[data-module="add-feature"]');
+  var addFeatureSection = document.getElementById('add-feature');
+  console.log('[ADD FEATURE] Button found:', !!addFeatureBtn, 'Section found:', !!addFeatureSection);
+  if (addFeatureBtn) {
+    console.log('[ADD FEATURE] Button text:', addFeatureBtn.textContent.trim());
+    console.log('[ADD FEATURE] Button classes:', addFeatureBtn.className);
+  }
 }
 
 /* ── ACCESS PAGE ───────────────────────────────── */
