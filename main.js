@@ -725,11 +725,12 @@ function sendEmailsToDefaulters() {
       'Total: ' + data.totalStudents + ' students<br>' +
       'Sent: ' + data.successCount + '<br>' +
       'Failed: ' + data.failureCount + '<br><br>' +
+      'From: ' + (data.fromEmail || 'edusysalert@gmail.com') + '<br>' +
       '<small>' + data.message + '</small>';
     statusDiv.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
     statusDiv.style.borderColor = 'rgba(34, 197, 94, 0.3)';
     statusDiv.style.color = 'var(--green)';
-    showToast('Warning emails sent to ' + data.successCount + ' defaulters!', 'success');
+    showToast('SMTP sent from ' + (data.fromEmail || 'edusysalert@gmail.com') + ' to ' + data.successCount + ' defaulters!', 'success');
   })
   .catch(function(error) {
     // Handle error
