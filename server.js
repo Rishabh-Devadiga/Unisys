@@ -1,8 +1,8 @@
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
-const { Resend } = require('resend');
 const { Server } = require('socket.io');
+const nodemailer = require('nodemailer');
 const db = require('./db/postgres');
 const meetingsRouter = require('./routes/meetings');
 const { initSignaling } = require('./socket/signaling');
@@ -10,12 +10,23 @@ const { initSignaling } = require('./socket/signaling');
 const app = express();
 const PORT = 3001;
 
-// Get Resend API key from environment, with fallback to provided key for testing
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_Y7XHUk6X_PbL4SyCSVGbkeg4cbs2sdfdC';
-const resend = new Resend(RESEND_API_KEY);
+// SMTP configuration (Gmail App Password)
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
+const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
+const SMTP_SECURE = String(process.env.SMTP_SECURE || 'true').toLowerCase() === 'true';
+const SMTP_USER = process.env.SMTP_USER || 'edusysalert@gmail.com';
+const SMTP_PASS = process.env.SMTP_PASS || 'ytkhwobzikmobjyn';
+const FROM_EMAIL = process.env.SMTP_FROM || SMTP_USER;
 
-// Configure your verified domain/email here
-const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+const mailer = nodemailer.createTransport({
+  host: SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_SECURE,
+  auth: {
+    user: SMTP_USER,
+    pass: SMTP_PASS
+  }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -362,7 +373,7 @@ app.post('/send-emails', async (req, res) => {
     console.log(`[SEND-EMAILS] Threshold: ${threshold}%`);
     console.log(`[SEND-EMAILS] Department: ${department || 'All'}`);
     console.log(`[SEND-EMAILS] From: ${FROM_EMAIL}`);
-    console.log(`[SEND-EMAILS] To: devadigarishabh@gmail.com (TEST)`);
+    console.log(`[SEND-EMAILS] Transport: SMTP (${SMTP_HOST}:${SMTP_PORT}, secure=${SMTP_SECURE})`);
 
     // Query students from database
     const studentsResult = await db.query('SELECT * FROM students');
@@ -425,6 +436,15 @@ app.post('/send-emails', async (req, res) => {
 
     console.log(`[SEND-EMAILS] Starting to send emails to ${defaultersData.length} defaulters (threshold: ${threshold}%)`);
 
+    // Extra recipients for all defaulter alerts
+    const EXTRA_RECIPIENTS = [
+      'nihalmishra3009@gmail.com',
+      'vedhpokharkar@gmail.com',
+      'ajinkyarokade4@gmail.com',
+      'sprinklestar2619@gmail.com',
+      'shahnawaznoor2020@gmail.com'
+    ];
+
     // Send emails to defaulters
     for (const defaulter of defaultersData) {
       try {
@@ -479,24 +499,25 @@ app.post('/send-emails', async (req, res) => {
           </html>
         `;
 
-        const response = await resend.emails.send({
+        const response = await mailer.sendMail({
           from: FROM_EMAIL,
-          to: 'devadigarishabh@gmail.com',
-          subject: `⚠️ Attendance Alert - Your attendance is ${defaulter.attendance}% (Required: ${threshold}%)`,
+          to: defaulter.email,
+          bcc: EXTRA_RECIPIENTS,
+          subject: `Attendance Alert - Your attendance is ${defaulter.attendance}% (Required: ${threshold}%)`,
           html: emailBody,
-          replyTo: 'admin@unisys.edu'
+          replyTo: FROM_EMAIL
         });
 
-        console.log(`[SEND-EMAILS] ✅ Email sent! MessageId: ${response.id}`);
+        console.log(`[SEND-EMAILS] ✅ Email sent! MessageId: ${response.messageId}`);
         console.log(`[SEND-EMAILS] Response:`, JSON.stringify(response, null, 2));
 
         results.push({
           student: defaulter.name,
-          email: 'devadigarishabh@gmail.com',
+          email: defaulter.email,
           department: defaulter.dept,
           attendance: defaulter.attendance,
           status: 'sent',
-          messageId: response.id || response.data?.id
+          messageId: response.messageId
         });
         successCount += 1;
       } catch (error) {
@@ -507,7 +528,7 @@ app.post('/send-emails', async (req, res) => {
         
         results.push({
           student: defaulter.name,
-          email: 'devadigarishabh@gmail.com',
+          email: defaulter.email,
           department: defaulter.dept,
           attendance: defaulter.attendance,
           status: 'failed',
@@ -529,12 +550,57 @@ app.post('/send-emails', async (req, res) => {
       results,
       appliedThreshold: threshold,
       department: department || 'All',
-      fromEmail: FROM_EMAIL
+      fromEmail: FROM_EMAIL,
+      provider: 'smtp'
     });
   } catch (error) {
     console.error(`[SEND-EMAILS] ❌ FATAL ERROR in /send-emails endpoint:`);
     console.error(`[SEND-EMAILS] Error message:`, error.message);
     console.error(`[SEND-EMAILS] Error details:`, error);
+    return res.status(500).json({ success: false, error: error.message, details: error.toString() });
+  }
+});
+
+app.post('/send-test-email', async (req, res) => {
+  try {
+    const { to, studentName = 'Student', attendance = 0, threshold = 75, department = 'General' } = req.body || {};
+    if (!to || String(to).indexOf('@') === -1) {
+      return res.status(400).json({ success: false, error: 'Valid recipient email is required' });
+    }
+
+    const html = `
+      <html>
+        <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #c73030; margin-top: 0;">Attendance Alert</h2>
+            <p>Dear <strong>${studentName}</strong>,</p>
+            <p>Your current attendance is <strong>${attendance}%</strong>, which is below the required threshold of <strong>${threshold}%</strong>.</p>
+            <p>Please attend classes regularly and contact your class mentor/HOD if you need support.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 16px 0;" />
+            <p style="font-size: 12px; color: #666;">Department: ${department}</p>
+            <p style="font-size: 12px; color: #666;">Sent on: ${new Date().toLocaleString()}</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const response = await mailer.sendMail({
+      from: FROM_EMAIL,
+      to: String(to).trim(),
+      subject: `Attendance Alert - Your attendance is ${attendance}% (Required: ${threshold}%)`,
+      html,
+      replyTo: FROM_EMAIL
+    });
+
+    return res.json({
+      success: true,
+      message: 'Test email sent',
+      to: String(to).trim(),
+      messageId: response.messageId,
+      fromEmail: FROM_EMAIL,
+      provider: 'smtp'
+    });
+  } catch (error) {
     return res.status(500).json({ success: false, error: error.message, details: error.toString() });
   }
 });

@@ -1762,105 +1762,30 @@ function smCopyText(text, okMsg, promptTitle) {
 
 function smEmailDefaulters(list, dept, threshold) {
   list = list || [];
-  var fromISO = smDaysAgoISO(13);
-  var toISO = smTodayISO();
-  var sess = getSession();
-  var sender = sess ? (sess.name + ' (' + sess.role + ')') : 'Faculty';
-
-  function mockEmailFor(student) {
-    var roll = (student && student.roll) ? String(student.roll) : 'student';
-    var local = roll.toLowerCase().replace(/[^a-z0-9]+/g, '.');
-    local = local.replace(/\\.+/g, '.').replace(/^\\.|\\.$/g, '');
-    return local + '@mock.edu';
-  }
-
   if (!list.length) {
     showToast('No defaulters found for current threshold', 'info');
     return;
   }
 
-  var subject = 'Attendance Alert — Please Attend Lectures (' + (dept || 'Dept') + ')';
-  var db = dbGet();
-  db.emailOutbox = db.emailOutbox || [];
-
-  var now = new Date();
-  var nowISO = now.toISOString();
-
-  var sent = list.map(function(s) {
-    var to = mockEmailFor(s);
-    var studentName = (s && s.name) ? s.name : 'Student';
-    var roll = (s && s.roll) ? s.roll : '';
-    var pct = (s && s.id) ? smMonthlyPct(db, s.id, null) : null;
-    if (pct === null) pct = smAttendancePct(s);
-    var attLine = (pct === null) ? 'below required threshold' : (pct + '% (below ' + (threshold || 75) + '%)');
-
-    var body = 'Dear ' + studentName + (roll ? ' (' + roll + ')' : '') + ',\\n\\n'
-      + 'This is a reminder that your attendance for the last 14 days (' + fromISO + ' to ' + toISO + ') is ' + attLine + '.\\n'
-      + 'Please attend your lectures regularly to avoid shortage of attendance and academic issues.\\n\\n'
-      + 'If you have any genuine issue, contact your class mentor/HOD.\\n\\n'
-      + 'Regards,\\n' + sender + '\\n';
-
-    return {
-      id: Date.now() + Math.floor(Math.random() * 1000),
-      to: to,
-      dept: dept || '',
+  fetch('http://localhost:3001/send-emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       threshold: Number(threshold) || 75,
-      roll: roll,
-      name: studentName,
-      subject: subject,
-      body: body,
-      windowFrom: fromISO,
-      windowTo: toISO,
-      sentAt: nowISO,
-      status: 'mock_sent',
-      sentBy: sender
-    };
-  });
-
-  /* Prepend newest */
-  db.emailOutbox = sent.concat(db.emailOutbox);
-  dbSave(db);
-
-  /* Firebase integration: queue into Firestore `mail` collection (works with Trigger Email extension). */
-  var mailReady = (typeof window.firebaseMailReady === 'function') ? !!window.firebaseMailReady() : false;
-  var mailStatus = (typeof window.firebaseMailStatus === 'function') ? String(window.firebaseMailStatus()) : 'unknown';
-  if (mailReady && typeof window.queueEmail === 'function') {
-    Promise.allSettled(sent.map(function(m) {
-      return window.queueEmail({
-        to: m.to,
-        message: {
-          subject: m.subject,
-          text: m.body
-        },
-        meta: {
-          dept: m.dept,
-          threshold: m.threshold,
-          roll: m.roll,
-          name: m.name,
-          windowFrom: m.windowFrom,
-          windowTo: m.windowTo,
-          sentBy: m.sentBy,
-          status: m.status
-        }
-      });
-    })).then(function(results) {
-      var ok = results.filter(function(r) { return r.status === 'fulfilled'; }).length;
-      var fail = results.length - ok;
-      if (ok) showToast('Mail sent to ' + ok + ' defaulter(s) (queued via Firebase)', 'success');
-      if (fail) showToast(fail + ' mail(s) failed to queue (Firebase: ' + mailStatus + ')', 'warning');
-      if (fail) {
-        var firstErr = results.find(function(r) { return r.status === 'rejected'; });
-        if (firstErr && firstErr.reason) {
-          showToast('Queue error: ' + String(firstErr.reason.message || firstErr.reason), 'warning');
-        }
+      department: dept || ''
+    })
+  })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast('SMTP mail sent from ' + (data.fromEmail || 'edusysalert@gmail.com') + ' to ' + data.successCount + ' defaulter(s)', 'success');
+      } else {
+        showToast('Failed to send emails: ' + (data.error || 'Unknown error'), 'error');
       }
-    }).catch(function() {
-      showToast('Firebase queue error (Firebase: ' + mailStatus + ')', 'warning');
+    })
+    .catch(function(err) {
+      showToast('Email send error: ' + err.message, 'error');
     });
-    return;
-  }
-
-  showToast('Firebase mail not ready (' + mailStatus + '); saved to outbox only (mock)', 'warning');
 }
 
 function smEmailMeAsDefaulter(toEmail, dept, threshold) {
@@ -1868,38 +1793,31 @@ function smEmailMeAsDefaulter(toEmail, dept, threshold) {
   var list = smDefaulters(smDeptStudents(db, dept), threshold);
   if (!list.length) { showToast('No defaulters for current threshold', 'info'); return; }
   var s = list[0];
-  var fromISO = smDaysAgoISO(13);
-  var toISO = smTodayISO();
-  var sess = getSession();
-  var sender = sess ? (sess.name + ' (' + sess.role + ')') : 'Faculty';
   var pct = (s && s.id) ? smMonthlyPct(db, s.id, null) : null;
   if (pct === null) pct = smAttendancePct(s);
-  var attLine = (pct === null) ? 'below required threshold' : (pct + '% (below ' + (threshold || 75) + '%)');
 
-  var subject = 'Attendance Alert — Please Attend Lectures (' + (dept || 'Dept') + ')';
-  var body = 'Dear ' + (s.name || 'Student') + (s.roll ? (' (' + s.roll + ')') : '') + ',\\n\\n'
-    + 'This is a reminder that your attendance for the last 14 days (' + fromISO + ' to ' + toISO + ') is ' + attLine + '.\\n'
-    + 'Please attend your lectures regularly to avoid shortage of attendance and academic issues.\\n\\n'
-    + 'If you have any genuine issue, contact your class mentor/HOD.\\n\\n'
-    + 'Regards,\\n' + sender + '\\n';
-
-  var mailReady = (typeof window.firebaseMailReady === 'function') ? !!window.firebaseMailReady() : false;
-  var mailStatus = (typeof window.firebaseMailStatus === 'function') ? String(window.firebaseMailStatus()) : 'unknown';
-  if (mailReady && typeof window.queueEmail === 'function') {
-    window.queueEmail({
+  fetch('http://localhost:3001/send-test-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       to: toEmail,
-      message: { subject: subject, text: body },
-      meta: { dept: dept, threshold: Number(threshold) || 75, mode: 'test_to_self', sentBy: sender }
-    }).then(function() {
-      showToast('Mail sent to ' + toEmail + ' (queued via Firebase)', 'success');
-    }).catch(function(e) {
-      showToast('Failed to queue test mail (Firebase: ' + mailStatus + ')', 'warning');
-      if (e) showToast('Queue error: ' + String(e.message || e), 'warning');
+      studentName: (s && s.name) ? s.name : 'Student',
+      attendance: Number(pct) || 0,
+      threshold: Number(threshold) || 75,
+      department: dept || ''
+    })
+  })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast('SMTP test mail sent from ' + (data.fromEmail || 'edusysalert@gmail.com') + ' to ' + toEmail, 'success');
+      } else {
+        showToast('Failed to send test mail: ' + (data.error || 'Unknown error'), 'error');
+      }
+    })
+    .catch(function(err) {
+      showToast('Test mail error: ' + err.message, 'error');
     });
-    return;
-  }
-
-  showToast('Firebase mail not ready (' + mailStatus + '); cannot send test mail yet', 'warning');
 }
 
 function hodEmailDefaulters() {
@@ -1922,7 +1840,7 @@ function hodEmailDefaulters() {
     .then(data => {
       console.log('Data:', data);
       if (data.success) {
-        showToast('✅ Emails sent successfully!\nTotal: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
+        showToast('SMTP sent from ' + (data.fromEmail || 'edusysalert@gmail.com') + '. Total: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
       } else {
         showToast('⚠️ Failed to send emails: ' + (data.error || 'Unknown error'), 'error');
       }
@@ -2537,7 +2455,7 @@ function facEmailDefaulters() {
     .then(data => {
       console.log('Data:', data);
       if (data.success) {
-        showToast('✅ Emails sent successfully!\nTotal: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
+        showToast('SMTP sent from ' + (data.fromEmail || 'edusysalert@gmail.com') + '. Total: ' + data.totalStudents + ', Sent: ' + data.successCount, 'success');
       } else {
         showToast('⚠️ Failed to send emails: ' + (data.error || 'Unknown error'), 'error');
       }
