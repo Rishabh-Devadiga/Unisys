@@ -372,6 +372,48 @@ function getUserInstitute(user) {
 
 }
 
+function normalizeDept(input) {
+
+  var raw = safeTrim(input);
+
+  if (!raw) return '';
+
+  var db = dbGet();
+
+  var known = [];
+
+  if (db && db.departments && db.departments.length) {
+    known = db.departments.map(function(d) { return d.name; });
+  }
+
+  known = known.concat(['Finance','Admissions','Student Services','Administration','All','General']);
+
+  var match = known.find(function(k) { return k.toLowerCase() === raw.toLowerCase(); });
+
+  return match || raw;
+
+}
+
+function isKnownDept(name) {
+
+  var raw = safeTrim(name);
+
+  if (!raw) return false;
+
+  var db = dbGet();
+
+  var known = [];
+
+  if (db && db.departments && db.departments.length) {
+    known = db.departments.map(function(d) { return d.name; });
+  }
+
+  known = known.concat(['Finance','Admissions','Student Services','Administration','All','General']);
+
+  return known.some(function(k) { return k.toLowerCase() === raw.toLowerCase(); });
+
+}
+
 
 
 /* ── DB HELPERS ──────────────────────────────────────────────
@@ -641,6 +683,48 @@ function initAccessMode() {
 
   if (keyInput && storedKey && !safeTrim(keyInput.value)) keyInput.value = storedKey;
 
+  bindAccessApprovalHint();
+
+}
+
+function updateAccessApprovalHint() {
+
+  var roleEl = document.getElementById('signup-role');
+
+  var hintEl = document.getElementById('access-approval-hint');
+
+  if (!roleEl || !hintEl) return;
+
+  var role = safeTrim(roleEl.value) || 'Faculty';
+
+  var approver = (role === 'Faculty') ? 'HOD' : 'Principal';
+
+  hintEl.textContent = 'Your request is sent to the ' + approver + ' for approval before access is granted.';
+
+}
+
+
+
+function bindAccessApprovalHint() {
+
+  var roleEl = document.getElementById('signup-role');
+
+  if (!roleEl) return;
+
+  if (roleEl.dataset && roleEl.dataset.approvalHint === '1') {
+
+    updateAccessApprovalHint();
+
+    return;
+
+  }
+
+  roleEl.addEventListener('change', updateAccessApprovalHint);
+
+  if (roleEl.dataset) roleEl.dataset.approvalHint = '1';
+
+  updateAccessApprovalHint();
+
 }
 
 
@@ -689,7 +773,8 @@ function requestAccess() {
 
   var role = safeTrim((document.getElementById('signup-role') || {}).value) || 'Faculty';
 
-  var dept = safeTrim((document.getElementById('signup-dept') || {}).value) || 'General';
+  var deptRaw = safeTrim((document.getElementById('signup-dept') || {}).value);
+  var dept = normalizeDept(deptRaw) || 'General';
 
   var institute = safeTrim((document.getElementById('signup-institute') || {}).value) || getCurrentInstitute();
 
@@ -704,6 +789,10 @@ function requestAccess() {
   if (!emailRegex.test(email)) return showErr('Please enter a valid email address');
 
   if (password.length < 8) return showErr('Password must be at least 8 characters');
+
+  if ((role === 'Faculty' || role === 'HOD') && !isKnownDept(dept)) {
+    return showErr('Please choose a valid department so the approval reaches the correct HOD.');
+  }
 
 
 
