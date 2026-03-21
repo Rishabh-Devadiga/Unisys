@@ -143,8 +143,10 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .notif-btn{display:flex;align-items:center}
 .notif-btn{position:relative}
 .notif-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid var(--nav-bg)}
-.logout-btn{width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center}
-.logout-svg{width:22px;height:22px;display:block;filter:drop-shadow(0 0 6px rgba(239,68,68,0.5))}
+.logout-btn{width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;order:99;color:var(--red);background:rgba(248,113,113,0.15);border-color:rgba(248,113,113,0.3)}
+.logout-btn:hover{background:rgba(248,113,113,0.25);border-color:rgba(248,113,113,0.45)}
+.logout-svg,.logout-icon{width:22px;height:22px;display:block;filter:drop-shadow(0 0 6px rgba(239,68,68,0.5))}
+.logout-icon path{stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .module-wrap{padding:28px;flex:1;overflow-y:auto}
 .module-section{display:none;animation:fadeUp 0.3s ease}
 .module-section.active{display:block}

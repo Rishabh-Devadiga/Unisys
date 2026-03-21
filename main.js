@@ -799,12 +799,19 @@ function showCreateRecord() {
 /* ── LOGOUT HANDLER ────────────────────────────── */
 window.handleNavbarLogout = async function handleNavbarLogout() {
   try {
-    if (typeof window.logout === "function") return await window.logout();
-    if (typeof window.handleLogout === "function" && window.handleLogout !== window.handleNavbarLogout) {
-      return await window.handleLogout();
-    }
     if (window.supabase_client?.auth?.signOut) {
       await window.supabase_client.auth.signOut();
+    }
+    let handled = false;
+    if (typeof window.logout === "function") {
+      await window.logout();
+      handled = true;
+    } else if (typeof window.handleLogout === "function" && window.handleLogout !== window.handleNavbarLogout) {
+      await window.handleLogout();
+      handled = true;
+    }
+    if (!handled && typeof window.authLogout === "function") {
+      window.authLogout();
     }
   } catch (err) {
     console.error("Logout failed:", err);
