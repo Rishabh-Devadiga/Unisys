@@ -930,7 +930,7 @@ var ROLE_MODULES = {
 
     'communications','compliance','integrations','analytics','attainment',
 
-    'coverage',
+    'coverage','add-feature',
 
     /* Admin-only extras */
 
@@ -939,21 +939,21 @@ var ROLE_MODULES = {
   ],
 
   Head: [
-    'overview','students','finance','attendance','analytics','communications','compliance',
+    'overview','students','finance','attendance','analytics','communications','compliance','add-feature',
     /* Head-only extras */
     'role-perf','role-proposals','role-accounts','role-strategic'
   ],
 
   HOD: [
     'overview','students','academics','exams','faculty',
-    'compliance','analytics','communications',
+    'compliance','analytics','communications','add-feature',
     /* HOD-only extras */
     'role-dept','role-timetable','role-leave','role-marks','role-hod-accounts'
   ],
 
   Faculty: [
 
-    'overview',
+    'overview','add-feature',
 
     /* Faculty-only */
 
@@ -965,19 +965,19 @@ var ROLE_MODULES = {
 
   Account: [
 
-    'overview','students','communications','analytics'
+    'overview','students','communications','analytics','add-feature'
 
   ],
 
   Admissions: [
 
-    'overview','students'
+    'overview','students','add-feature'
 
   ],
 
   'Railway Concession': [
 
-    'overview'
+    'overview','add-feature'
 
   ]
 

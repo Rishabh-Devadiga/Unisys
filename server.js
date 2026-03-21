@@ -11,7 +11,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_Y7XHUk6X_PbL4SyCSVGbkeg
 const resend = new Resend(RESEND_API_KEY);
 
 // Configure your verified domain/email here
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@unisys.edu';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
 app.use(cors());
 app.use(express.json());
@@ -334,13 +334,21 @@ app.post('/send-emails', async (req, res) => {
     let successCount = 0;
     let failureCount = 0;
 
+    console.log(`\n[SEND-EMAILS] ========== EMAIL SEND REQUEST ==========`);
+    console.log(`[SEND-EMAILS] Threshold: ${threshold}%`);
+    console.log(`[SEND-EMAILS] Department: ${department || 'All'}`);
+    console.log(`[SEND-EMAILS] From: ${FROM_EMAIL}`);
+    console.log(`[SEND-EMAILS] To: devadigarishabh@gmail.com (TEST)`);
+
     // Query students from database
     const studentsResult = await db.query('SELECT * FROM students');
     const studentsData = studentsResult.rows || [];
+    console.log(`[SEND-EMAILS] ✓ Found ${studentsData.length} total students in database`);
 
     // Query attendance data
     const attendanceResult = await db.query('SELECT * FROM attendance');
     const attendanceData = attendanceResult.rows || [];
+    console.log(`[SEND-EMAILS] ✓ Found ${attendanceData.length} total attendance records`);
 
     // Filter students by department and find defaulters
     const defaultersData = studentsData
@@ -354,16 +362,42 @@ app.post('/send-emails', async (req, res) => {
           ? studentAttendance.reduce((sum, att) => sum + (att.attendance_pct || 0), 0) / studentAttendance.length
           : student.attendance || 0;
         
+        // Ensure email exists (create fallback if null/empty)
+        const email = student.email || `${student.name.toLowerCase().replace(/\s+/g, '.')}@unisys.edu`;
+        
+        console.log(`[SEND-EMAILS] Student: ${student.name} (${student.id}) - Attendance: ${Math.round(avgAttendance)}%`);
+        
         return {
           id: student.id,
           name: student.name,
-          email: student.email || `${student.name.toLowerCase().replace(/\s+/g, '.')}@unisys.edu`,
+          email: email,
           attendance: Math.round(avgAttendance),
           dept: student.dept,
           class: student.class
         };
       })
-      .filter(student => student.attendance < threshold && student.email);
+      .filter(student => {
+        const isDefaulter = student.attendance < threshold;
+        if (isDefaulter) {
+          console.log(`[SEND-EMAILS] ⚠️  DEFAULTER FOUND: ${student.name} (${student.attendance}% < ${threshold}%)`);
+        }
+        return isDefaulter;
+      });
+
+    console.log(`[SEND-EMAILS] ✓ Found ${defaultersData.length} defaulters to email`);
+
+    if (defaultersData.length === 0) {
+      console.log(`[SEND-EMAILS] ⚠️  No defaulters found! Check students table and attendance data.`);
+      return res.json({
+        success: true,
+        message: 'No defaulters found',
+        totalStudents: studentsData.length,
+        attendanceRecords: attendanceData.length,
+        successCount: 0,
+        failureCount: 0,
+        results: []
+      });
+    }
 
     console.log(`[SEND-EMAILS] Starting to send emails to ${defaultersData.length} defaulters (threshold: ${threshold}%)`);
 
@@ -423,17 +457,18 @@ app.post('/send-emails', async (req, res) => {
 
         const response = await resend.emails.send({
           from: FROM_EMAIL,
-          to: defaulter.email,
+          to: 'devadigarishabh@gmail.com',
           subject: `⚠️ Attendance Alert - Your attendance is ${defaulter.attendance}% (Required: ${threshold}%)`,
           html: emailBody,
           replyTo: 'admin@unisys.edu'
         });
 
-        console.log(`[SEND-EMAILS] ✅ Email sent to ${defaulter.email}. MessageId: ${response.id}`);
+        console.log(`[SEND-EMAILS] ✅ Email sent! MessageId: ${response.id}`);
+        console.log(`[SEND-EMAILS] Response:`, JSON.stringify(response, null, 2));
 
         results.push({
           student: defaulter.name,
-          email: defaulter.email,
+          email: 'devadigarishabh@gmail.com',
           department: defaulter.dept,
           attendance: defaulter.attendance,
           status: 'sent',
@@ -441,11 +476,14 @@ app.post('/send-emails', async (req, res) => {
         });
         successCount += 1;
       } catch (error) {
-        console.error(`[SEND-EMAILS] ❌ Failed to send email to ${defaulter.email}:`, error.message);
+        console.error(`[SEND-EMAILS] ❌ Failed to send email:`);
+        console.error(`[SEND-EMAILS]   Student: ${defaulter.name}`);
+        console.error(`[SEND-EMAILS]   Error: ${error.message}`);
+        console.error(`[SEND-EMAILS]   Full error:`, error);
         
         results.push({
           student: defaulter.name,
-          email: defaulter.email,
+          email: 'devadigarishabh@gmail.com',
           department: defaulter.dept,
           attendance: defaulter.attendance,
           status: 'failed',
@@ -456,6 +494,7 @@ app.post('/send-emails', async (req, res) => {
     }
 
     console.log(`[SEND-EMAILS] Complete. Success: ${successCount}, Failed: ${failureCount}`);
+    console.log(`[SEND-EMAILS] ==========================================\n`);
 
     return res.json({
       success: failureCount === 0,
@@ -469,8 +508,10 @@ app.post('/send-emails', async (req, res) => {
       fromEmail: FROM_EMAIL
     });
   } catch (error) {
-    console.error('[SEND-EMAILS] Error in /send-emails endpoint:', error);
-    return res.status(500).json({ success: false, error: error.message });
+    console.error(`[SEND-EMAILS] ❌ FATAL ERROR in /send-emails endpoint:`);
+    console.error(`[SEND-EMAILS] Error message:`, error.message);
+    console.error(`[SEND-EMAILS] Error details:`, error);
+    return res.status(500).json({ success: false, error: error.message, details: error.toString() });
   }
 });
 

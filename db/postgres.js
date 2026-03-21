@@ -32,6 +32,7 @@ async function ensureSchema() {
     CREATE TABLE IF NOT EXISTS students (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
+      email TEXT,
       class TEXT,
       dept TEXT,
       fees_due NUMERIC DEFAULT 0,
@@ -40,6 +41,13 @@ async function ensureSchema() {
       created_at DATE
     );
   `);
+  
+  // Add email column if it doesn't exist
+  try {
+    await query(`ALTER TABLE students ADD COLUMN email TEXT;`);
+  } catch (e) {
+    // Column likely already exists, ignore
+  }
 
   await query(`
     CREATE TABLE IF NOT EXISTS fees (
