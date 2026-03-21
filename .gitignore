@@ -1,10 +1,11 @@
 # Local-only / secrets
+.env
 .firebaserc
 functions/.env
 
 # Dependencies
+node_modules/
 functions/node_modules/
 
 # Logs
 *.log
-
