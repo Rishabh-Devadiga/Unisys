@@ -1,6 +1,6 @@
 /* ============================================================
    features.js — UniSys EduSys Extended Feature Set
-   Implements all features from the Admin/Principal spec (Doc 1)
+   Implements all features from the Admin/Head spec (Doc 1)
    and the Professor/OBE spec (Doc 2).
    Extends roles.js without modifying any existing file.
    All data via localStorage (demo mode — no backend).
@@ -103,7 +103,7 @@ var EXT_SEED = {
       targetSem:'2026-27 Odd', status:'Planned', createdOn:'2026-03-14' }
   ],
 
-  /* Workflow approvals queue (Admin/Principal) */
+  /* Workflow approvals queue (Admin/Head) */
   approvalQueue: [
     { id:1, type:'Budget Request',    requester:'Dr. Rajiv Rao',    dept:'CSE', amount:120000, description:'DSP Lab upgrade — 15 new units', status:'Pending', date:'2026-03-12' },
     { id:2, type:'Leave Application', requester:'Prof. Meera Singh',dept:'CSE', amount:null,   description:'Personal leave 3 days (Mar 17-19)', status:'Pending', date:'2026-03-10' },
@@ -111,7 +111,7 @@ var EXT_SEED = {
     { id:4, type:'Event Approval',    requester:'T&P Cell',         dept:'CSE', amount:15000, description:'Infosys campus drive logistics', status:'Approved', date:'2026-03-05' }
   ],
 
-  /* Financial summary for Admin/Principal */
+  /* Financial summary for Admin/Head */
   financialSummary: {
     tuitionRevenue:  48000000,
     hostelRevenue:   8500000,
@@ -249,7 +249,7 @@ window.dbGet = function() {
 
 /* ══════════════════════════════════════════════════════════
    SHARED OBE HELPERS
-   Reusable across Faculty, HOD, and Admin/Principal sections.
+   Reusable across Faculty, HOD, and Admin/Head sections.
    ══════════════════════════════════════════════════════════ */
 
 /* Calculate attainment level (0–3) from percentage */
@@ -729,10 +729,10 @@ function buildRailwayConcessionAppointments() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   PRINCIPAL EXTENDED SECTIONS
+   HEAD EXTENDED SECTIONS
    ══════════════════════════════════════════════════════════ */
 
-/* Principal: Student Enrollment Statistics */
+/* Head: Student Enrollment Statistics */
 function buildPrincipalEnrollment() {
   return '<div class="module-header"><div class="module-title">Student Enrollment Statistics</div>'
     + '<div class="module-sub">Enrollment trends, demographic analytics, diversity metrics, and conversion funnel reporting.</div></div>'
@@ -760,7 +760,7 @@ function buildPrincipalEnrollment() {
     + '</div></div></div>';
 }
 
-/* Principal: OBE Programme Overview */
+/* Head: OBE Programme Overview */
 function buildPrincipalOBE() {
   var db = dbGet();
   var coAtt = db.coAttainment || [];
@@ -792,7 +792,7 @@ function buildPrincipalOBE() {
     + '</div>';
 }
 
-/* Principal: Institutional Attendance Reports */
+/* Head: Institutional Attendance Reports */
 function buildPrincipalAttendance() {
   var db = dbGet();
   return '<div class="module-header"><div class="module-title">Institutional Attendance Reports</div>'
@@ -818,7 +818,7 @@ function buildPrincipalAttendance() {
     + '</div>';
 }
 
-/* Principal: Academic Calendar */
+/* Head: Academic Calendar */
 function buildPrincipalCalendar() {
   var db = dbGet();
   return '<div class="module-header"><div class="module-title">Academic Calendar</div>'
@@ -835,7 +835,7 @@ function buildPrincipalCalendar() {
     + '</div></div>';
 }
 
-/* Principal: Communication & Notifications Hub */
+/* Head: Communication & Notifications Hub */
 function buildPrincipalComms() {
   var db = dbGet();
   return '<div class="module-header"><div class="module-title">Communications &amp; Notification Hub</div>'
@@ -1289,7 +1289,7 @@ function buildHODOBE() {
             p.action.substring(0,35)+'…', '<span class="badge badge-'+sc+'">'+p.status+'</span>', p.targetSem];
         }))
     + '<div class="form-actions" style="margin-top:14px">'
-    + '<button class="btn btn-primary" onclick="showToast(\'Dept OBE report submitted to Principal\')">📤 Submit to Principal</button>'
+    + '<button class="btn btn-primary" onclick="showToast(\'Dept OBE report submitted to Head\')">📤 Submit to Head</button>'
     + '<button class="btn btn-sm" onclick="showToast(\'NBA Annual Report PDF generated\')">Export NBA Report</button>'
     + '</div></div>';
 }
@@ -2994,7 +2994,7 @@ Object.assign(SECTION_BUILDERS, {
   'role-admission-caste':     buildAdmissionsCasteCategory,
   'role-admission-docs':      buildAdmissionsDocuments,
   'role-railway-concession':  buildRailwayConcessionAppointments,
-  /* Principal new */
+  /* Head new */
   'role-enrollment':  buildPrincipalEnrollment,
   'role-obe-principal': buildPrincipalOBE,
   'role-attendance-report': buildPrincipalAttendance,
@@ -3034,7 +3034,7 @@ ROLE_MODULES.Admin = ROLE_MODULES.Admin.concat([
   'role-lifecycle','role-admissions','role-academic','role-financial',
   'role-approvals','role-multicampus','role-obe-admin','role-resources'
 ]);
-ROLE_MODULES.Principal = ROLE_MODULES.Principal.concat([
+ROLE_MODULES.Head = ROLE_MODULES.Head.concat([
   'role-enrollment','role-obe-principal','role-attendance-report',
   'role-calendar','role-comms'
 ]);
@@ -3070,22 +3070,22 @@ ROLE_NAV.Admin = ROLE_NAV.Admin.concat([
   { id:'role-resources',   icon:'🏗',  label:'Resource Booking',     section:'Admin — Operations' },
   { id:'role-multicampus', icon:'🌐', label:'Multi-Campus',         section:'Admin — Operations' }
 ]);
-ROLE_NAV.Principal = ROLE_NAV.Principal.concat([
-  { id:'role-enrollment',        icon:'📈', label:'Enrollment Stats',      section:'Principal — Academic' },
-  { id:'role-obe-principal',     icon:'🎯', label:'OBE & CO Attainment',   section:'Principal — Academic' },
-  { id:'role-attendance-report', icon:'📍', label:'Attendance Reports',    section:'Principal — Academic' },
-  { id:'role-calendar',          icon:'🗓', label:'Academic Calendar',     section:'Principal — Admin' },
-  { id:'role-comms',             icon:'📣', label:'Comm. Hub',             section:'Principal — Admin' }
+ROLE_NAV.Head = ROLE_NAV.Head.concat([
+  { id:'role-enrollment',        icon:'📈', label:'Enrollment Stats',      section:'Head — Academic' },
+  { id:'role-attendance-report', icon:'📍', label:'Attendance Reports',    section:'Head — Academic' },
+  { id:'role-obe-principal',     icon:'🎯', label:'OBE & CO Attainment',   section:'Head — Academic' },
+  { id:'role-calendar',          icon:'🗓', label:'Academic Calendar',     section:'Head — Admin' },
+  { id:'role-comms',             icon:'📣', label:'Comm. Hub',             section:'Head — Admin' }
 ]);
 ROLE_NAV.HOD = ROLE_NAV.HOD.concat([
-  { id:'role-hod-obe',       icon:'🎯', label:'OBE Roll-Up',         section:'HOD — OBE' },
-  { id:'role-hod-analytics', icon:'📊', label:'Dept Analytics',      section:'HOD — OBE' },
   { id:'role-hod-attendance', icon:'📍', label:'Attendance Tracking',  section:'HOD — Student Mgmt' },
   { id:'role-hod-defaulters', icon:'⚠️', label:'Defaulters',         section:'HOD — Student Mgmt' },
   { id:'role-hod-cia-ese',    icon:'📝', label:'CIA & ESE',           section:'HOD — Student Mgmt' },
   { id:'role-hod-behavior',   icon:'🏷', label:'Behavior',            section:'HOD — Student Mgmt' },
   { id:'role-hod-performance', icon:'📈', label:'Student Performance', section:'HOD — Student Mgmt' },
-  { id:'role-hod-reports',    icon:'📄', label:'Reports',             section:'HOD — Student Mgmt' }
+  { id:'role-hod-reports',    icon:'📄', label:'Reports',             section:'HOD — Student Mgmt' },
+  { id:'role-hod-obe',       icon:'🎯', label:'OBE Roll-Up',         section:'HOD — OBE' },
+  { id:'role-hod-analytics', icon:'📊', label:'Dept Analytics',      section:'HOD — OBE' }
 ]);
 ROLE_NAV.Faculty = ROLE_NAV.Faculty.concat([
   { id:'role-co-mgmt',          icon:'🎯', label:'CO Management',       section:'OBE Tools' },

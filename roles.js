@@ -4,7 +4,7 @@
 
    Extends main.js without modifying it.
 
-   Roles: Admin | Principal | HOD | Faculty | Account | Admissions | Railway Concession
+   Roles: Admin | Head | HOD | Faculty | Account | Admissions | Railway Concession
 
    Storage: localStorage (demo mode, no backend needed)
 
@@ -24,7 +24,7 @@ var DEMO_USERS = [
 
   { email:'admin@edusys.in',     password:'admin123',     role:'Admin',     name:'Mr. Suresh Kumar',   dept:'All',  title:'System Administrator' },
 
-  { email:'principal@edusys.in', password:'principal123', role:'Principal', name:'Dr. Anita Sharma',   dept:'All',  title:'Principal' },
+  { email:'head@edusys.in', password:'head123', role:'Head', name:'Dr. Anita Sharma',   dept:'All',  title:'Head' },
 
   { email:'hod@edusys.in',       password:'hod123',       role:'HOD',       name:'Dr. Rajiv Rao',      dept:'CSE',  title:'Head of Department — CSE' },
 
@@ -60,7 +60,7 @@ var SEED_DATA = {
 
     { id:1, name:'Mr. Suresh Kumar',  email:'admin@edusys.in',     role:'Admin',     dept:'All',   status:'Active',  lastLogin:'2026-03-14 09:12' },
 
-    { id:2, name:'Dr. Anita Sharma',  email:'principal@edusys.in', role:'Principal', dept:'All',   status:'Active',  lastLogin:'2026-03-14 08:45' },
+    { id:2, name:'Dr. Anita Sharma',  email:'head@edusys.in', role:'Head', dept:'All',   status:'Active',  lastLogin:'2026-03-14 08:45' },
 
     { id:3, name:'Dr. Rajiv Rao',     email:'hod@edusys.in',       role:'HOD',       dept:'CSE',   status:'Active',  lastLogin:'2026-03-13 17:30' },
 
@@ -246,11 +246,11 @@ var SEED_DATA = {
 
     { id:2, title:'Fee Submission Deadline Extended', author:'Finance',   audience:'Students',date:'2026-03-10', priority:'Medium', content:'Last date for fee submission extended to March 31, 2026. Late fee of ₹500 after deadline.' },
 
-    { id:3, title:'Faculty Workshop: AI in Education', author:'Principal',audience:'Faculty', date:'2026-03-08', priority:'Medium', content:'Mandatory workshop on March 20, 2026 in Seminar Hall B. Attendance compulsory.' },
+    { id:3, title:'Faculty Workshop: AI in Education', author:'Head',audience:'Faculty', date:'2026-03-08', priority:'Medium', content:'Mandatory workshop on March 20, 2026 in Seminar Hall B. Attendance compulsory.' },
 
     { id:4, title:'Campus Placement Drive — TCS',     author:'T&P Cell',  audience:'Final Year', date:'2026-03-06', priority:'High', content:'TCS placement drive on April 5. Register on placement portal before March 25.' },
 
-    { id:5, title:'HOD Meeting — Academic Planning',  author:'Principal', audience:'HODs',    date:'2026-03-05', priority:'Medium', content:'Monthly HOD meeting on March 16 at 11 AM in Conference Room 1.' }
+    { id:5, title:'HOD Meeting — Academic Planning',  author:'Head', audience:'HODs',    date:'2026-03-05', priority:'Medium', content:'Monthly HOD meeting on March 16 at 11 AM in Conference Room 1.' }
 
   ],
 
@@ -294,7 +294,7 @@ var SEED_DATA = {
 
 
 
-  /* HOD proposals waiting for Principal approval */
+  /* HOD proposals waiting for Head approval */
 
   proposals: [
 
@@ -352,7 +352,7 @@ var SEED_DATA = {
 
 var DEFAULT_INSTITUTE = 'EduSys Demo College';
 
-var ROLE_OPTIONS = ['Admin','Principal','HOD','Faculty','Account','Admissions','Railway Concession'];
+var ROLE_OPTIONS = ['Admin','Head','HOD','Faculty','Account','Admissions','Railway Concession'];
 
 
 
@@ -561,7 +561,7 @@ function authLogin(email, password, role) {
 
   var institute = user.institute || getCurrentInstitute();
 
-  if (user.role === 'Principal' && institute) storeSet('edusys-college', institute);
+  if (user.role === 'Head' && institute) storeSet('edusys-college', institute);
 
   storeSet(SESSION_KEY, JSON.stringify({
 
@@ -597,7 +597,7 @@ function authLoginAsRole(role) {
 
   var institute = user.institute || getCurrentInstitute();
 
-  if (user.role === 'Principal' && institute) storeSet('edusys-college', institute);
+  if (user.role === 'Head' && institute) storeSet('edusys-college', institute);
 
   storeSet(SESSION_KEY, JSON.stringify({
 
@@ -697,7 +697,7 @@ function updateAccessApprovalHint() {
 
   var role = safeTrim(roleEl.value) || 'Faculty';
 
-  var approver = (role === 'Faculty') ? 'HOD' : 'Principal';
+  var approver = (role === 'Faculty') ? 'HOD' : 'Head';
 
   hintEl.textContent = 'Your request is sent to the ' + approver + ' for approval before access is granted.';
 
@@ -800,7 +800,7 @@ function requestAccess() {
 
   var keyValid = (storedKey && key === storedKey) || key === 'EDU-DEMO-2026';
 
-  if (!keyValid) return showErr('Invalid System Key. Contact the Principal for the correct key.');
+  if (!keyValid) return showErr('Invalid System Key. Contact the Head for the correct key.');
 
 
 
@@ -878,7 +878,7 @@ function requestAccess() {
 
 
 
-  showOk('Request submitted. Awaiting ' + (role === 'Faculty' ? 'HOD' : 'Principal') + ' approval.');
+  showOk('Request submitted. Awaiting ' + (role === 'Faculty' ? 'HOD' : 'Head') + ' approval.');
 
   setAccessMode('login');
 
@@ -938,9 +938,9 @@ var ROLE_MODULES = {
 
   ],
 
-  Principal: [
+  Head: [
     'overview','students','finance','attendance','analytics','communications','compliance',
-    /* Principal-only extras */
+    /* Head-only extras */
     'role-perf','role-proposals','role-accounts','role-strategic'
   ],
 
@@ -1005,11 +1005,11 @@ var ROLE_NAV = {
 
   ],
 
-  Principal: [
-    { id:'role-perf',      icon:'📊', label:'Performance Review', section:'Principal Tools' },
-    { id:'role-proposals', icon:'', label:'HOD Proposals',      section:'Principal Tools' },
-    { id:'role-accounts',  icon:'&#128101;', label:'Account Approvals',  section:'Principal Tools' },
-    { id:'role-strategic', icon:'🗺', label:'Strategic Reports',  section:'Principal Tools' }
+  Head: [
+    { id:'role-perf',      icon:'📊', label:'Performance Review', section:'Head Tools' },
+    { id:'role-proposals', icon:'', label:'HOD Proposals',      section:'Head Tools' },
+    { id:'role-accounts',  icon:'&#128101;', label:'Account Approvals',  section:'Head Tools' },
+    { id:'role-strategic', icon:'🗺', label:'Strategic Reports',  section:'Head Tools' }
   ],
   HOD: [
 
@@ -1017,8 +1017,8 @@ var ROLE_NAV = {
 
     { id:'role-timetable', icon:'🗓',  label:'Timetable',          section:'HOD Tools' },
 
-    { id:'role-leave',     icon:'📅',  label:'Leave Requests',     section:'HOD Tools' },
     { id:'role-hod-accounts', icon:'',  label:'Faculty Approvals',   section:'HOD Tools' },
+    { id:'role-leave',     icon:'📅',  label:'Leave Requests',     section:'HOD Tools' },
 
     { id:'role-marks',     icon:'',  label:'Internal Marks',     section:'HOD Tools' }
 
@@ -1028,15 +1028,11 @@ var ROLE_NAV = {
 
     { id:'role-mycourses',  icon:'📚', label:'My Courses',         section:'My Dashboard' },
 
-    { id:'role-attendance', icon:'', label:'Take Attendance',    section:'My Dashboard' },
-
-    { id:'role-marks',      icon:'', label:'Enter Marks',        section:'My Dashboard' },
-
-    { id:'role-assignments',icon:'📋', label:'Assignments',        section:'My Dashboard' },
-
-    { id:'role-materials',  icon:'', label:'Study Materials',    section:'My Dashboard' },
-
     { id:'role-schedule',   icon:'🗓', label:'My Schedule',        section:'My Dashboard' },
+    { id:'role-attendance', icon:'', label:'Take Attendance',    section:'My Dashboard' },
+    { id:'role-assignments',icon:'📋', label:'Assignments',        section:'My Dashboard' },
+    { id:'role-marks',      icon:'', label:'Enter Marks',        section:'My Dashboard' },
+    { id:'role-materials',  icon:'', label:'Study Materials',    section:'My Dashboard' },
 
     { id:'role-announce',   icon:'📣', label:'Post Announcement',  section:'My Dashboard' }
 
@@ -1198,7 +1194,7 @@ function buildAdminUsers() {
 
   var roleColors = {
 
-    Admin:'purple', Principal:'blue', HOD:'accent', Faculty:'green',
+    Admin:'purple', Head:'blue', HOD:'accent', Faculty:'green',
 
     Account:'yellow', Admissions:'blue', 'Railway Concession':'orange'
 
@@ -1216,7 +1212,7 @@ function buildAdminUsers() {
 
     + '<div class="form-group"><label class="form-label">Email</label><input class="form-input" id="nu-email" type="email" placeholder="user@edusys.in"/></div>'
 
-    + '<div class="form-group"><label class="form-label">Role</label><select class="form-select" id="nu-role"><option>Admin</option><option>Principal</option><option>HOD</option><option>Faculty</option><option>Account</option><option>Admissions</option><option>Railway Concession</option></select></div>'
+    + '<div class="form-group"><label class="form-label">Role</label><select class="form-select" id="nu-role"><option>Admin</option><option>Head</option><option>HOD</option><option>Faculty</option><option>Account</option><option>Admissions</option><option>Railway Concession</option></select></div>'
 
     + '<div class="form-group"><label class="form-label">Department</label><select class="form-select" id="nu-dept"><option>All</option><option>CSE</option><option>ECE</option><option>ME</option><option>Civil</option><option>MBA</option></select></div>'
 
@@ -1392,7 +1388,7 @@ function buildAdminBackup() {
 
 /* 
 
-   PRINCIPAL ROLE SECTIONS
+   HEAD ROLE SECTIONS
 
     */
 
@@ -1408,7 +1404,7 @@ function buildPrincipalOverride() {
 
 
 
-  return '<div class="module-header"><div class="module-title">Principal\'s Dashboard</div>'
+  return '<div class="module-header"><div class="module-title">Head\'s Dashboard</div>'
 
     + '<div class="module-sub">Institution performance at a glance — Departments, Faculty, Students, Compliance</div></div>'
 
@@ -1992,9 +1988,9 @@ function buildHODDept() {
 
     + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Proposal Title</label><input class="form-input" id="hod-prop-title" placeholder="New course / Lab upgrade / Event…"/></div>'
 
-    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Description</label><textarea class="form-textarea" id="hod-prop-desc" rows="2" placeholder="Details for Principal review…"></textarea></div>'
+    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Description</label><textarea class="form-textarea" id="hod-prop-desc" rows="2" placeholder="Details for Head review…"></textarea></div>'
 
-    + '</div><div class="form-actions"><button class="btn btn-primary" onclick="hodSubmitProposal()">Submit to Principal</button></div></div></div>'
+    + '</div><div class="form-actions"><button class="btn btn-primary" onclick="hodSubmitProposal()">Submit to Head</button></div></div></div>'
 
     + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Faculty List — ' + myDept + '</h3>'
 
@@ -2738,7 +2734,7 @@ function confirmReset() {
 
 
 
-/* Principal actions */
+/* Head actions */
 
 function principalApproveProposal(id, approve) {
 
@@ -2818,7 +2814,7 @@ function hodSubmitProposal() {
 
     title:title, description:desc||'—', status:'Pending', date:new Date().toISOString().split('T')[0] });
 
-  dbSave(db); showToast('Proposal submitted to Principal');
+  dbSave(db); showToast('Proposal submitted to Head');
 
   renderRoleSection('role-dept');
 
@@ -3012,7 +3008,7 @@ var SECTION_BUILDERS = {
 
   'role-backup':   buildAdminBackup,
 
-  /* Principal extras */
+  /* Head extras */
 
   'role-perf':       buildPrincipalPerf,
 
@@ -3294,9 +3290,9 @@ function applyRolePermissions(role) {
 
 
 function applyRoleRestrictions(role) {
-  if (document.body) document.body.classList.remove('role-principal');
-  if (role !== 'Principal') return;
-  if (document.body) document.body.classList.add('role-principal');
+  if (document.body) document.body.classList.remove('role-head');
+  if (role !== 'Head') return;
+  if (document.body) document.body.classList.add('role-head');
   var blocked = ['add-invoice','add-student','delete-student','convert-student'];
   blocked.forEach(function(action) {
     document.querySelectorAll('[data-action="'+action+'"]').forEach(function(btn) {
@@ -3318,7 +3314,7 @@ function applyRoleOverview(role) {
 
     Admin:     buildAdminOverride,
 
-    Principal: buildPrincipalOverride,
+    Head: buildPrincipalOverride,
 
     HOD:       buildHODOverride,
 
@@ -3356,7 +3352,7 @@ function showRoleBadge(sess) {
 
   var colors = {
 
-    Admin:'purple', Principal:'blue', HOD:'accent', Faculty:'green',
+    Admin:'purple', Head:'blue', HOD:'accent', Faculty:'green',
 
     Account:'yellow', Admissions:'blue', 'Railway Concession':'orange'
 
@@ -3591,7 +3587,7 @@ function enhanceAccessPage() {
     + '<div class="grid grid-2" style="gap:10px">'
 
     + buildRoleCard('Admin',     '&#128100;', 'admin@edusys.in',     'admin123',     'purple', 'Full system access, user management, audit logs')
-    + buildRoleCard('Principal', '&#127979;', 'principal@edusys.in', 'principal123', 'blue',   'Institution performance, approve HOD proposals')
+    + buildRoleCard('Head', '&#127979;', 'head@edusys.in', 'head123', 'blue',   'Institution performance, approve HOD proposals')
     + buildRoleCard('HOD',       '&#128218;', 'hod@edusys.in',       'hod123',       'accent', 'CSE dept management, leave approvals, timetable')
     + buildRoleCard('Faculty',   '&#128104;&#8205;&#127979;', 'faculty@edusys.in',   'faculty123',   'green',  'My courses, attendance, marks, assignments')
     + buildRoleCard('Account',   '&#128176;', 'accounts@edusys.in',  'accounts123',  'yellow', 'Student accounts, finance, outstanding, analytics')
