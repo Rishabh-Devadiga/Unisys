@@ -713,19 +713,25 @@
         /* Load tables if database is selected */
         if (source === 'database') {
           tablesLoading = true;
-          fetch('/api/tables')
-            .then(function(res) { return res.json(); })
-            .then(function(tables) {
-              availableTables = tables || [];
-              tablesLoading = false;
-              mountBuilder();
-            })
-            .catch(function(err) {
-              console.error('Failed to load tables:', err);
-              tablesLoading = false;
-              availableTables = [];
-              mountBuilder();
-            });
+          if (window.FeatureDataClient && typeof window.FeatureDataClient.getSchema === 'function') {
+            window.FeatureDataClient.getSchema()
+              .then(function(schema) {
+                availableTables = (schema && schema.tables) ? schema.tables : [];
+                tablesLoading = false;
+                mountBuilder();
+              })
+              .catch(function(err) {
+                console.error('Failed to load tables:', err);
+                tablesLoading = false;
+                availableTables = [];
+                mountBuilder();
+              });
+          } else {
+            console.error('FeatureDataClient not available');
+            tablesLoading = false;
+            availableTables = [];
+            mountBuilder();
+          }
         }
         
         mountBuilder();
