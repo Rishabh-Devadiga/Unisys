@@ -15,6 +15,7 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@unisys.edu';
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 
 const SAFE_OPERATORS = new Set(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'in', 'between']);
 const SAFE_AGGREGATIONS = new Set(['sum', 'avg', 'count', 'min', 'max']);
