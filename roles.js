@@ -963,7 +963,7 @@ var ROLE_MODULES = {
     'overview','students','academics','exams','faculty',
     'compliance','analytics','communications','add-feature',
     /* HOD-only extras */
-    'role-dept','role-timetable','role-leave','role-marks','role-hod-accounts'
+    'role-dept','role-timetable','role-leave','role-marks','role-marks-viewer','role-hod-accounts'
   ],
 
   Faculty: [
@@ -972,7 +972,7 @@ var ROLE_MODULES = {
 
     /* Faculty-only */
 
-    'role-mycourses','role-attendance','role-marks','role-assignments',
+    'role-mycourses','role-attendance','role-marks','role-marks-viewer','role-assignments',
 
     'role-materials','role-schedule','role-announce'
 
@@ -1035,7 +1035,8 @@ var ROLE_NAV = {
     { id:'role-hod-accounts', icon:'',  label:'Faculty Approvals',   section:'HOD Tools' },
     { id:'role-leave',     icon:'📅',  label:'Leave Requests',     section:'HOD Tools' },
 
-    { id:'role-marks',     icon:'',  label:'Internal Marks',     section:'HOD Tools' }
+    { id:'role-marks',     icon:'',  label:'Internal Marks',     section:'HOD Tools' },
+    { id:'role-marks-viewer', icon:'', label:'Marks Viewer',     section:'HOD Tools' }
 
   ],
 
@@ -1047,6 +1048,7 @@ var ROLE_NAV = {
     { id:'role-attendance', icon:'', label:'Take Attendance',    section:'My Dashboard' },
     { id:'role-assignments',icon:'📋', label:'Assignments',        section:'My Dashboard' },
     { id:'role-marks',      icon:'', label:'Enter Marks',        section:'My Dashboard' },
+    { id:'role-marks-viewer', icon:'', label:'Marks Viewer',     section:'My Dashboard' },
     { id:'role-materials',  icon:'', label:'Study Materials',    section:'My Dashboard' },
 
     { id:'role-announce',   icon:'📣', label:'Post Announcement',  section:'My Dashboard' }
@@ -2437,6 +2439,202 @@ function buildFacultyMarks() {
 
 
 
+/* 
+   MARKS VIEWER (FACULTY + HOD)
+   Step-by-step pages with route-style navigation.
+*/
+
+var MARKS_VIEWER_DEPARTMENTS = [
+  { id:'computer-engineering', label:'Computer Engineering' },
+  { id:'information-technology', label:'Information Technology' },
+  { id:'ai-data-science', label:'Artificial Intelligence & Data Science' }
+];
+
+var MARKS_VIEWER_YEARS = [
+  { id:'first-year', label:'First Year' },
+  { id:'second-year', label:'Second Year' },
+  { id:'third-year', label:'Third Year' },
+  { id:'final-year', label:'Final Year' }
+];
+
+var MARKS_VIEWER_SEMESTERS = [
+  { id:'semester-1', label:'Semester 1' },
+  { id:'semester-2', label:'Semester 2' }
+];
+
+var MARKS_VIEWER_SUBJECTS = [
+  { id:'data-structures', label:'Data Structures', crumb:'Data Structures' },
+  { id:'dbms', label:'Database Management Systems', crumb:'DBMS' },
+  { id:'machine-learning', label:'Machine Learning', crumb:'Machine Learning' }
+];
+
+var MARKS_VIEWER_MARKS = {
+  'dbms': [
+    { roll:1, name:'Rahul Sharma', internal:18, external:65 },
+    { roll:2, name:'Sneha Patil', internal:17, external:70 },
+    { roll:3, name:'Amit Kumar', internal:15, external:60 }
+  ],
+  'data-structures': [
+    { roll:1, name:'Neha Verma', internal:19, external:66 },
+    { roll:2, name:'Arjun Singh', internal:16, external:62 },
+    { roll:3, name:'Priya Shah', internal:18, external:68 }
+  ],
+  'machine-learning': [
+    { roll:1, name:'Karan Mehta', internal:20, external:72 },
+    { roll:2, name:'Ishita Rao', internal:17, external:69 },
+    { roll:3, name:'Vikram Joshi', internal:16, external:64 }
+  ]
+};
+
+function marksViewerFind(list, id) {
+  if (!id) return null;
+  var key = String(id).toLowerCase();
+  return list.find(function(item){ return String(item.id).toLowerCase() === key; }) || null;
+}
+
+function marksViewerGetRoutePath() {
+  var base = '/marks-viewer';
+  var path = (window.location && window.location.pathname) ? window.location.pathname : '';
+  if (path.indexOf(base) !== -1) {
+    return path.slice(path.indexOf(base));
+  }
+  var hash = (window.location && window.location.hash) ? window.location.hash : '';
+  if (hash.indexOf(base) !== -1) {
+    return hash.slice(hash.indexOf(base));
+  }
+  return base;
+}
+
+function marksViewerNormalizePath(path) {
+  return String(path || '').split('?')[0].split('#')[0].replace(/\/+$/,'') || '/marks-viewer';
+}
+
+function marksViewerGetState() {
+  var base = '/marks-viewer';
+  var clean = marksViewerNormalizePath(marksViewerGetRoutePath());
+  if (clean.indexOf(base) !== 0) clean = base;
+  var parts = clean.split('/').filter(Boolean);
+  var dept = marksViewerFind(MARKS_VIEWER_DEPARTMENTS, parts[1]);
+  var year = dept ? marksViewerFind(MARKS_VIEWER_YEARS, parts[2]) : null;
+  var semester = year ? marksViewerFind(MARKS_VIEWER_SEMESTERS, parts[3]) : null;
+  var subject = semester ? marksViewerFind(MARKS_VIEWER_SUBJECTS, parts[4]) : null;
+  return { dept: dept, year: year, semester: semester, subject: subject };
+}
+
+function marksViewerEnsureRoute() {
+  var base = '/marks-viewer';
+  var path = (window.location && window.location.pathname) ? window.location.pathname : '';
+  var hash = (window.location && window.location.hash) ? window.location.hash : '';
+  if (path.indexOf(base) !== -1 || hash.indexOf(base) !== -1) return;
+  try {
+    history.replaceState({ marksViewer:true }, '', base);
+  } catch(e) {
+    window.location.hash = '#' + base;
+  }
+}
+
+function marksViewerNavigate(path, replace) {
+  var target = marksViewerNormalizePath(path);
+  try {
+    if (replace) history.replaceState({ marksViewer:true }, '', target);
+    else history.pushState({ marksViewer:true }, '', target);
+  } catch(e) {
+    window.location.hash = '#' + target;
+  }
+  if (typeof renderRoleSection === 'function') renderRoleSection('role-marks-viewer');
+}
+
+function marksViewerBreadcrumb(state) {
+  var base = '/marks-viewer';
+  var crumbs = [
+    { label:'Marks Viewer', path: base }
+  ];
+  if (state.dept) crumbs.push({ label: state.dept.label, path: base + '/' + state.dept.id });
+  if (state.year) crumbs.push({ label: state.year.label, path: base + '/' + state.dept.id + '/' + state.year.id });
+  if (state.semester) crumbs.push({ label: state.semester.label, path: base + '/' + state.dept.id + '/' + state.year.id + '/' + state.semester.id });
+  if (state.subject) crumbs.push({ label: state.subject.crumb || state.subject.label, path: base + '/' + state.dept.id + '/' + state.year.id + '/' + state.semester.id + '/' + state.subject.id });
+
+  var trail = crumbs.map(function(c, idx) {
+    var sep = idx ? '<span style="color:var(--text3);padding:0 4px">></span>' : '';
+    return sep + '<button class="btn btn-sm btn-secondary" onclick="marksViewerNavigate(\'' + c.path + '\')">' + c.label + '</button>';
+  }).join('');
+
+  return '<div class="panel" style="padding:14px 18px;margin-bottom:18px;display:flex;flex-wrap:wrap;align-items:center;gap:4px">' + trail + '</div>';
+}
+
+function marksViewerSelectionPanel(title, items, buildPath) {
+  return '<div class="panel">'
+    + '<div class="form-section-title">' + title + '</div>'
+    + '<div class="grid grid-3">'
+    + items.map(function(item){
+        var path = buildPath(item);
+        var sub = item.sub ? '<div style="color:var(--text3);font-size:12px;margin-top:4px">' + item.sub + '</div>' : '';
+        return '<div class="integration-card" style="cursor:pointer" onclick="marksViewerNavigate(\'' + path + '\')">'
+          + '<div><div style="font-weight:600">' + item.label + '</div>' + sub + '</div>'
+          + '<span class="badge badge-blue">Select</span>'
+          + '</div>';
+      }).join('')
+    + '</div></div>';
+}
+
+function marksViewerMarksTable(subjectId) {
+  var rows = (MARKS_VIEWER_MARKS[subjectId] || []).slice().sort(function(a,b){ return a.roll - b.roll; });
+  return '<div class="panel"><div class="form-section-title">Student Marks</div>'
+    + widgetTable(['Roll Number','Student Name','Internal Marks','External Marks','Total Marks'],
+      rows.map(function(r){
+        var total = (Number(r.internal) || 0) + (Number(r.external) || 0);
+        return [r.roll, r.name, r.internal, r.external, total];
+      }),
+      'No marks found for this subject.'
+    )
+    + '</div>';
+}
+
+function buildMarksViewer() {
+  marksViewerEnsureRoute();
+  var state = marksViewerGetState();
+  var base = '/marks-viewer';
+  var body = '';
+
+  if (!state.dept) {
+    body = marksViewerSelectionPanel('Select Department', MARKS_VIEWER_DEPARTMENTS, function(item){
+      return base + '/' + item.id;
+    });
+  } else if (!state.year) {
+    body = marksViewerSelectionPanel('Select Academic Year', MARKS_VIEWER_YEARS, function(item){
+      return base + '/' + state.dept.id + '/' + item.id;
+    });
+  } else if (!state.semester) {
+    body = marksViewerSelectionPanel('Select Semester', MARKS_VIEWER_SEMESTERS, function(item){
+      return base + '/' + state.dept.id + '/' + state.year.id + '/' + item.id;
+    });
+  } else if (!state.subject) {
+    body = marksViewerSelectionPanel('Select Subject', MARKS_VIEWER_SUBJECTS, function(item){
+      return base + '/' + state.dept.id + '/' + state.year.id + '/' + state.semester.id + '/' + item.id;
+    });
+  } else {
+    body = marksViewerMarksTable(state.subject.id);
+  }
+
+  return '<div class="module-header"><div class="module-title">Marks Viewer</div>'
+    + '<div class="module-sub">Browse student marks by department, year, semester, and subject.</div></div>'
+    + marksViewerBreadcrumb(state)
+    + body;
+}
+
+if (typeof window !== 'undefined') {
+  window.marksViewerNavigate = marksViewerNavigate;
+  if (!window.__marksViewerPopstateBound) {
+    window.addEventListener('popstate', function() {
+      var active = document.querySelector('.module-section.active');
+      if (active && active.id === 'role-marks-viewer' && typeof renderRoleSection === 'function') {
+        renderRoleSection('role-marks-viewer');
+      }
+    });
+    window.__marksViewerPopstateBound = true;
+  }
+}
+
 function buildFacultyAssignments() {
 
   var db = dbGet();
@@ -3043,6 +3241,7 @@ var SECTION_BUILDERS = {
 
   'role-marks':     buildHODMarks,       /* HOD view */
   'role-hod-accounts': buildHODAccounts,
+  'role-marks-viewer': buildMarksViewer,
 
   /* Faculty extras */
 
