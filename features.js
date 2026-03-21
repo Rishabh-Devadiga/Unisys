@@ -151,7 +151,7 @@ var EXT_SEED = {
 
   /* Student lifecycle flags */
   studentFlags: [
-    { studentId:4,  roll:'CSE-104', name:'Karan Gupta',   flag:'Low Attendance (74%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-12' },
+    { studentId:4,  roll:'CSE-104', name:'Rishabh Devadiga',   flag:'Low Attendance (74%)',    severity:'Warning', raisedBy:'Prof. Meera Singh', date:'2026-03-12' },
     { studentId:2,  roll:'CSE-102', name:'Rohan Mehta',   flag:'CO3 Attainment Gap',      severity:'Info',    raisedBy:'OBE Engine',        date:'2026-03-14' },
     { studentId:9,  roll:'MBA-201', name:'Pooja Reddy',   flag:'Fee Payment Overdue',     severity:'Urgent',  raisedBy:'Finance',           date:'2026-03-10' }
   ],
@@ -194,7 +194,7 @@ var EXT_SEED = {
   behaviorRecords: [
     { id:1, studentId:1, student:'Priya Sharma', roll:'CSE-101', dept:'CSE', type:'positive', category:'participation', severity:'low',
       description:'Led the class discussion on tree traversals', action:'Appreciated in class', recordedBy:'Prof. Meera Singh', date:'2026-03-12', status:'Open' },
-    { id:2, studentId:4, student:'Karan Gupta', roll:'CSE-104', dept:'CSE', type:'negative', category:'discipline', severity:'medium',
+    { id:2, studentId:4, student:'Rishabh Devadiga', roll:'CSE-104', dept:'CSE', type:'negative', category:'discipline', severity:'medium',
       description:'Late submission of lab assignment', action:'Warned and counseled', recordedBy:'Prof. Meera Singh', date:'2026-03-11', status:'Open' }
   ],
 
@@ -1720,6 +1720,15 @@ function hodApplyThreshold() {
   renderRoleSection('role-hod-defaulters');
 }
 
+function hodChangeDept(newDept) {
+  var sess = getSession();
+  if (sess && sess.dept !== newDept) {
+    sess.dept = newDept;
+    storeSet('edusys_session', JSON.stringify(sess));
+  }
+  renderRoleSection('role-hod-defaulters');
+}
+
 function hodExportDefaulters() {
   var db = dbGet();
   var dept = smMyDept();
@@ -1984,12 +1993,20 @@ function buildHODDefaulters() {
   var students = smDeptStudents(db, dept);
   var defaulters = smDefaulters(students, threshold);
 
+  // Get all unique departments
+  var depts = db.students.reduce(function(acc, s) {
+    if (acc.indexOf(s.dept) === -1) acc.push(s.dept);
+    return acc;
+  }, []).sort();
+
+  var deptOptions = depts.map(function(d) { return '<option value="' + d + '" ' + (d === dept ? 'selected' : '') + '>' + d + '</option>'; }).join('');
+
   return '<div class="module-header"><div class="module-title">Monthly Defaulters — ' + dept + '</div>'
     + '<div class="module-sub">Students below the attendance threshold (default 75%)</div></div>'
     + '<div class="panel"><div class="form-section-title">Filter & Actions</div>'
     + '<div class="form-grid">'
     + '<div class="form-group"><label class="form-label">Threshold (%)</label><input class="form-input" id="hod-def-threshold" type="number" value="' + threshold + '"/></div>'
-    + '<div class="form-group"><label class="form-label">Department</label><input class="form-input" value="' + dept + '" disabled/></div>'
+    + '<div class="form-group"><label class="form-label">Department</label><select class="form-input" id="hod-def-dept" onchange="hodChangeDept(this.value)">' + deptOptions + '</select></div>'
     + '</div>'
     + '<div class="form-actions">'
     + '<button class="btn btn-primary" onclick="hodApplyThreshold()">Apply</button>'

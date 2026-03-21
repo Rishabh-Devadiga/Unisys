@@ -112,7 +112,7 @@ var SEED_DATA = {
 
     { id:3,  name:'Ananya Das',     roll:'CSE-103', dept:'CSE', year:'3rd Year', status:'Active',   cgpa:9.1, attendance:96, email:'ananya@college.edu',  phone:'9876543212' },
 
-    { id:4,  name:'Karan Gupta',    roll:'CSE-104', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:7.2, attendance:74, email:'karan@college.edu',   phone:'9876543213' },
+    { id:4,  name:'Rishabh Devadiga',    roll:'CSE-104', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:7.2, attendance:74, email:'rishabh@college.edu',   phone:'9876543213' },
 
     { id:5,  name:'Sneha Nair',     roll:'CSE-105', dept:'CSE', year:'2nd Year', status:'Active',   cgpa:8.8, attendance:95, email:'sneha@college.edu',   phone:'9876543214' },
 
@@ -124,7 +124,11 @@ var SEED_DATA = {
 
     { id:9,  name:'Pooja Reddy',    roll:'MBA-201', dept:'MBA', year:'1st Year', status:'Active',   cgpa:8.6, attendance:91, email:'pooja@college.edu',   phone:'9876543218' },
 
-    { id:10, name:'Amit Joshi',     roll:'CSE-107', dept:'CSE', year:'4th Year', status:'Active',   cgpa:9.3, attendance:97, email:'amit@college.edu',    phone:'9876543219' }
+    { id:10, name:'Amit Joshi',     roll:'CSE-107', dept:'CSE', year:'4th Year', status:'Active',   cgpa:9.3, attendance:97, email:'amit@college.edu',    phone:'9876543219' },
+
+    { id:105, name:'Gaurav Pawar',   roll:'ME-307',  dept:'ME',  year:'2nd Year', status:'Active',   cgpa:5.2, attendance:5,  email:'gaurav.pawar@college.edu',   phone:'9876543220' },
+
+    { id:106, name:'Ajinkya Rokade', roll:'ECE-308', dept:'ECE', year:'2nd Year', status:'Active',   cgpa:5.8, attendance:8,  email:'ajinkya.rokade@college.edu', phone:'9876543221' }
 
   ],
 
@@ -216,7 +220,7 @@ var SEED_DATA = {
 
     { id:3, course:'CSE301', exam:'Mid Semester', student:'Ananya Das',   roll:'CSE-103', marks:47, maxMarks:50, grade:'A+' },
 
-    { id:4, course:'CSE301', exam:'Mid Semester', student:'Karan Gupta',  roll:'CSE-104', marks:31, maxMarks:50, grade:'C' },
+    { id:4, course:'CSE301', exam:'Mid Semester', student:'Rishabh Devadiga',  roll:'CSE-104', marks:31, maxMarks:50, grade:'C' },
 
     { id:5, course:'CSE302', exam:'Unit Test 1',  student:'Priya Sharma', roll:'CSE-101', marks:18, maxMarks:20, grade:'A' }
 
@@ -483,6 +487,17 @@ function dbGet() {
   }
 
   if (changed) dbSave(d);
+
+  // Sync missing students from SEED_DATA
+  if (SEED_DATA && SEED_DATA.students && Array.isArray(SEED_DATA.students)) {
+    var existingIds = d.students ? d.students.map(function(s) { return s.id; }) : [];
+    var newStudents = SEED_DATA.students.filter(function(s) { return existingIds.indexOf(s.id) === -1; });
+    if (newStudents.length > 0) {
+      if (!d.students) d.students = [];
+      d.students = d.students.concat(newStudents);
+      dbSave(d);
+    }
+  }
 
   return d;
 
