@@ -46,7 +46,7 @@
       'Faculty Management', 'Finance & Fees', 'HR & Payroll', 'Library', 'Hostel Management', 'Transport Management',
       'Placements & Career', 'Research', 'Facilities', 'Inventory', 'Procurement', 'Service Desk',
       'Communications', 'Compliance & Accreditation', 'Integration Hub', 'Analytics & KPIs',
-      'Attainment Calculator', 'ERP Coverage', 'Role-based Admin/Principal/HOD/Faculty custom sections'
+      'Attainment Calculator', 'ERP Coverage', 'Role-based Admin/Head/HOD/Faculty custom sections'
     ]
   };
 

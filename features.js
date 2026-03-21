@@ -1,6 +1,6 @@
 /* ============================================================
    features.js — UniSys EduSys Extended Feature Set
-   Implements all features from the Admin/Principal spec (Doc 1)
+   Implements all features from the Admin/Head spec (Doc 1)
    and the Professor/OBE spec (Doc 2).
    Extends roles.js without modifying any existing file.
    All data via localStorage (demo mode — no backend).
@@ -103,7 +103,7 @@ var EXT_SEED = {
       targetSem:'2026-27 Odd', status:'Planned', createdOn:'2026-03-14' }
   ],
 
-  /* Workflow approvals queue (Admin/Principal) */
+  /* Workflow approvals queue (Admin/Head) */
   approvalQueue: [
     { id:1, type:'Budget Request',    requester:'Dr. Rajiv Rao',    dept:'CSE', amount:120000, description:'DSP Lab upgrade — 15 new units', status:'Pending', date:'2026-03-12' },
     { id:2, type:'Leave Application', requester:'Prof. Meera Singh',dept:'CSE', amount:null,   description:'Personal leave 3 days (Mar 17-19)', status:'Pending', date:'2026-03-10' },
@@ -111,7 +111,7 @@ var EXT_SEED = {
     { id:4, type:'Event Approval',    requester:'T&P Cell',         dept:'CSE', amount:15000, description:'Infosys campus drive logistics', status:'Approved', date:'2026-03-05' }
   ],
 
-  /* Financial summary for Admin/Principal */
+  /* Financial summary for Admin/Head */
   financialSummary: {
     tuitionRevenue:  48000000,
     hostelRevenue:   8500000,
@@ -185,9 +185,9 @@ var EXT_SEED = {
 
   /* Railway concession requests */
   concessionRequests: [
-    { id:1, studentId:2, route:'Bengaluru - Mysore',  requestDate:'2026-03-12', status:'Requested', appointmentDate:'' },
-    { id:2, studentId:4, route:'Mysore - Bengaluru',  requestDate:'2026-03-11', status:'Requested', appointmentDate:'' },
-    { id:3, studentId:9, route:'Bengaluru - Chennai', requestDate:'2026-03-08', status:'Scheduled', appointmentDate:'2026-03-18' }
+    { id:1, studentId:2, route:'Bengaluru - Mysore',  requestDate:'2026-03-12', status:'Requested', appointmentDate:'', appointmentTime:'' },
+    { id:2, studentId:4, route:'Mysore - Bengaluru',  requestDate:'2026-03-11', status:'Requested', appointmentDate:'', appointmentTime:'' },
+    { id:3, studentId:9, route:'Bengaluru - Chennai', requestDate:'2026-03-08', status:'Scheduled', appointmentDate:'2026-03-18', appointmentTime:'10:30' }
   ],
 
   /* Student behavior records */
@@ -249,7 +249,7 @@ window.dbGet = function() {
 
 /* ══════════════════════════════════════════════════════════
    SHARED OBE HELPERS
-   Reusable across Faculty, HOD, and Admin/Principal sections.
+   Reusable across Faculty, HOD, and Admin/Head sections.
    ══════════════════════════════════════════════════════════ */
 
 /* Calculate attainment level (0–3) from percentage */
@@ -632,7 +632,7 @@ function buildRailwayOverview() {
   var scheduled = reqs.filter(function(r){ return (r.appointmentDate || r.status === 'Scheduled'); });
   var pending = reqs.filter(function(r){ return !r.appointmentDate && r.status !== 'Scheduled'; });
   return '<div class="module-header"><div class="module-title">Railway Concession Dashboard</div>'
-    + '<div class="module-sub">Track concession requests and assign appointment dates.</div></div>'
+    + '<div class="module-sub">Track concession requests and assign appointment dates and time slots.</div></div>'
     + '<div class="kpi-grid">'
     + widgetKpi('Requests', reqs.length, 'Total submitted', 'up')
     + widgetKpi('Scheduled', scheduled.length, 'Appointments fixed', scheduled.length ? 'up' : 'neutral')
@@ -701,15 +701,57 @@ function buildAdmissionsDocuments() {
     + widgetTable(['Student','Roll','Document','Status','Submitted On'], rows);
 }
 
+
+function formatTimeLabel(h, m) {
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  var h12 = h % 12;
+  if (h12 === 0) h12 = 12;
+  var mm = (m < 10 ? '0' : '') + m;
+  return h12 + ':' + mm + ' ' + ampm;
+}
+
+function formatTimeSlot(value) {
+  if (!value) return '—';
+  var parts = value.split(':');
+  if (parts.length < 2) return value;
+  var h = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10);
+  if (isNaN(h) || isNaN(m)) return value;
+  var endH = h;
+  var endM = m + 30;
+  if (endM >= 60) { endM -= 60; endH += 1; }
+  return formatTimeLabel(h, m) + ' - ' + formatTimeLabel(endH, endM);
+}
+
+function buildTimeSlotOptions(selected) {
+  var opts = '<option value="">Select</option>';
+  var h = 9;
+  var m = 30;
+  while (true) {
+    var hh = (h < 10 ? '0' : '') + h;
+    var mm = (m < 10 ? '0' : '') + m;
+    var val = hh + ':' + mm;
+    var label = formatTimeSlot(val);
+    var sel = selected === val ? ' selected' : '';
+    opts += '<option value="' + val + '"' + sel + '>' + label + '</option>';
+    if (h === 16 && m === 30) break;
+    m += 30;
+    if (m >= 60) { m = 0; h += 1; }
+  }
+  return opts;
+}
+
 function buildRailwayConcessionAppointments() {
   var db = dbGet();
   var rows = (db.concessionRequests || []).map(function(r){
     var s = findStudentById(db, r.studentId);
     var status = r.appointmentDate ? 'Scheduled' : (r.status || 'Requested');
     var inputId = 'rc-appt-' + r.id;
+    var timeId = 'rc-time-' + r.id;
     var btnLabel = r.appointmentDate ? 'Update' : 'Set';
     var action = '<div style="display:flex;gap:6px;align-items:center">'
       + '<input type="date" class="form-input" id="'+inputId+'" value="'+(r.appointmentDate || '')+'"/>'
+      + '<select class="form-select" id="'+timeId+'">'+buildTimeSlotOptions(r.appointmentTime)+'</select>'
       + '<button class="btn btn-sm btn-primary" onclick="railwaySetAppointment('+r.id+')">'+btnLabel+'</button>'
       + '</div>';
     return [
@@ -719,20 +761,21 @@ function buildRailwayConcessionAppointments() {
       r.requestDate || '—',
       sbadge(status),
       r.appointmentDate || '—',
+      formatTimeSlot(r.appointmentTime),
       action
     ];
   });
 
-  return '<div class="module-header"><div class="module-title">Railway Concession Appointments</div>'
-    + '<div class="module-sub">Students request concessions; assign an appointment date for verification.</div></div>'
-    + widgetTable(['Student','Roll','Route','Requested On','Status','Appointment','Action'], rows);
+  return '<div class="module-header"><div class="module-title">Railway Concession Scheduling</div>'
+    + '<div class="module-sub">Students request concessions; assign appointment date and time slot for verification.</div></div>'
+    + widgetTable(['Student','Roll','Route','Requested On','Status','Date','Time Slot','Action'], rows);
 }
 
 /* ══════════════════════════════════════════════════════════
-   PRINCIPAL EXTENDED SECTIONS
+   HEAD EXTENDED SECTIONS
    ══════════════════════════════════════════════════════════ */
 
-/* Principal: Student Enrollment Statistics */
+/* Head: Student Enrollment Statistics */
 function buildPrincipalEnrollment() {
   return '<div class="module-header"><div class="module-title">Student Enrollment Statistics</div>'
     + '<div class="module-sub">Enrollment trends, demographic analytics, diversity metrics, and conversion funnel reporting.</div></div>'
@@ -760,7 +803,7 @@ function buildPrincipalEnrollment() {
     + '</div></div></div>';
 }
 
-/* Principal: OBE Programme Overview */
+/* Head: OBE Programme Overview */
 function buildPrincipalOBE() {
   var db = dbGet();
   var coAtt = db.coAttainment || [];
@@ -792,7 +835,7 @@ function buildPrincipalOBE() {
     + '</div>';
 }
 
-/* Principal: Institutional Attendance Reports */
+/* Head: Institutional Attendance Reports */
 function buildPrincipalAttendance() {
   var db = dbGet();
   return '<div class="module-header"><div class="module-title">Institutional Attendance Reports</div>'
@@ -818,7 +861,7 @@ function buildPrincipalAttendance() {
     + '</div>';
 }
 
-/* Principal: Academic Calendar */
+/* Head: Academic Calendar */
 function buildPrincipalCalendar() {
   var db = dbGet();
   return '<div class="module-header"><div class="module-title">Academic Calendar</div>'
@@ -835,7 +878,7 @@ function buildPrincipalCalendar() {
     + '</div></div>';
 }
 
-/* Principal: Communication & Notifications Hub */
+/* Head: Communication & Notifications Hub */
 function buildPrincipalComms() {
   var db = dbGet();
   return '<div class="module-header"><div class="module-title">Communications &amp; Notification Hub</div>'
@@ -1289,7 +1332,7 @@ function buildHODOBE() {
             p.action.substring(0,35)+'…', '<span class="badge badge-'+sc+'">'+p.status+'</span>', p.targetSem];
         }))
     + '<div class="form-actions" style="margin-top:14px">'
-    + '<button class="btn btn-primary" onclick="showToast(\'Dept OBE report submitted to Principal\')">📤 Submit to Principal</button>'
+    + '<button class="btn btn-primary" onclick="showToast(\'Dept OBE report submitted to Head\')">📤 Submit to Head</button>'
     + '<button class="btn btn-sm" onclick="showToast(\'NBA Annual Report PDF generated\')">Export NBA Report</button>'
     + '</div></div>';
 }
@@ -1368,9 +1411,13 @@ function railwaySetAppointment(id) {
   var item = (db.concessionRequests || []).find(function(x){ return x.id === id; });
   if (!item) return;
   var input = g('rc-appt-' + id);
+  var timeInput = g('rc-time-' + id);
   var date = input ? input.value : '';
+  var time = timeInput ? timeInput.value : '';
   if (!date) { showToast('Select appointment date', 'error'); return; }
+  if (!time) { showToast('Select appointment time slot', 'error'); return; }
   item.appointmentDate = date;
+  item.appointmentTime = time;
   item.status = 'Scheduled';
   dbSave(db);
   showToast('Appointment scheduled');
@@ -2994,7 +3041,7 @@ Object.assign(SECTION_BUILDERS, {
   'role-admission-caste':     buildAdmissionsCasteCategory,
   'role-admission-docs':      buildAdmissionsDocuments,
   'role-railway-concession':  buildRailwayConcessionAppointments,
-  /* Principal new */
+  /* Head new */
   'role-enrollment':  buildPrincipalEnrollment,
   'role-obe-principal': buildPrincipalOBE,
   'role-attendance-report': buildPrincipalAttendance,
@@ -3034,7 +3081,7 @@ ROLE_MODULES.Admin = ROLE_MODULES.Admin.concat([
   'role-lifecycle','role-admissions','role-academic','role-financial',
   'role-approvals','role-multicampus','role-obe-admin','role-resources'
 ]);
-ROLE_MODULES.Principal = ROLE_MODULES.Principal.concat([
+ROLE_MODULES.Head = ROLE_MODULES.Head.concat([
   'role-enrollment','role-obe-principal','role-attendance-report',
   'role-calendar','role-comms'
 ]);
@@ -3070,22 +3117,22 @@ ROLE_NAV.Admin = ROLE_NAV.Admin.concat([
   { id:'role-resources',   icon:'🏗',  label:'Resource Booking',     section:'Admin — Operations' },
   { id:'role-multicampus', icon:'🌐', label:'Multi-Campus',         section:'Admin — Operations' }
 ]);
-ROLE_NAV.Principal = ROLE_NAV.Principal.concat([
-  { id:'role-enrollment',        icon:'📈', label:'Enrollment Stats',      section:'Principal — Academic' },
-  { id:'role-obe-principal',     icon:'🎯', label:'OBE & CO Attainment',   section:'Principal — Academic' },
-  { id:'role-attendance-report', icon:'📍', label:'Attendance Reports',    section:'Principal — Academic' },
-  { id:'role-calendar',          icon:'🗓', label:'Academic Calendar',     section:'Principal — Admin' },
-  { id:'role-comms',             icon:'📣', label:'Comm. Hub',             section:'Principal — Admin' }
+ROLE_NAV.Head = ROLE_NAV.Head.concat([
+  { id:'role-enrollment',        icon:'📈', label:'Enrollment Stats',      section:'Head — Academic' },
+  { id:'role-attendance-report', icon:'📍', label:'Attendance Reports',    section:'Head — Academic' },
+  { id:'role-obe-principal',     icon:'🎯', label:'OBE & CO Attainment',   section:'Head — Academic' },
+  { id:'role-calendar',          icon:'🗓', label:'Academic Calendar',     section:'Head — Admin' },
+  { id:'role-comms',             icon:'📣', label:'Comm. Hub',             section:'Head — Admin' }
 ]);
 ROLE_NAV.HOD = ROLE_NAV.HOD.concat([
-  { id:'role-hod-obe',       icon:'🎯', label:'OBE Roll-Up',         section:'HOD — OBE' },
-  { id:'role-hod-analytics', icon:'📊', label:'Dept Analytics',      section:'HOD — OBE' },
   { id:'role-hod-attendance', icon:'📍', label:'Attendance Tracking',  section:'HOD — Student Mgmt' },
   { id:'role-hod-defaulters', icon:'⚠️', label:'Defaulters',         section:'HOD — Student Mgmt' },
   { id:'role-hod-cia-ese',    icon:'📝', label:'CIA & ESE',           section:'HOD — Student Mgmt' },
   { id:'role-hod-behavior',   icon:'🏷', label:'Behavior',            section:'HOD — Student Mgmt' },
   { id:'role-hod-performance', icon:'📈', label:'Student Performance', section:'HOD — Student Mgmt' },
-  { id:'role-hod-reports',    icon:'📄', label:'Reports',             section:'HOD — Student Mgmt' }
+  { id:'role-hod-reports',    icon:'📄', label:'Reports',             section:'HOD — Student Mgmt' },
+  { id:'role-hod-obe',       icon:'🎯', label:'OBE Roll-Up',         section:'HOD — OBE' },
+  { id:'role-hod-analytics', icon:'📊', label:'Dept Analytics',      section:'HOD — OBE' }
 ]);
 ROLE_NAV.Faculty = ROLE_NAV.Faculty.concat([
   { id:'role-co-mgmt',          icon:'🎯', label:'CO Management',       section:'OBE Tools' },
@@ -3115,7 +3162,7 @@ ROLE_NAV.Admissions = (ROLE_NAV.Admissions || []).concat([
   { id:'role-admission-docs',  icon:'📁', label:'Student Documents', section:'Admissions — Students' }
 ]);
 ROLE_NAV['Railway Concession'] = (ROLE_NAV['Railway Concession'] || []).concat([
-  { id:'role-railway-concession', icon:'🚆', label:'Concession Appointments', section:'Railway — Concession' }
+  { id:'role-railway-concession', icon:'🚆', label:'Concession Scheduling', section:'Railway — Concession' }
 ]);
 
 /* Force re-apply role nav when ERP is already active (handles hot-load) */
