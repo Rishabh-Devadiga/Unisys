@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Resend } = require('resend');
-const db = require('./db/postgres');
+const db = require('../database/db/postgres');
 
 const app = express();
 const PORT = 3001;
