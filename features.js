@@ -702,17 +702,25 @@ function buildAdmissionsDocuments() {
 }
 
 
+function formatTimeLabel(h, m) {
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  var h12 = h % 12;
+  if (h12 === 0) h12 = 12;
+  var mm = (m < 10 ? '0' : '') + m;
+  return h12 + ':' + mm + ' ' + ampm;
+}
+
 function formatTimeSlot(value) {
   if (!value) return '—';
   var parts = value.split(':');
   if (parts.length < 2) return value;
   var h = parseInt(parts[0], 10);
-  var m = parts[1];
-  if (isNaN(h)) return value;
-  var ampm = h >= 12 ? 'PM' : 'AM';
-  var h12 = h % 12;
-  if (h12 === 0) h12 = 12;
-  return h12 + ':' + m + ' ' + ampm;
+  var m = parseInt(parts[1], 10);
+  if (isNaN(h) || isNaN(m)) return value;
+  var endH = h;
+  var endM = m + 30;
+  if (endM >= 60) { endM -= 60; endH += 1; }
+  return formatTimeLabel(h, m) + ' - ' + formatTimeLabel(endH, endM);
 }
 
 function buildTimeSlotOptions(selected) {
