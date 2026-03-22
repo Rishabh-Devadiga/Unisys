@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS fees (
   due_date DATE
 );
 
-
 CREATE TABLE IF NOT EXISTS attendance (
   id INTEGER PRIMARY KEY,
   student_id INTEGER,

@@ -1,9 +1,10 @@
+const path = require('path');
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const nodemailer = require('nodemailer');
-const db = require('./db/postgres');
+const db = require('../database/db/postgres');
 const createMeetingsRouter = require('./routes/meetings');
 const { initSignaling } = require('./socket/signaling');
 
@@ -30,7 +31,7 @@ const mailer = nodemailer.createTransport({
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 const server = http.createServer(app);
 const io = new Server(server, {

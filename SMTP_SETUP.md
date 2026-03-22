@@ -4,7 +4,7 @@ The "Email Defaulters" button (HOD + Faculty dashboards) sends mail through SMTP
 
 ## Default SMTP config used by backend
 
-`server.js` is configured to use these defaults if env vars are not set:
+`backend/server.js` is configured to use these defaults if env vars are not set:
 
 - Host: `smtp.gmail.com`
 - Port: `465`
