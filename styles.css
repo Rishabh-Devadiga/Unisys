@@ -115,6 +115,8 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex;animation:fadeIn 0.2s ease}
 .modal-box{background:var(--panel);border:1px solid var(--border2);border-radius:var(--r-xl);padding:32px;max-width:500px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(109,139,255,0.1);animation:slideUp 0.3s cubic-bezier(.22,1,.36,1)}
+.modal-box--meeting{width:420px;max-width:420px;height:380px;max-height:380px;display:flex;flex-direction:column}
+.modal-box--meeting .modal-body{flex:1;min-height:0;overflow:auto}
 .modal-box h2{font-family:var(--font-head);font-size:22px;margin-bottom:6px}
 .modal-sub{color:var(--text2);font-size:14px;margin-bottom:22px}
 .modal-footer{display:flex;gap:10px;margin-top:22px;justify-content:flex-end}
@@ -147,11 +149,28 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .notif-btn{display:flex;align-items:center}
 .notif-btn{position:relative}
 .notif-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid var(--nav-bg)}
+.notif-panel{position:absolute;top:calc(100% + 12px);right:0;width:350px;height:400px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);display:flex;flex-direction:column;padding:14px 14px 12px;opacity:0;transform:translateY(-6px);pointer-events:none;transition:all 0.18s ease;z-index:120}
+.notif-panel.open{opacity:1;transform:translateY(0);pointer-events:auto}
+.notif-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.notif-panel-title{font-family:var(--font-head);font-size:14px;font-weight:700}
+.notif-panel-divider{height:1px;background:var(--border);margin:10px 0}
+.notif-panel-body{flex:1;overflow-y:auto;padding-right:6px}
+.notif-panel-body::-webkit-scrollbar{width:6px}
+.notif-panel-body::-webkit-scrollbar-thumb{background:rgba(109,139,255,0.35);border-radius:999px}
+.notif-item{border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:10px;background:var(--surface2)}
+.notif-item.is-unread{background:rgba(109,139,255,0.12);border-color:rgba(109,139,255,0.35)}
+.notif-item-title{font-size:13px;font-weight:700}
+.notif-item-msg{font-size:12px;color:var(--text2);margin-top:2px}
+.notif-item-time{font-size:11px;color:var(--text3);margin-top:6px}
+.notif-item-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:4px}
+.notif-item.is-read .notif-item-dot{background:var(--text3);opacity:0.5}
+.notif-empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px}
 .logout-btn{width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;order:99;color:var(--red);background:rgba(248,113,113,0.15);border-color:rgba(248,113,113,0.3)}
 .logout-btn:hover{background:rgba(248,113,113,0.25);border-color:rgba(248,113,113,0.45)}
 .logout-svg,.logout-icon{width:22px;height:22px;display:block;filter:drop-shadow(0 0 6px rgba(239,68,68,0.5))}
 .logout-icon path{stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .module-wrap{padding:28px;flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.meeting-room{position:relative}
 
 /* Meeting-only window (Google Meet style focus) */
 body.meeting-only #erp .sidebar,
@@ -210,6 +229,22 @@ body.meeting-only.meeting-cam-off #erp .meet-self-tile::after {
   letter-spacing:0.04em;
 }
 body.meeting-only.meeting-mic-off #erp .meet-pill { background:rgba(248,113,113,0.18); border-color:rgba(248,113,113,0.35); color:#fecaca; }
+.meet-invite-panel{position:absolute;top:64px;right:18px;width:320px;height:420px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);display:flex;flex-direction:column;padding:12px;opacity:0;transform:translateY(-6px);pointer-events:none;transition:all 0.18s ease;z-index:60}
+.meet-invite-panel.open{opacity:1;transform:translateY(0);pointer-events:auto}
+.meet-invite-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.meet-invite-title{font-family:var(--font-head);font-size:13px;font-weight:700}
+.meet-invite-divider{height:1px;background:var(--border);margin:10px 0}
+.meet-invite-body{flex:1;overflow-y:auto;padding-right:6px}
+.meet-invite-body::-webkit-scrollbar{width:6px}
+.meet-invite-body::-webkit-scrollbar-thumb{background:rgba(109,139,255,0.35);border-radius:999px}
+.meet-invite-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin:6px 0}
+.meet-invite-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;background:var(--surface2)}
+.meet-invite-item.offline{opacity:0.6}
+.meet-invite-name{font-size:12px;font-weight:600}
+.meet-invite-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)}
+.meet-invite-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.meet-invite-item.offline .meet-invite-dot{background:var(--text3)}
+.meet-invite-empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:12px}
 body.meeting-only #erp .meet-media-error {
   background:rgba(248,113,113,0.12);
   border:1px solid rgba(248,113,113,0.35);

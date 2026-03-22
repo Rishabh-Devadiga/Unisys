@@ -4,7 +4,7 @@ const cors = require('cors');
 const { Server } = require('socket.io');
 const nodemailer = require('nodemailer');
 const db = require('./db/postgres');
-const meetingsRouter = require('./routes/meetings');
+const createMeetingsRouter = require('./routes/meetings');
 const { initSignaling } = require('./socket/signaling');
 
 const app = express();
@@ -31,13 +31,13 @@ const mailer = nodemailer.createTransport({
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
-app.use('/api/meetings', meetingsRouter);
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 initSignaling(io);
+app.use('/api/meetings', createMeetingsRouter(io));
 
 const SAFE_OPERATORS = new Set(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'in', 'between']);
 const SAFE_AGGREGATIONS = new Set(['sum', 'avg', 'count', 'min', 'max']);
@@ -620,7 +620,13 @@ app.get('/health', async (req, res) => {
 
 async function startServer(port) {
   const usePort = port || PORT;
-  await db.initDatabase();
+  try {
+    await db.initDatabase();
+  } catch (err) {
+    const msg = err && err.message ? err.message : String(err);
+    console.error('[DB] Unable to initialize database. Continuing without DB.');
+    console.error('[DB] Details:', msg);
+  }
   return server.listen(usePort, () => {
     console.log(`Server is running on http://localhost:${usePort}`);
   });

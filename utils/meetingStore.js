@@ -1,14 +1,17 @@
 const { v4: uuidv4 } = require('uuid');
 
 const meetings = new Map();
+const scheduledMeetings = new Map();
+const meetingInvites = new Map();
 
 function createMeeting(options) {
   const opts = options || {};
-  const meetingId = uuidv4();
+  const meetingId = opts.meetingId || uuidv4();
   const meeting = {
     meetingId,
     hostId: opts.hostId || null,
     createdAt: new Date().toISOString(),
+    scheduledAt: opts.scheduledAt || null,
     participants: [],
     screenShareUserId: null
   };
@@ -78,6 +81,53 @@ function getScreenShareUserId(meetingId) {
   return meeting ? meeting.screenShareUserId : null;
 }
 
+function scheduleMeeting(options) {
+  const opts = options || {};
+  const meetingId = opts.meetingId || uuidv4();
+  const scheduledAt = opts.scheduledAt || null;
+  if (!meetings.has(meetingId)) {
+    createMeeting({ hostId: opts.hostId, meetingId, scheduledAt });
+  }
+  const record = {
+    meetingId,
+    title: opts.title || 'Scheduled Meeting',
+    date: opts.date || '',
+    time: opts.time || '',
+    description: opts.description || '',
+    hostId: opts.hostId || null,
+    scheduledAt: scheduledAt,
+    createdAt: new Date().toISOString()
+  };
+  scheduledMeetings.set(meetingId, record);
+  return record;
+}
+
+function getScheduledMeeting(meetingId) {
+  return scheduledMeetings.get(meetingId) || null;
+}
+
+function listScheduledMeetings() {
+  return Array.from(scheduledMeetings.values());
+}
+
+function addInvite(meetingId, invitedUserId, invitedBy) {
+  if (!meetingId || !invitedUserId) return null;
+  const invites = meetingInvites.get(meetingId) || [];
+  const invite = {
+    meetingId,
+    invitedUserId,
+    invitedBy: invitedBy || null,
+    invitedAt: new Date().toISOString()
+  };
+  invites.push(invite);
+  meetingInvites.set(meetingId, invites);
+  return invite;
+}
+
+function listInvites(meetingId) {
+  return meetingInvites.get(meetingId) || [];
+}
+
 module.exports = {
   createMeeting,
   getMeeting,
@@ -88,5 +138,10 @@ module.exports = {
   countParticipants,
   listParticipants,
   setScreenShare,
-  getScreenShareUserId
+  getScreenShareUserId,
+  scheduleMeeting,
+  getScheduledMeeting,
+  listScheduledMeetings,
+  addInvite,
+  listInvites
 };

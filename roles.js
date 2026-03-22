@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
 
    roles.js — UniSys EduSys Role-Based Dashboard System
 
@@ -945,7 +945,7 @@ var ROLE_MODULES = {
 
     'communications','compliance','integrations','analytics','attainment',
 
-    'coverage','add-feature',
+    'coverage','add-feature','role-meetings',
 
     /* Admin-only extras */
 
@@ -955,6 +955,7 @@ var ROLE_MODULES = {
 
   Head: [
     'overview','students','finance','attendance','analytics','communications','compliance','add-feature',
+    'role-meetings',
     /* Head-only extras */
     'role-perf','role-proposals','role-accounts','role-strategic'
   ],
@@ -980,19 +981,19 @@ var ROLE_MODULES = {
 
   Account: [
 
-    'overview','students','communications','analytics','add-feature'
+    'overview','students','communications','analytics','add-feature','role-meetings'
 
   ],
 
   Admissions: [
 
-    'overview','students','add-feature'
+    'overview','students','add-feature','role-meetings'
 
   ],
 
   'Railway Concession': [
 
-    'overview','add-feature'
+    'overview','add-feature','role-meetings'
 
   ]
 
@@ -1016,7 +1017,8 @@ var ROLE_NAV = {
 
     { id:'role-config', icon:'⚙',  label:'System Config',       section:'Admin Tools' },
 
-    { id:'role-backup', icon:'💾', label:'Backup & Restore',    section:'Admin Tools' }
+    { id:'role-backup', icon:'💾', label:'Backup & Restore',    section:'Admin Tools' },
+    { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' }
 
   ],
 
@@ -1024,7 +1026,8 @@ var ROLE_NAV = {
     { id:'role-perf',      icon:'📊', label:'Performance Review', section:'Head Tools' },
     { id:'role-proposals', icon:'', label:'HOD Proposals',      section:'Head Tools' },
     { id:'role-accounts',  icon:'&#128101;', label:'Account Approvals',  section:'Head Tools' },
-    { id:'role-strategic', icon:'🗺', label:'Strategic Reports',  section:'Head Tools' }
+    { id:'role-strategic', icon:'🗺', label:'Strategic Reports',  section:'Head Tools' },
+    { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' }
   ],
   HOD: [
 
@@ -1057,11 +1060,23 @@ var ROLE_NAV = {
 
   ],
 
-  Account: [],
+  Account: [
 
-  Admissions: [],
+    { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' }
 
-  'Railway Concession': []
+  ],
+
+  Admissions: [
+
+    { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' }
+
+  ],
+
+  'Railway Concession': [
+
+    { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' }
+
+  ]
 
 };
 
@@ -2751,6 +2766,49 @@ function meetingJoin() {
   });
 }
 
+function meetingOpenSchedule() {
+  var dateEl = g('meeting-schedule-date');
+  var timeEl = g('meeting-schedule-time');
+  var titleEl = g('meeting-schedule-title');
+  if (dateEl && !dateEl.value) {
+    var d = new Date();
+    dateEl.value = d.toISOString().slice(0, 10);
+  }
+  if (timeEl && !timeEl.value) {
+    var t = new Date();
+    t.setMinutes(Math.ceil(t.getMinutes() / 15) * 15);
+    timeEl.value = t.toTimeString().slice(0, 5);
+  }
+  if (titleEl && !titleEl.value) titleEl.value = '';
+  if (typeof openModal === 'function') openModal('meeting-schedule-modal');
+}
+
+function scheduleMeetingSubmit() {
+  var title = gv('meeting-schedule-title');
+  var date = gv('meeting-schedule-date');
+  var time = gv('meeting-schedule-time');
+  var desc = gv('meeting-schedule-desc');
+  if (!title || !date || !time) {
+    showToast('Please enter meeting title, date, and time', 'error');
+    return;
+  }
+  var payload = { title: title, date: date, time: time, description: desc };
+  fetch('/api/meetings/schedule', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(function(res){
+    if (!res.ok) throw new Error('schedule failed');
+    return res.json();
+  }).then(function(data){
+    var id = data && data.meetingId ? data.meetingId : '';
+    if (typeof closeModal === 'function') closeModal('meeting-schedule-modal');
+    showToast('Meeting scheduled' + (id ? ' (ID: ' + id + ')' : ''));
+  }).catch(function(){
+    showToast('Unable to schedule meeting. Please try again.', 'error');
+  });
+}
+
 function meetingToggle(type) {
   if (!MEETING_UI_STATE) MEETING_UI_STATE = { mic:true, cam:true, screen:false };
   MEETING_UI_STATE[type] = !MEETING_UI_STATE[type];
@@ -3255,6 +3313,135 @@ function buildVideoGrid(participants) {
     + '</div>';
 }
 
+var MEETING_INVITE_STATE = { open:false };
+
+function inviteEscape(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+}
+
+function getInviteUsers() {
+  var db = (typeof dbGet === 'function') ? dbGet() : null;
+  var users = db && Array.isArray(db.users) ? db.users : [];
+  if (!users.length && typeof DEMO_USERS !== 'undefined') {
+    users = DEMO_USERS.map(function(u, idx) {
+      return { id: idx + 1, name: u.name, email: u.email, role: u.role };
+    });
+  }
+  var sess = (typeof getSession === 'function') ? getSession() : null;
+  var currentId = sess && sess.email ? sess.email : null;
+  return users.map(function(u) {
+    return { id: u.email || String(u.id || ''), name: u.name || u.email || 'User', role: u.role || '' };
+  }).filter(function(u) {
+    return u.id && u.id !== currentId;
+  });
+}
+
+function getOnlinePresenceMap() {
+  var pres = (typeof window !== 'undefined') ? window.ERP_PRESENCE : null;
+  return pres && pres.online ? pres.online : {};
+}
+
+function renderInvitePanel() {
+  var list = g('meet-invite-list');
+  if (!list) return;
+  var users = getInviteUsers();
+  var onlineMap = getOnlinePresenceMap();
+  var online = [];
+  var offline = [];
+  users.forEach(function(u) {
+    if (onlineMap[u.id]) online.push(u);
+    else offline.push(u);
+  });
+  var html = '';
+  if (!online.length && !offline.length) {
+    html = '<div class="meet-invite-empty">No users found</div>';
+  } else {
+    if (online.length) {
+      html += '<div class="meet-invite-section">Online Users</div>';
+      html += online.map(function(u) {
+        var name = inviteEscape(u.name);
+        var uid = inviteEscape(u.id);
+        return '<div class="meet-invite-item">'
+          + '<div>'
+            + '<div class="meet-invite-name">' + name + '</div>'
+            + '<div class="meet-invite-meta"><span class="meet-invite-dot"></span><span>Online</span></div>'
+          + '</div>'
+          + '<button class="btn btn-sm" onclick="inviteUserToMeeting(\'' + uid + '\', \'' + name + '\')">Invite</button>'
+        + '</div>';
+      }).join('');
+    }
+    if (offline.length) {
+      html += '<div class="meet-invite-section">Offline Users</div>';
+      html += offline.map(function(u) {
+        var name = inviteEscape(u.name);
+        var uid = inviteEscape(u.id);
+        return '<div class="meet-invite-item offline">'
+          + '<div>'
+            + '<div class="meet-invite-name">' + name + '</div>'
+            + '<div class="meet-invite-meta"><span class="meet-invite-dot"></span><span>Offline</span></div>'
+          + '</div>'
+          + '<button class="btn btn-sm" onclick="inviteUserToMeeting(\'' + uid + '\', \'' + name + '\')">Invite</button>'
+        + '</div>';
+      }).join('');
+    }
+  }
+  list.innerHTML = html;
+}
+
+function toggleInvitePanel(force) {
+  var panel = g('meet-invite-panel');
+  if (!panel) return;
+  var open = (typeof force === 'boolean') ? force : !panel.classList.contains('open');
+  panel.classList.toggle('open', open);
+  MEETING_INVITE_STATE.open = open;
+  if (open) renderInvitePanel();
+  if (!window.__invitePanelClickBound) {
+    document.addEventListener('click', function(e) {
+      var btn = g('meeting-invite-btn');
+      if (!panel.classList.contains('open')) return;
+      if (panel.contains(e.target) || (btn && btn.contains(e.target))) return;
+      panel.classList.remove('open');
+      MEETING_INVITE_STATE.open = false;
+    });
+    window.__invitePanelClickBound = true;
+  }
+}
+
+function getInviteSenderName() {
+  var sess = (typeof getSession === 'function') ? getSession() : null;
+  return sess && sess.name ? sess.name : 'Host';
+}
+
+function inviteUserToMeeting(userId, name) {
+  var meetingId = MEETING_RTC.meetingId;
+  if (!meetingId || !userId) return;
+  fetch('/api/meetings/invite', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      meetingId: meetingId,
+      invitedUserId: userId,
+      invitedBy: getInviteSenderName()
+    })
+  }).then(function(res){
+    if (!res.ok) throw new Error('invite failed');
+    return res.json();
+  }).then(function(){
+    showToast('Invite sent to ' + (name || 'user'));
+  }).catch(function(){
+    showToast('Unable to send invite', 'error');
+  });
+}
+
+function refreshInvitePanel() {
+  var panel = g('meet-invite-panel');
+  if (panel && panel.classList.contains('open')) renderInvitePanel();
+}
+
+if (typeof window !== 'undefined') {
+  window.refreshInvitePanel = refreshInvitePanel;
+}
+
 function buildMeetingControls() {
   return '<div class="meeting-controls-bar">'
     + '<button class="meet-control" id="meeting-mic-btn" onclick="meetingToggle(\'mic\')" aria-label="Toggle microphone" title="Microphone">'
@@ -3280,6 +3467,7 @@ function buildMeetingsDashboard() {
     + '<div class="form-actions">'
     + '<button class="btn btn-primary" onclick="meetingStart()">Start Meeting</button>'
     + '<button class="btn" onclick="meetingJoin()">Join Meeting</button>'
+    + '<button class="btn" onclick="meetingOpenSchedule()">Schedule Meeting</button>'
     + '</div>'
     + '<div class="form-grid" style="margin-top:10px">'
     + '<div class="form-group"><label class="form-label">Enter Meeting ID</label><input class="form-input" id="meeting-join-id" placeholder="e.g. abc123xyz"/></div>'
@@ -3325,7 +3513,16 @@ function buildMeetingRoom(meetingId) {
     + '<span class="meet-pill">Live</span>'
     + '<span class="meet-pill meet-pill--neutral"><span id="meet-participant-count">' + count + '</span> Participants</span>'
     + '<button class="meet-chip">Chat</button>'
+    + '<button class="meet-chip" id="meeting-invite-btn" onclick="toggleInvitePanel()">Invite</button>'
     + '</div>'
+    + '</div>'
+    + '<div class="meet-invite-panel" id="meet-invite-panel">'
+    + '<div class="meet-invite-head">'
+    + '<div class="meet-invite-title">Invite Users</div>'
+    + '<button class="btn btn-sm" onclick="toggleInvitePanel(false)">Close</button>'
+    + '</div>'
+    + '<div class="meet-invite-divider"></div>'
+    + '<div class="meet-invite-body" id="meet-invite-list"></div>'
     + '</div>'
     + '<div class="meet-stage">'
     + buildVideoGrid(participants)

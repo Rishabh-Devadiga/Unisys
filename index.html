@@ -54,6 +54,26 @@
   </div>
 </div>
 
+<!-- MEETING SCHEDULE MODAL -->
+<div class="modal-overlay" id="meeting-schedule-modal">
+  <div class="modal-box modal-box--meeting">
+    <h2>Schedule Meeting</h2>
+    <p class="modal-sub">Plan a meeting and notify participants.</p>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr">
+        <div class="form-group"><label class="form-label">Meeting Title</label><input class="form-input" id="meeting-schedule-title" placeholder="AI Lecture"/></div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="meeting-schedule-date" type="date"/></div>
+        <div class="form-group"><label class="form-label">Start Time</label><input class="form-input" id="meeting-schedule-time" type="time"/></div>
+      </div>
+      <div class="form-group" style="margin-top:12px"><label class="form-label">Description (optional)</label><textarea class="form-textarea" id="meeting-schedule-desc" rows="3" placeholder="Add agenda or notes..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('meeting-schedule-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="scheduleMeetingSubmit()">Schedule</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== LANDING PAGE ===== -->
 <div id="landing" class="page active">
   <header class="nav">
@@ -477,9 +497,17 @@
       </div>
       <div class="topbar-actions">
         <button class="btn btn-icon theme-btn" onclick="toggleTheme()">☀️</button>
-        <div class="notif-btn">
-          <button class="btn btn-icon" onclick="showToast('3 pending approvals require attention','warning')">🔔</button>
-          <div class="notif-dot"></div>
+        <div class="notif-btn" id="notif-root">
+          <button class="btn btn-icon" id="notif-toggle" aria-label="Notifications" aria-expanded="false" aria-controls="notif-panel">🔔</button>
+          <div class="notif-dot" id="notif-dot"></div>
+          <div class="notif-panel" id="notif-panel" aria-hidden="true">
+            <div class="notif-panel-head">
+              <div class="notif-panel-title">Notifications</div>
+              <button class="btn btn-sm" id="notif-mark-all">Mark All as Read</button>
+            </div>
+            <div class="notif-panel-divider"></div>
+            <div class="notif-panel-body" id="notif-list"></div>
+          </div>
         </div>
 
         <button

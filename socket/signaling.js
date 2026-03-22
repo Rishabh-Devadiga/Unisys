@@ -1,7 +1,19 @@
 const meetingStore = require('../utils/meetingStore');
+const presenceStore = require('../utils/presenceStore');
+const notificationStore = require('../utils/notificationStore');
 
 function initSignaling(io) {
   io.on('connection', (socket) => {
+    socket.on('presence:join', (payload) => {
+      const data = payload || {};
+      const userId = String(data.userId || socket.id).trim();
+      const name = String(data.name || userId).trim();
+      presenceStore.setOnline(userId, socket.id, name);
+      socket.data.presenceUserId = userId;
+      io.emit('presence:update', presenceStore.getOnlineSummary());
+      socket.emit('notifications:sync', notificationStore.listForUser(userId));
+    });
+
     socket.on('join-room', (payload) => {
       const data = payload || {};
       const meetingId = String(data.meetingId || '').trim();
@@ -102,6 +114,10 @@ function initSignaling(io) {
     });
 
     socket.on('disconnect', () => {
+      const removedUser = presenceStore.setOfflineBySocket(socket.id);
+      if (removedUser) {
+        io.emit('presence:update', presenceStore.getOnlineSummary());
+      }
       const meetingId = socket.data.meetingId;
       if (!meetingId) return;
       const removed = meetingStore.removeParticipant(meetingId, socket.id);

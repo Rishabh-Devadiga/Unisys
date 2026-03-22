@@ -250,6 +250,167 @@ function g(id) { return document.getElementById(id); }
 function gv(id) { const e = g(id); return e ? e.value.trim() : ''; }
 function gn(id) { const e = g(id); return e ? (Number(e.value) || 0) : 0; }
 
+/* ── NOTIFICATIONS (MOCK) ─────────────────────────────────── */
+const NOTIFICATIONS = [
+  { id: 1, title: 'Assignment Uploaded', message: 'DBMS Assignment 2 has been uploaded.', time: '2 minutes ago', read: false },
+  { id: 2, title: 'Meeting Scheduled', message: 'AI Lecture meeting scheduled.', time: '10 minutes ago', read: false },
+  { id: 3, title: 'Fee Reminder', message: 'Semester fee is due in 3 days.', time: '1 hour ago', read: true },
+  { id: 4, title: 'Library Notice', message: 'New journals added to the CS section.', time: 'Yesterday', read: true }
+];
+let _notifOpen = false;
+let _notifReady = false;
+let ERP_SOCKET = null;
+let ERP_PRESENCE = { online: {} };
+let ERP_USER = null;
+
+function normalizeNotification(item) {
+  if (!item) return null;
+  return {
+    id: item.id || ('n' + Date.now() + Math.random().toString(36).slice(2, 6)),
+    title: item.title || 'Notification',
+    message: item.message || '',
+    time: item.time || 'Just now',
+    meetingId: item.meetingId || null,
+    read: !!item.read
+  };
+}
+
+function pushNotification(item, prepend) {
+  const next = normalizeNotification(item);
+  if (!next) return;
+  if (NOTIFICATIONS.some(function(n) { return n.id === next.id; })) return;
+  if (prepend === false) NOTIFICATIONS.push(next);
+  else NOTIFICATIONS.unshift(next);
+  renderNotifications();
+}
+
+function replaceNotifications(list) {
+  if (!Array.isArray(list) || !list.length) return;
+  NOTIFICATIONS.length = 0;
+  list.forEach(function(n) {
+    const next = normalizeNotification(n);
+    if (next) NOTIFICATIONS.push(next);
+  });
+  renderNotifications();
+}
+
+function renderNotifications() {
+  const list = g('notif-list');
+  const dot = g('notif-dot');
+  const markAll = g('notif-mark-all');
+  if (!list) return;
+
+  if (!NOTIFICATIONS.length) {
+    list.innerHTML = '<div class="notif-empty">No notifications</div>';
+  } else {
+    list.innerHTML = NOTIFICATIONS.map(function(n) {
+      const state = n.read ? 'is-read' : 'is-unread';
+      return '<div class="notif-item ' + state + '">'
+        + '<div>'
+          + '<div class="notif-item-title">' + (n.title || 'Notification') + '</div>'
+          + '<div class="notif-item-msg">' + (n.message || '') + '</div>'
+          + '<div class="notif-item-time">' + (n.time || 'Just now') + '</div>'
+        + '</div>'
+        + '<span class="notif-item-dot" aria-hidden="true"></span>'
+      + '</div>';
+    }).join('');
+  }
+
+  const hasUnread = NOTIFICATIONS.some(function(n) { return !n.read; });
+  if (dot) dot.style.display = hasUnread ? 'block' : 'none';
+  if (markAll) markAll.disabled = !hasUnread;
+}
+
+function setNotifOpen(open) {
+  const panel = g('notif-panel');
+  const toggle = g('notif-toggle');
+  if (!panel || !toggle) return;
+  _notifOpen = !!open;
+  panel.classList.toggle('open', _notifOpen);
+  panel.setAttribute('aria-hidden', _notifOpen ? 'false' : 'true');
+  toggle.setAttribute('aria-expanded', _notifOpen ? 'true' : 'false');
+}
+
+function toggleNotifPanel() {
+  setNotifOpen(!_notifOpen);
+}
+
+function initNotifications() {
+  if (_notifReady) return;
+  _notifReady = true;
+  const root = g('notif-root');
+  const toggle = g('notif-toggle');
+  const panel = g('notif-panel');
+  const markAll = g('notif-mark-all');
+  if (!root || !toggle || !panel) return;
+
+  toggle.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleNotifPanel();
+  });
+
+  panel.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  if (markAll) {
+    markAll.addEventListener('click', function(e) {
+      e.preventDefault();
+      NOTIFICATIONS.forEach(function(n) { n.read = true; });
+      renderNotifications();
+    });
+  }
+
+  document.addEventListener('click', function(e) {
+    if (!_notifOpen) return;
+    if (root && !root.contains(e.target)) setNotifOpen(false);
+  });
+
+  renderNotifications();
+}
+
+function getERPUser() {
+  if (ERP_USER) return ERP_USER;
+  var sess = (typeof getSession === 'function') ? getSession() : null;
+  if (sess && sess.email) {
+    ERP_USER = { id: sess.email, name: sess.name || sess.email };
+    return ERP_USER;
+  }
+  var anon = storeGet('edusys-guest-id');
+  if (!anon) {
+    anon = 'guest-' + Math.random().toString(36).slice(2, 8);
+    storeSet('edusys-guest-id', anon);
+  }
+  ERP_USER = { id: anon, name: 'Guest User' };
+  return ERP_USER;
+}
+
+function initPresenceSocket() {
+  if (ERP_SOCKET || !window.io) return;
+  var user = getERPUser();
+  ERP_SOCKET = io({ transports: ['websocket', 'polling'] });
+  window.ERP_SOCKET = ERP_SOCKET;
+  window.ERP_PRESENCE = ERP_PRESENCE;
+  window.ERP_CURRENT_USER = user;
+
+  ERP_SOCKET.on('connect', function() {
+    ERP_SOCKET.emit('presence:join', { userId: user.id, name: user.name });
+  });
+
+  ERP_SOCKET.on('presence:update', function(payload) {
+    ERP_PRESENCE = payload || { online: {} };
+    window.ERP_PRESENCE = ERP_PRESENCE;
+    if (typeof window.refreshInvitePanel === 'function') window.refreshInvitePanel();
+  });
+
+  ERP_SOCKET.on('notifications:sync', function(payload) {
+    if (Array.isArray(payload) && payload.length) replaceNotifications(payload);
+  });
+
+  ERP_SOCKET.on('notification', function(payload) {
+    pushNotification(payload);
+  });
+}
+
 function updateAll() {
   renderT('admission-table', ['Applicant','Program','Stage','Score'],
     S.admissions.map(function(a) { return [a.name, a.program, sbadge(a.stage), a.score]; }));
@@ -491,6 +652,9 @@ function initERP() {
   updateAll();
   if (_erpReady) return;
   _erpReady = true;
+
+  initNotifications();
+  initPresenceSocket();
 
   /* sidebar nav */
   const sidebarNav = document.getElementById('module-nav');
