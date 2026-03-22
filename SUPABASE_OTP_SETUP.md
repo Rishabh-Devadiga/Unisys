@@ -2,9 +2,9 @@
 
 ## Files Created
 
-1. **supabase-config.js** - Initializes Supabase client with your credentials
-2. **otp.js** - Contains `sendOtp()` and `verifyOtp()` functions
-3. **otp.html** - UI for OTP signup verification
+1. **frontend/supabase-config.js** - Initializes Supabase client with your credentials
+2. **frontend/otp.js** - Contains `sendOtp()` and `verifyOtp()` functions
+3. **frontend/otp.html** - UI for OTP signup verification
 
 ## Supabase Configuration
 
@@ -62,8 +62,8 @@ Or use the full template:
 ### Option 1: Using VS Code Live Server
 
 1. Install [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) extension
-2. Right-click **otp.html** → Select **"Open with Live Server"**
-3. App will open at `http://127.0.0.1:5500/otp.html`
+2. Right-click **frontend/otp.html** → Select **"Open with Live Server"**
+3. App will open at `http://127.0.0.1:5500/frontend/otp.html`
 
 ### Option 2: Using Python
 
@@ -75,7 +75,7 @@ python -m http.server 5500
 python -m SimpleHTTPServer 5500
 ```
 
-Then visit: `http://127.0.0.1:5500/otp.html`
+Then visit: `http://127.0.0.1:5500/frontend/otp.html`
 
 ### Option 3: Using Node.js http-server
 
@@ -122,13 +122,13 @@ http-server -p 5500
 | OTP not received | Check email spam folder; check Supabase email settings |
 | "Invalid OTP" | Ensure OTP hasn't expired (usually 24 hours); verify correct email |
 | CORS errors | Make sure you're using `http://` not `file://` |
-| "API key not found" | Verify credentials in supabase-config.js are correct |
+| "API key not found" | Verify credentials in frontend/supabase-config.js are correct |
 
 ## Security Notes
 
 ⚠️ **Important**: 
 
-- The `supabase-config.js` contains your **anon key** (public key), which is safe to expose
+- The `frontend/supabase-config.js` contains your **anon key** (public key), which is safe to expose
 - The anon key can only perform operations you've allowed via Row Level Security (RLS)
 - For production, ensure proper security rules are configured in Supabase
 
@@ -136,15 +136,15 @@ http-server -p 5500
 
 ```
 Unisys-1/
-├── otp.html                 ← Open this file (on HTTP server)
-├── otp.js                   ← OTP functions (sendOtp, verifyOtp)
-├── supabase-config.js       ← Supabase client config
+├── frontend/otp.html                 ← Open this file (on HTTP server)
+├── frontend/otp.js                   ← OTP functions (sendOtp, verifyOtp)
+├── frontend/supabase-config.js       ← Supabase client config
 ├── (other existing files)
 ```
 
 ## Next Steps
 
-1. ✅ Create `supabase-config.js`, `otp.js`, `otp.html`
+1. ✅ Create `frontend/supabase-config.js`, `frontend/otp.js`, `frontend/otp.html`
 2. ✅ Set Supabase credentials
 3. 📋 Configure Supabase Email Provider
 4. 📋 Add Redirect URLs in Supabase
@@ -167,3 +167,5 @@ You can extend this system with:
 - [Supabase Auth Docs](https://supabase.com/docs/guides/auth)
 - [Email OTP Guide](https://supabase.com/docs/guides/auth/auth-email-otp)
 - [JavaScript Client Docs](https://supabase.com/docs/reference/javascript/auth-signinwithotp)
+
+

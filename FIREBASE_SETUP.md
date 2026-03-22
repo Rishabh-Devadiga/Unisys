@@ -1,6 +1,6 @@
 # Firebase email sending (SMTP) — UniSys_Project
 
-This repo already queues email documents to Firestore collection `mail` (see `firebase-email.js`).  
+This repo already queues email documents to Firestore collection `mail` (see `frontend/firebase-email.js`).  
 This setup adds a Firebase Cloud Function that watches `mail/{docId}` and sends real emails via SMTP (Gmail App Password recommended).
 
 ## What you need
@@ -9,7 +9,7 @@ This setup adds a Firebase Cloud Function that watches `mail/{docId}` and sends 
 - SMTP credentials (recommended: Gmail App Password).
 
 ## Step 1 — Put Firebase Web config in the app
-Edit `firebase-config.js` and paste your Firebase config from:
+Edit `frontend/firebase-config.js` and paste your Firebase config from:
 Firebase Console → Project settings → Your apps → Web app → SDK config.
 
 ## Step 2 — Initialize Firebase in this folder
@@ -19,11 +19,11 @@ From `UniSys_Project`:
 3. `firebase init firestore functions`
    - Select your Firebase project
    - Functions language: **JavaScript**
-   - Use existing `functions` folder when prompted
+   - Use existing `backend/functions` folder when prompted
    - Don’t overwrite existing files if asked
 
 ## Step 3 — Install function deps
-From `UniSys_Project\\functions`:
+From `UniSys_Project\\backend\\functions`:
 - `npm install`
 
 ## Step 4 — Set SMTP secrets (for deployed Functions)
@@ -42,7 +42,7 @@ From `UniSys_Project`:
 - `firebase deploy --only functions,firestore:rules`
 
 ## Step 6 — Test from the UI
-Open `index.html`, login as HOD/Faculty, go to Defaulters:
+Open `frontend/index.html`, login as HOD/Faculty, go to Defaulters:
 - Click **Email Me (Test)** and enter your email when prompted.
 - Click **Email Defaulters** to queue emails to the mock addresses.
 
