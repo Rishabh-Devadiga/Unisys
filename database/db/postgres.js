@@ -29,6 +29,14 @@ async function query(text, params) {
 
 async function ensureSchema() {
   await query(`
+    CREATE TABLE IF NOT EXISTS app_state (
+      id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS students (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
@@ -180,6 +188,34 @@ async function insertRecord(tableName, payload) {
   return result.rows[0] || null;
 }
 
+async function getAppState(id) {
+  const key = id || 'default';
+  const result = await query(
+    `SELECT data FROM app_state WHERE id = $1 LIMIT 1`,
+    [key]
+  );
+  return result.rows[0] ? result.rows[0].data : null;
+}
+
+async function setAppState(id, payload) {
+  const key = id || 'default';
+  const data = JSON.stringify(payload || {});
+  await query(
+    `
+      INSERT INTO app_state (id, data, updated_at)
+      VALUES ($1, $2::jsonb, NOW())
+      ON CONFLICT (id)
+      DO UPDATE SET data = EXCLUDED.data, updated_at = NOW();
+    `,
+    [key, data]
+  );
+}
+
+async function clearAppState(id) {
+  const key = id || 'default';
+  await query(`DELETE FROM app_state WHERE id = $1`, [key]);
+}
+
 module.exports = {
   pool,
   query,
@@ -187,5 +223,8 @@ module.exports = {
   getSchema,
   listTables,
   getTableRows,
-  insertRecord
+  insertRecord,
+  getAppState,
+  setAppState,
+  clearAppState
 };
