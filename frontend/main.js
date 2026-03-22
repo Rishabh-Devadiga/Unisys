@@ -262,16 +262,97 @@ let _notifReady = false;
 let ERP_SOCKET = null;
 let ERP_PRESENCE = { online: {} };
 let ERP_USER = null;
+let _erpStateLoading = false;
+let _erpPersistTimer = null;
+
+function resolveApiRole(role) {
+  var r = String(role || '').trim().toLowerCase();
+  if (!r) return '';
+  if (r === 'admin') return 'Admin';
+  if (r === 'student') return 'Student';
+  return 'Faculty';
+}
+
+function getInstituteKey() {
+  if (typeof getSession === 'function') {
+    var sess = getSession();
+    if (sess && sess.institute) return String(sess.institute);
+  }
+  var stored = storeGet('edusys-college');
+  return stored ? String(stored) : '';
+}
+
+function getAuthHeaders() {
+  var headers = {};
+  if (typeof getSession === 'function') {
+    var sess = getSession();
+    if (sess && sess.email && sess.role) {
+      headers['x-user-email'] = sess.email;
+      headers['x-user-role'] = resolveApiRole(sess.role);
+      headers['x-user-id'] = sess.email;
+    }
+  }
+  var inst = getInstituteKey();
+  if (inst) {
+    headers['x-user-institute'] = inst;
+    headers['x-erp-institute'] = inst;
+  }
+  return headers;
+}
+
+function applyErpState(state) {
+  if (!state || typeof state !== 'object') return;
+  Object.keys(S).forEach(function(key) {
+    if (Array.isArray(state[key])) {
+      S[key] = state[key];
+    }
+  });
+}
+
+function loadErpStateFromApi() {
+  var headers = getAuthHeaders();
+  fetch('/api/erp-state', { headers: headers, credentials: 'include' })
+    .then(function(res) { return res.ok ? res.json() : null; })
+    .then(function(payload) {
+      if (!payload || !payload.state) {
+        persistErpStateNow();
+        return;
+      }
+      _erpStateLoading = true;
+      applyErpState(payload.state);
+      updateAll();
+    })
+    .catch(function() {})
+    .finally(function() { _erpStateLoading = false; });
+}
+
+function persistErpStateNow() {
+  var headers = getAuthHeaders();
+  if (!headers['x-user-email']) return;
+  fetch('/api/erp-state', {
+    method: 'POST',
+    credentials: 'include',
+    headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+    body: JSON.stringify({ state: S })
+  }).catch(function() {});
+}
+
+function schedulePersistErpState() {
+  if (_erpStateLoading) return;
+  clearTimeout(_erpPersistTimer);
+  _erpPersistTimer = setTimeout(persistErpStateNow, 600);
+}
 
 function normalizeNotification(item) {
   if (!item) return null;
+  var createdAt = item.created_at || item.createdAt || item.created || '';
   return {
     id: item.id || ('n' + Date.now() + Math.random().toString(36).slice(2, 6)),
     title: item.title || 'Notification',
     message: item.message || '',
-    time: item.time || 'Just now',
+    time: item.time || (createdAt ? new Date(createdAt).toLocaleString() : 'Just now'),
     meetingId: item.meetingId || null,
-    read: !!item.read
+    read: !!(item.read || item.read_status || item.readStatus)
   };
 }
 
@@ -305,7 +386,7 @@ function renderNotifications() {
   } else {
     list.innerHTML = NOTIFICATIONS.map(function(n) {
       const state = n.read ? 'is-read' : 'is-unread';
-      return '<div class="notif-item ' + state + '">'
+      return '<div class="notif-item ' + state + '" data-id="' + n.id + '">'
         + '<div>'
           + '<div class="notif-item-title">' + (n.title || 'Notification') + '</div>'
           + '<div class="notif-item-msg">' + (n.message || '') + '</div>'
@@ -319,6 +400,29 @@ function renderNotifications() {
   const hasUnread = NOTIFICATIONS.some(function(n) { return !n.read; });
   if (dot) dot.style.display = hasUnread ? 'block' : 'none';
   if (markAll) markAll.disabled = !hasUnread;
+}
+
+function markNotificationRead(id) {
+  if (!id) return;
+  var headers = getAuthHeaders();
+  if (!headers['x-user-email']) return;
+  fetch('/api/notifications/read', {
+    method: 'POST',
+    headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+    body: JSON.stringify({ id: id })
+  }).catch(function() {});
+}
+
+function loadNotificationsFromApi() {
+  var headers = getAuthHeaders();
+  if (!headers['x-user-email']) return;
+  fetch('/api/notifications', { headers: headers })
+    .then(function(res) { return res.ok ? res.json() : null; })
+    .then(function(data) {
+      if (!data || !Array.isArray(data.notifications)) return;
+      replaceNotifications(data.notifications);
+    })
+    .catch(function() {});
 }
 
 function setNotifOpen(open) {
@@ -342,6 +446,7 @@ function initNotifications() {
   const toggle = g('notif-toggle');
   const panel = g('notif-panel');
   const markAll = g('notif-mark-all');
+  const list = g('notif-list');
   if (!root || !toggle || !panel) return;
 
   toggle.addEventListener('click', function(e) {
@@ -355,7 +460,12 @@ function initNotifications() {
   if (markAll) {
     markAll.addEventListener('click', function(e) {
       e.preventDefault();
-      NOTIFICATIONS.forEach(function(n) { n.read = true; });
+      NOTIFICATIONS.forEach(function(n) {
+        if (!n.read) {
+          n.read = true;
+          markNotificationRead(n.id);
+        }
+      });
       renderNotifications();
     });
   }
@@ -365,7 +475,20 @@ function initNotifications() {
     if (root && !root.contains(e.target)) setNotifOpen(false);
   });
 
+  if (list) list.addEventListener('click', function(e) {
+    var item = e.target.closest ? e.target.closest('.notif-item') : null;
+    if (!item) return;
+    var id = item.getAttribute('data-id');
+    var found = NOTIFICATIONS.find(function(n) { return String(n.id) === String(id); });
+    if (found && !found.read) {
+      found.read = true;
+      markNotificationRead(id);
+      renderNotifications();
+    }
+  });
+
   renderNotifications();
+  loadNotificationsFromApi();
 }
 
 function getERPUser() {
@@ -507,6 +630,8 @@ function updateAll() {
   /* KPI cards */
   const ks = g('kpi-students'); if (ks) ks.textContent = (1842 + S.students.length - 3).toLocaleString();
   const kt = g('kpi-tickets'); if (kt) kt.textContent = (128 + S.service.length - 3);
+
+  schedulePersistErpState();
 }
 
 /* ── ERP ACTIONS ───────────────────────────────── */
@@ -649,12 +774,13 @@ const A = {
 /* ── ERP INIT ──────────────────────────────────── */
 let _erpReady = false;
 function initERP() {
-  updateAll();
-  if (_erpReady) return;
+  if (_erpReady) { updateAll(); return; }
   _erpReady = true;
 
   initNotifications();
   initPresenceSocket();
+  loadErpStateFromApi();
+  updateAll();
 
   /* sidebar nav */
   const sidebarNav = document.getElementById('module-nav');

@@ -43,14 +43,20 @@ function hasMeeting(meetingId) {
   return meetings.has(meetingId);
 }
 
-function addParticipant(meetingId, userId, socketId) {
+function addParticipant(meetingId, userId, socketId, displayName) {
   const meeting = getMeeting(meetingId);
   if (!meeting) return null;
   const existing = meeting.participants.find((p) => p.socketId === socketId || p.userId === userId);
-  if (existing) return existing;
+  if (existing) {
+    if (displayName && !existing.name) {
+      existing.name = displayName;
+    }
+    return existing;
+  }
   const participant = {
     userId: userId || socketId,
     socketId,
+    name: displayName || null,
     joinedAt: new Date().toISOString()
   };
   meeting.participants.push(participant);

@@ -729,6 +729,10 @@ function authLoginAsRole(role) {
 
 
 function authLogout() {
+  try {
+    fetch('/api/users/logout', { method: 'POST', credentials: 'include' })
+      .catch(function() {});
+  } catch (e) {}
 
   storeRemove(SESSION_KEY);
 
@@ -1074,7 +1078,7 @@ var ROLE_MODULES = {
     'overview','students','finance','attendance','analytics','communications','compliance','add-feature',
     'role-meetings',
     /* Head-only extras */
-    'role-perf','role-proposals','role-accounts','role-strategic'
+    'role-perf','role-proposals','role-users','role-strategic'
   ],
 
   HOD: [
@@ -1142,7 +1146,7 @@ var ROLE_NAV = {
   Head: [
     { id:'role-perf',      icon:'📊', label:'Performance Review', section:'Head Tools' },
     { id:'role-proposals', icon:'', label:'HOD Proposals',      section:'Head Tools' },
-    { id:'role-accounts',  icon:'&#128101;', label:'Account Approvals',  section:'Head Tools' },
+    { id:'role-users',  icon:'👤', label:'User Management',    section:'Head Tools' },
     { id:'role-strategic', icon:'🗺', label:'Strategic Reports',  section:'Head Tools' },
     { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' }
   ],
@@ -2784,6 +2788,8 @@ var MEETING_RTC = {
   peers: {},
   userId: null,
   meetingId: null,
+  displayName: null,
+  names: {},
   pinnedId: null,
   pinAuto: false,
   localStream: null,
@@ -3054,10 +3060,31 @@ function getMeetingUserId() {
   return id;
 }
 
+function getMeetingDisplayName() {
+  var sess = (typeof getSession === 'function') ? getSession() : null;
+  var name = sess && sess.name ? sess.name : '';
+  if (!name && sess && sess.email) name = sess.email;
+  return safeTrim(name) || 'Guest';
+}
+
+function setParticipantLabel(userId, name) {
+  if (!userId) return;
+  var clean = safeTrim(name);
+  if (clean) {
+    MEETING_RTC.names[userId] = clean;
+  }
+  var label = document.querySelector('.meet-tile[data-user-id=\"' + userId + '\"] .meet-name');
+  if (label) {
+    label.textContent = clean || formatParticipantLabel(userId);
+  }
+}
+
 function initMeetingRoom(meetingId) {
   if (MEETING_RTC.meetingId === meetingId && MEETING_RTC.socket) return;
   MEETING_RTC.meetingId = meetingId;
   MEETING_RTC.userId = getMeetingUserId();
+  MEETING_RTC.displayName = getMeetingDisplayName();
+  MEETING_RTC.names[MEETING_RTC.userId] = MEETING_RTC.displayName;
   syncLocalTile();
   initMeetingMedia();
   fetchMeetingIceServers();
@@ -3074,14 +3101,22 @@ function initMeetingSocket(meetingId) {
   MEETING_RTC.socket = socket;
 
   socket.on('connect', function() {
-    socket.emit('join-room', { meetingId: meetingId, userId: MEETING_RTC.userId });
+    socket.emit('join-room', {
+      meetingId: meetingId,
+      userId: MEETING_RTC.userId,
+      name: MEETING_RTC.displayName
+    });
   });
 
   socket.on('join-success', function(payload) {
     var data = payload || {};
     var list = Array.isArray(data.participants) ? data.participants : [];
     list.forEach(function(p) {
-      if (!p || p.userId === MEETING_RTC.userId) return;
+      if (!p) return;
+      if (p.userId) {
+        setParticipantLabel(p.userId, p.name || p.displayName || p.display_name || '');
+      }
+      if (p.userId === MEETING_RTC.userId) return;
       createPeerConnection(p.userId, true);
     });
     if (data.screenShareUserId) {
@@ -3092,6 +3127,7 @@ function initMeetingSocket(meetingId) {
   socket.on('user-joined', function(payload) {
     var id = payload ? payload.userId : null;
     if (!id || id === MEETING_RTC.userId) return;
+    setParticipantLabel(id, payload ? payload.name : '');
     createPeerConnection(id, true);
   });
 
@@ -3315,6 +3351,8 @@ function removePeer(userId) {
 }
 
 function formatParticipantLabel(userId) {
+  var name = MEETING_RTC.names && MEETING_RTC.names[userId];
+  if (name) return name;
   return 'Participant ' + String(userId).slice(-4).toUpperCase();
 }
 
@@ -3323,7 +3361,7 @@ function syncLocalTile() {
   if (!tile) return;
   tile.setAttribute('data-user-id', MEETING_RTC.userId);
   var label = tile.querySelector('.meet-name');
-  if (label) label.textContent = 'You';
+  if (label) label.textContent = MEETING_RTC.displayName || 'You';
   updateParticipantCount();
 }
 
@@ -4801,59 +4839,43 @@ async function enterERP() {
 
 
 
-  /* Demo key bypass (original behavior) */
-
   var keyNorm = key.toUpperCase();
-  if (keyNorm === 'EDU-DEMO-2026') {
-
-    if (errEl) errEl.style.display = 'none';
-
-    /* Default to Admin for plain key login */
-
-    authLoginAsRole('Admin');
-
-    showPage('erp');
-
-    return;
-
-  }
-
-  /* Stored key match */
-
   var stored = storeGet('edusys-key');
   var storedNorm = stored ? String(stored).toUpperCase() : null;
+  var keyRequired = true;
+  var validKey = false;
 
-  if (storedNorm && keyNorm === storedNorm) {
-
-    if (errEl) errEl.style.display = 'none';
-
-    authLoginAsRole('Admin');
-
-    showPage('erp');
-
+  if (keyRequired && !keyNorm) {
+    if (errEl) { errEl.textContent = '⚠ System Key required for ' + roleSel + ' login.'; errEl.style.display = 'block'; }
     return;
-
   }
 
   if (keyNorm) {
-    try {
-      var res = await fetch('/api/system-key/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: keyNorm })
-      });
-      if (!res.ok) throw new Error('verify failed');
-      var data = await res.json();
-      if (data && data.valid) {
-        if (typeof storeSet === 'function') storeSet('edusys-key', keyNorm);
-        if (errEl) errEl.style.display = 'none';
-        authLoginAsRole('Admin');
-        showPage('erp');
-        return;
+    if (storedNorm && keyNorm === storedNorm) {
+      validKey = true;
+    } else {
+      try {
+        var res = await fetch('/api/system-key/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: keyNorm })
+        });
+        if (!res.ok) throw new Error('verify failed');
+        var data = await res.json();
+        if (data && data.valid) validKey = true;
+      } catch (e) {
+        validKey = false;
       }
-    } catch (e) {
-      // fall through to email/password or error
     }
+    if (!validKey) {
+      if (errEl) { errEl.textContent = '⚠ Invalid System Key.'; errEl.style.display = 'block'; }
+      return;
+    }
+    if (typeof storeSet === 'function') storeSet('edusys-key', keyNorm);
+  } else if (keyRequired) {
+    validKey = false;
+  } else {
+    validKey = true;
   }
 
   /* Email + password login */
@@ -4880,13 +4902,19 @@ async function enterERP() {
 
     }
 
-    if (errEl) errEl.style.display = 'block';
+    if (errEl) {
+      errEl.textContent = validKey ? '⚠ Invalid email, password, or role.' : '⚠ Invalid System Key.';
+      errEl.style.display = 'block';
+    }
 
     return;
 
   }
 
-  if (errEl) errEl.style.display = 'block';
+  if (errEl) {
+    errEl.textContent = validKey ? '⚠ Please enter email and password.' : '⚠ Invalid System Key.';
+    errEl.style.display = 'block';
+  }
 
 }
 

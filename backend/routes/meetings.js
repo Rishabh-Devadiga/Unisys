@@ -2,6 +2,8 @@ const express = require('express');
 const meetingStore = require('../utils/meetingStore');
 const notificationStore = require('../utils/notificationStore');
 const presenceStore = require('../utils/presenceStore');
+const meetingService = require('../services/meetingService');
+const notificationsService = require('../services/notificationsService');
 
 function scheduleReminder(io, meeting) {
   if (!meeting || !meeting.scheduledAt) return;
@@ -27,6 +29,12 @@ function createMeetingsRouter(io) {
   router.post('/create', (req, res) => {
     const payload = req.body || {};
     const meeting = meetingStore.createMeeting({ hostId: payload.hostId });
+    meetingService
+      .createMeetingRecord({
+        meetingId: meeting.meetingId,
+        createdByRef: payload.hostId || null
+      })
+      .catch(() => {});
     return res.status(201).json({ meetingId: meeting.meetingId });
   });
 
@@ -49,15 +57,31 @@ function createMeetingsRouter(io) {
       date,
       time,
       description,
-      scheduledAt: scheduledAt.toISOString()
+      scheduledAt: scheduledAt.toISOString(),
+      hostId: payload.hostId || null
     });
 
-    const notif = notificationStore.addNotification({
-      title: 'New Meeting Scheduled',
-      message: `${title} meeting scheduled at ${time}`,
-      meetingId: meeting.meetingId
-    });
-    if (io) io.emit('notification', notif);
+    meetingService
+      .createMeetingRecord({
+        meetingId: meeting.meetingId,
+        title,
+        description,
+        scheduledAt: scheduledAt.toISOString(),
+        createdByRef: payload.hostId || null
+      })
+      .catch(() => {});
+
+    notificationsService
+      .createNotification({
+        title: 'New Meeting Scheduled',
+        message: `${title} meeting scheduled at ${time}`,
+        meetingId: meeting.meetingId
+      })
+      .then((notif) => {
+        notificationStore.addNotification(notif);
+        if (io) io.emit('notification', notif);
+      })
+      .catch(() => {});
     scheduleReminder(io, meeting);
 
     return res.status(201).json({ meetingId: meeting.meetingId });
@@ -73,16 +97,28 @@ function createMeetingsRouter(io) {
       return res.status(400).json({ error: 'meetingId and invitedUserId are required' });
     }
     meetingStore.addInvite(meetingId, invitedUserId, invitedBy);
-    const notif = notificationStore.addNotification({
-      title: 'Meeting Invite',
-      message: `${invitedBy} invited you to a meeting`,
-      meetingId,
-      userId: invitedUserId
-    });
-    if (io) {
-      const socketId = presenceStore.getSocketId(invitedUserId);
-      if (socketId) io.to(socketId).emit('notification', notif);
-    }
+    meetingService
+      .addInviteRecord({
+        meetingId,
+        invitedUserRef: invitedUserId,
+        invitedByRef: invitedBy
+      })
+      .catch(() => {});
+    notificationsService
+      .createNotification({
+        title: 'Meeting Invite',
+        message: `${invitedBy} invited you to a meeting`,
+        meetingId,
+        userRef: invitedUserId
+      })
+      .then((notif) => {
+        notificationStore.addNotification(notif);
+        if (io) {
+          const socketId = presenceStore.getSocketId(invitedUserId);
+          if (socketId) io.to(socketId).emit('notification', notif);
+        }
+      })
+      .catch(() => {});
     return res.json({ ok: true });
   });
 

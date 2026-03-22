@@ -210,23 +210,87 @@ async function verifyOtpForSignup() {
       // Ignore DB failures; local key still works
     }
 
-    // Display success page with key
-    const otpPanel = document.getElementById('otp-verify-panel');
-    const keyPanel = document.getElementById('key-panel');
-    const keyDisplay = document.getElementById('generated-key');
+    // Clear any stale session before auto-login
+    try { localStorage.removeItem('edusys_session'); } catch (e) {}
 
-    if (otpPanel) otpPanel.style.display = 'none';
-    if (keyPanel) {
-      keyPanel.style.display = 'block';
-      // Update success message
-      const heading = keyPanel.querySelector('h3');
-      if (heading) heading.textContent = college + ' System Created!';
+    // Create Head account + login (best-effort)
+    var autoLoginOk = false;
+    try {
+      const headName = signupData.head || 'Head';
+      const headEmail = signupData.email || email;
+      const headPassword = signupData.password || password;
+      const roleValue = String(signupData.role || 'Head').toLowerCase();
+      const finalRole = roleValue.includes('head') ? 'Head' : 'Head';
+      await fetch('/api/users/request-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: headName,
+          email: headEmail,
+          password: headPassword,
+          role: finalRole,
+          dept: 'All',
+          institute: college,
+          key: key
+        })
+      }).catch(function() {});
+
+      if (typeof authLoginServer === 'function') {
+        autoLoginOk = await authLoginServer(headEmail, headPassword, 'Head');
+      } else {
+        const loginRes = await fetch('/api/users/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: headEmail, password: headPassword })
+        });
+        const loginData = await loginRes.json();
+        if (loginRes.ok && loginData && loginData.ok && loginData.user) {
+          if (typeof setSessionFromUser === 'function') {
+            setSessionFromUser(loginData.user);
+          } else {
+            const storeSet = window.storeSet || function(k, v) { localStorage.setItem(k, v); };
+            storeSet('edusys_session', JSON.stringify({
+              email: loginData.user.email,
+              role: loginData.user.role,
+              name: loginData.user.name,
+              dept: loginData.user.dept || 'All',
+              title: loginData.user.title || loginData.user.role,
+              institute: loginData.user.institute || college
+            }));
+          }
+          autoLoginOk = true;
+        }
+      }
+    } catch (e) {
+      autoLoginOk = false;
     }
-    if (keyDisplay) keyDisplay.textContent = key;
 
-    // Show success toast
-    const showToast = window.showToast || function(msg, type) { console.log(msg); };
-    showToast(college + ' registered and verified! System Key: ' + key, 'success');
+    if (autoLoginOk && typeof showPage === 'function') {
+      const showToast = window.showToast || function(msg, type) { console.log(msg); };
+      showToast(college + ' created! System Key: ' + key, 'success');
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(key).catch(function() {});
+      }
+      showPage('erp');
+    } else {
+      // Display success page with key
+      const otpPanel = document.getElementById('otp-verify-panel');
+      const keyPanel = document.getElementById('key-panel');
+      const keyDisplay = document.getElementById('generated-key');
+
+      if (otpPanel) otpPanel.style.display = 'none';
+      if (keyPanel) {
+        keyPanel.style.display = 'block';
+        // Update success message
+        const heading = keyPanel.querySelector('h3');
+        if (heading) heading.textContent = college + ' System Created!';
+      }
+      if (keyDisplay) keyDisplay.textContent = key;
+
+      // Show success toast
+      const showToast = window.showToast || function(msg, type) { console.log(msg); };
+      showToast(college + ' registered and verified! System Key: ' + key, 'success');
+    }
 
     // Clear sensitive data
     window.__signupData = null;

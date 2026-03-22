@@ -2,25 +2,40 @@ const path = require('path');
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
+const helmet = require('helmet');
+const session = require('express-session');
+const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcryptjs');
 const { Server } = require('socket.io');
 const nodemailer = require('nodemailer');
 const db = require('../database/db/postgres');
+const PgSession = require('connect-pg-simple')(session);
 const createMeetingsRouter = require('./routes/meetings');
 const { initSignaling } = require('./socket/signaling');
+const { initErpSockets } = require('./socket/erp');
+const createStudentsRouter = require('./routes/students');
+const createFacultyRouter = require('./routes/faculty');
+const createAttendanceRouter = require('./routes/attendance');
+const createMarksRouter = require('./routes/marks');
+const createNotificationsRouter = require('./routes/notifications');
+const createPresenceRouter = require('./routes/presence');
+const createErpStateRouter = require('./routes/erpState');
 const { getIceServers, updateTurnHealth, getTurnHealth } = require('./utils/turnService');
+const { getUserFromSession, getUserFromHeaders } = require('./services/auth');
 const SYSTEM_KEY_ID = 'system_key';
 const USERS_STORE_ID = 'users_store';
 
 const app = express();
 const PORT = 3001;
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
+app.disable('x-powered-by');
 
 // SMTP configuration (Gmail App Password)
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
 const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
 const SMTP_SECURE = String(process.env.SMTP_SECURE || 'true').toLowerCase() === 'true';
 const SMTP_USER = process.env.SMTP_USER || 'edusysalert@gmail.com';
-const SMTP_PASS = process.env.SMTP_PASS || 'ytkhwobzikmobjyn';
+const SMTP_PASS = process.env.SMTP_PASS || '';
 const FROM_EMAIL = process.env.SMTP_FROM || SMTP_USER;
 
 const mailer = nodemailer.createTransport({
@@ -33,9 +48,70 @@ const mailer = nodemailer.createTransport({
   }
 });
 
-app.use(cors());
-app.use(express.json());
+if (!SMTP_PASS) {
+  console.warn('[SMTP] SMTP_PASS is not set. Email sending will be disabled.');
+}
+
+if (String(process.env.TRUST_PROXY || '').toLowerCase() === 'true') {
+  app.set('trust proxy', 1);
+}
+
+const corsOrigins = String(process.env.CORS_ORIGIN || '').trim();
+const corsOptions = corsOrigins
+  ? { origin: corsOrigins.split(',').map((o) => o.trim()), credentials: true }
+  : { origin: true, credentials: true };
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.RATE_LIMIT_MAX || 200),
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.RATE_LIMIT_AUTH_MAX || 20),
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+let sessionStore;
+try {
+  sessionStore = new PgSession({
+    pool: db.pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  });
+} catch (err) {
+  sessionStore = new session.MemoryStore();
+  console.warn('[SESSION] Falling back to MemoryStore. Set up Postgres for production.');
+}
+
+const sessionSecret = process.env.SESSION_SECRET || 'dev-secret-change-me';
+if (sessionSecret === 'dev-secret-change-me') {
+  console.warn('[SESSION] SESSION_SECRET not set. Using insecure default.');
+}
+
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors(corsOptions));
+app.use(apiLimiter);
+app.use(express.json({ limit: '1mb' }));
+app.use(session({
+  name: 'erp_sid',
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  store: sessionStore,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: String(process.env.NODE_ENV || '').toLowerCase() === 'production'
+  }
+}));
 app.use(express.static(FRONTEND_DIR));
+app.use('/api/system-key/verify', authLimiter);
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/request-access', authLimiter);
 // Keep legacy hash-based meetings routes working by redirecting /meetings to /#/meetings.
 app.get(/^\/meetings(\/.*)?$/, (req, res) => {
   const rest = req.path.replace(/^\/meetings/, '');
@@ -74,8 +150,11 @@ app.post('/api/system-key', async (req, res) => {
     if (!rawKey) return res.status(400).json({ error: 'key is required' });
     const existing = await db.getAppState(SYSTEM_KEY_ID);
     const existingKey = existing && existing.key ? String(existing.key).toUpperCase() : null;
-    if (existingKey && existingKey !== rawKey && !(req.body || {}).force) {
-      return res.status(409).json({ error: 'System key already set' });
+    if (existingKey) {
+      if (!requireAdmin(req, res)) return;
+      if (existingKey !== rawKey && !(req.body || {}).force) {
+        return res.status(409).json({ error: 'System key already set' });
+      }
     }
     await db.setAppState(SYSTEM_KEY_ID, { key: rawKey });
     return res.json({ ok: true, key: rawKey });
@@ -107,8 +186,44 @@ async function saveUserStore(store) {
   await db.setAppState(USERS_STORE_ID, store || { users: [], auditLogs: [] });
 }
 
+function isBcryptHash(value) {
+  return typeof value === 'string' && value.startsWith('$2');
+}
+
+async function hashPassword(password) {
+  return bcrypt.hash(String(password), 10);
+}
+
+async function verifyPassword(password, stored) {
+  if (!stored) return false;
+  if (isBcryptHash(stored)) {
+    return bcrypt.compare(String(password), stored);
+  }
+  return String(password) === String(stored);
+}
+
+function requireAdmin(req, res) {
+  const user = getUserFromSession(req) || getUserFromHeaders(req);
+  if (!user || user.role !== 'admin') {
+    res.status(403).json({ error: 'Forbidden' });
+    return null;
+  }
+  return user;
+}
+
+function requireApprover(req, res) {
+  const user = getUserFromSession(req) || getUserFromHeaders(req);
+  const rawRole = String(user && user.rawRole ? user.rawRole : '').toLowerCase();
+  if (!user || !(user.role === 'admin' || rawRole === 'hod' || rawRole === 'head')) {
+    res.status(403).json({ error: 'Forbidden' });
+    return null;
+  }
+  return user;
+}
+
 app.get('/api/users', async (req, res) => {
   try {
+    if (!requireAdmin(req, res)) return;
     const store = await getUserStore();
     const safeUsers = (store.users || []).map((user) => {
       if (!user || typeof user !== 'object') return user;
@@ -134,6 +249,9 @@ app.post('/api/users/request-access', async (req, res) => {
     if (!name || !email || !password || !key) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
 
     const sys = await db.getAppState(SYSTEM_KEY_ID);
     const sysKey = sys && sys.key ? String(sys.key).toUpperCase() : null;
@@ -147,11 +265,16 @@ app.post('/api/users/request-access', async (req, res) => {
       return res.status(409).json({ error: 'User already exists' });
     }
     const now = new Date();
-    const hasActiveHead = store.users.some((u) =>
-      String(u.role || '').toLowerCase() === 'head' && String(u.status || '') === 'Active'
-    );
+    const instNorm = institute ? String(institute).trim().toLowerCase() : '';
+    const hasActiveHead = store.users.some((u) => {
+      if (String(u.role || '').toLowerCase() !== 'head') return false;
+      if (String(u.status || '') !== 'Active') return false;
+      if (!instNorm) return true;
+      return String(u.institute || '').trim().toLowerCase() === instNorm;
+    });
     const autoActivateHead = String(role || '').toLowerCase() === 'head' && !hasActiveHead;
     const status = autoActivateHead ? 'Active' : 'Pending';
+    const hashedPassword = await hashPassword(password);
     const user = {
       id: Date.now(),
       name,
@@ -162,7 +285,7 @@ app.post('/api/users/request-access', async (req, res) => {
       status,
       lastLogin: '-',
       institute,
-      password,
+      password: hashedPassword,
       requestedOn: now.toISOString().split('T')[0]
     };
     store.users.push(user);
@@ -193,14 +316,32 @@ app.post('/api/users/login', async (req, res) => {
     }
     const store = await getUserStore();
     const user = store.users.find((u) =>
-      u.email && String(u.email).toLowerCase() === email && String(u.password || '') === password
+      u.email && String(u.email).toLowerCase() === email
     );
     if (!user) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
+    const ok = await verifyPassword(password, user.password);
+    if (!ok) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
     if (user.status && user.status !== 'Active') {
       return res.json({ ok: false, status: user.status });
     }
     user.lastLogin = new Date().toLocaleString();
+    if (!isBcryptHash(user.password)) {
+      try {
+        user.password = await hashPassword(password);
+      } catch (err) {
+        // ignore hash upgrade failure
+      }
+    }
     await saveUserStore(store);
+    if (req.session) {
+      req.session.user = {
+        id: user.id || user.email,
+        email: user.email,
+        role: user.role || 'Faculty',
+        name: user.name || user.email,
+        institute: user.institute || ''
+      };
+    }
     const { password: _pw, ...safeUser } = user;
     return res.json({ ok: true, user: safeUser });
   } catch (error) {
@@ -208,8 +349,30 @@ app.post('/api/users/login', async (req, res) => {
   }
 });
 
+app.get('/api/users/me', (req, res) => {
+  const user = getUserFromSession(req) || getUserFromHeaders(req);
+  if (!user) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  return res.json({
+    ok: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.rawRole || user.role
+    }
+  });
+});
+
+app.post('/api/users/logout', (req, res) => {
+  if (!req.session) return res.json({ ok: true });
+  req.session.destroy(() => {
+    res.clearCookie('erp_sid');
+    res.json({ ok: true });
+  });
+});
+
 app.post('/api/users/approve', async (req, res) => {
   try {
+    if (!requireApprover(req, res)) return;
     const payload = req.body || {};
     const id = payload.id != null ? Number(payload.id) : null;
     const email = String(payload.email || '').trim().toLowerCase();
@@ -244,7 +407,15 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 initSignaling(io);
+initErpSockets(io);
 app.use('/api/meetings', createMeetingsRouter(io));
+app.use('/api/students', createStudentsRouter());
+app.use('/api/faculty', createFacultyRouter());
+app.use('/api/attendance', createAttendanceRouter());
+app.use('/api/marks', createMarksRouter());
+app.use('/api/notifications', createNotificationsRouter(io));
+app.use('/api/presence', createPresenceRouter());
+app.use('/api/erp-state', createErpStateRouter());
 
 const SAFE_OPERATORS = new Set(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'in', 'between']);
 const SAFE_AGGREGATIONS = new Set(['sum', 'avg', 'count', 'min', 'max']);
@@ -854,6 +1025,12 @@ app.get('/health', async (req, res) => {
   } catch (error) {
     res.status(500).json({ status: 'DB connection failed', error: error.message });
   }
+});
+
+app.use((err, req, res, next) => {
+  const msg = err && err.message ? err.message : String(err);
+  console.error('[ERROR]', msg);
+  res.status(500).json({ ok: false, error: 'Internal server error' });
 });
 
 async function startServer(port) {

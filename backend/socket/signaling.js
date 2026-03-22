@@ -2,6 +2,7 @@ const meetingStore = require('../utils/meetingStore');
 const presenceStore = require('../utils/presenceStore');
 const notificationStore = require('../utils/notificationStore');
 const createMeetingHub = require('../utils/meetingHub');
+const meetingService = require('../services/meetingService');
 
 const meetingHub = createMeetingHub();
 
@@ -43,6 +44,7 @@ function initSignaling(io) {
       const data = payload || {};
       const meetingId = String(data.meetingId || '').trim();
       const userId = String(data.userId || socket.id).trim();
+      const displayName = String(data.name || data.displayName || data.display_name || '').trim();
 
       if (!meetingId || !meetingStore.hasMeeting(meetingId)) {
         socket.emit('join-error', { message: 'Meeting not found' });
@@ -52,13 +54,20 @@ function initSignaling(io) {
       socket.join(meetingId);
       socket.data.meetingId = meetingId;
       socket.data.userId = userId;
-      meetingStore.addParticipant(meetingId, userId, socket.id);
+      meetingStore.addParticipant(meetingId, userId, socket.id, displayName);
+      meetingService.addParticipantRecord({
+        meetingId,
+        userRef: userId
+      }).catch(() => {});
 
-      socket.to(meetingId).emit('user-joined', { userId });
+      socket.to(meetingId).emit('user-joined', { userId, name: displayName || userId });
       socket.emit('join-success', {
         meetingId,
         userId,
-        participants: meetingStore.listParticipants(meetingId),
+        participants: meetingStore.listParticipants(meetingId).map((participant) => ({
+          ...participant,
+          name: participant.name || participant.userId
+        })),
         screenShareUserId: meetingStore.getScreenShareUserId(meetingId)
       });
     });
@@ -317,6 +326,12 @@ function initSignaling(io) {
       const meetingId = socket.data.meetingId;
       if (!meetingId) return;
       const removed = meetingStore.removeParticipant(meetingId, socket.id);
+      if (removed) {
+        meetingService.markParticipantLeft({
+          meetingId,
+          userRef: removed.userId
+        }).catch(() => {});
+      }
       if (removed && meetingStore.getScreenShareUserId(meetingId) === removed.userId) {
         meetingStore.setScreenShare(meetingId, null);
         socket.to(meetingId).emit('screen-share-stopped', { userId: removed.userId });
@@ -333,6 +348,12 @@ function initSignaling(io) {
       const meetingId = socket.data.meetingId;
       if (!meetingId) return;
       const removed = meetingStore.removeParticipant(meetingId, socket.id);
+      if (removed) {
+        meetingService.markParticipantLeft({
+          meetingId,
+          userRef: removed.userId
+        }).catch(() => {});
+      }
       if (removed && meetingStore.getScreenShareUserId(meetingId) === removed.userId) {
         meetingStore.setScreenShare(meetingId, null);
         socket.to(meetingId).emit('screen-share-stopped', { userId: removed.userId });
