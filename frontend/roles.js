@@ -428,22 +428,50 @@ function isKnownDept(name) {
 
    ──────────────────────────────────────────────────────────── */
 
+var _dbCache = null;
+var _dbSyncing = false;
+
+function dbSaveLocal(data) {
+  try { storeSet(DEMO_DB_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function dbSyncFromBackend() {
+  if (_dbSyncing) return;
+  _dbSyncing = true;
+  fetch('/api/app-state')
+    .then(function(res) { return res.json(); })
+    .then(function(payload) {
+      if (payload && payload.state) {
+        _dbCache = payload.state;
+        dbSaveLocal(_dbCache);
+        if (typeof renderRoleSection === 'function') {
+          var cur = getCurrentRoleSection && getCurrentRoleSection();
+          if (cur) renderRoleSection(cur);
+        }
+      }
+    })
+    .catch(function() {})
+    .finally(function() { _dbSyncing = false; });
+}
+
 function dbLoad() {
-
+  if (_dbCache) return _dbCache;
   try {
-
     var raw = storeGet(DEMO_DB_KEY);
-
-    return raw ? JSON.parse(raw) : null;
-
-  } catch(e) { return null; }
-
+    _dbCache = raw ? JSON.parse(raw) : null;
+  } catch(e) { _dbCache = null; }
+  dbSyncFromBackend();
+  return _dbCache;
 }
 
 function dbSave(data) {
-
-  try { storeSet(DEMO_DB_KEY, JSON.stringify(data)); } catch(e) {}
-
+  _dbCache = data;
+  dbSaveLocal(data);
+  fetch('/api/app-state', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ state: data })
+  }).catch(function() {});
 }
 
 function dbGet() {
@@ -504,11 +532,10 @@ function dbGet() {
 }
 
 function dbReset() {
-
   storeRemove(DEMO_DB_KEY);
-
+  _dbCache = null;
+  fetch('/api/app-state', { method: 'DELETE' }).catch(function() {});
   showToast('Demo data restored to defaults', 'info');
-
   setTimeout(function() { location.reload(); }, 800);
 
 }

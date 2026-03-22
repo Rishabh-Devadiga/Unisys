@@ -363,6 +363,37 @@ app.post('/api/records/:table', async (req, res) => {
   }
 });
 
+app.get('/api/app-state', async (req, res) => {
+  try {
+    const state = await db.getAppState('default');
+    return res.json({ ok: true, state: state || null });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Failed to load app state' });
+  }
+});
+
+app.post('/api/app-state', async (req, res) => {
+  try {
+    const payload = req.body || {};
+    if (!payload.state || typeof payload.state !== 'object') {
+      return res.status(400).json({ ok: false, error: 'state payload is required' });
+    }
+    await db.setAppState('default', payload.state);
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Failed to save app state' });
+  }
+});
+
+app.delete('/api/app-state', async (req, res) => {
+  try {
+    await db.clearAppState('default');
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Failed to clear app state' });
+  }
+});
+
 app.post('/send-emails', async (req, res) => {
   try {
     const { threshold = 75, department } = req.body;
