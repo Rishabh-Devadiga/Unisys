@@ -322,6 +322,24 @@ function initSignaling(io) {
       }
     });
 
+    socket.on('room:chat', (payload) => {
+      const data = payload || {};
+      const meetingId = String(data.meetingId || '').trim();
+      const userId = String(data.userId || socket.data.userId || socket.id).trim();
+      const name = String(data.name || userId).trim();
+      const text = String(data.text || '').trim();
+      if (!meetingId || !meetingStore.hasMeeting(meetingId) || !text) return;
+      const message = {
+        meetingId,
+        userId,
+        name,
+        text,
+        ts: new Date().toISOString()
+      };
+      socket.to(meetingId).emit('room:chat', message);
+      socket.emit('room:chat', { ...message, isOwn: true });
+    });
+
     socket.on('leave-room', () => {
       const meetingId = socket.data.meetingId;
       if (!meetingId) return;

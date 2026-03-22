@@ -253,6 +253,25 @@ body.meeting-only.meeting-mic-off #erp .meet-pill { background:rgba(248,113,113,
 .meet-invite-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
 .meet-invite-item.offline .meet-invite-dot{background:var(--text3)}
 .meet-invite-empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:12px}
+
+.meet-chat-panel{position:absolute;top:64px;right:18px;width:320px;height:420px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);display:flex;flex-direction:column;padding:12px;opacity:0;transform:translateY(-6px);pointer-events:none;transition:all 0.18s ease;z-index:61}
+.meet-chat-panel.open{opacity:1;transform:translateY(0);pointer-events:auto}
+.meet-chat-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.meet-chat-title{font-family:var(--font-head);font-size:13px;font-weight:700}
+.meet-chat-divider{height:1px;background:var(--border);margin:10px 0}
+.meet-chat-body{flex:1;overflow-y:auto;padding-right:6px;display:flex;flex-direction:column;gap:8px}
+.meet-chat-body::-webkit-scrollbar{width:6px}
+.meet-chat-body::-webkit-scrollbar-thumb{background:rgba(109,139,255,0.35);border-radius:999px}
+.meet-chat-msg{display:flex;align-items:flex-start}
+.meet-chat-msg.is-own{justify-content:flex-end}
+.meet-chat-bubble{max-width:78%;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:8px 10px}
+.meet-chat-msg.is-own .meet-chat-bubble{background:rgba(109,139,255,0.12);border-color:rgba(109,139,255,0.35)}
+.meet-chat-name{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px}
+.meet-chat-text{font-size:12px;line-height:1.4}
+.meet-chat-input{display:flex;gap:8px;margin-top:10px}
+.meet-chat-input .form-input{flex:1}
+.meet-chip.has-unread{position:relative}
+.meet-chip.has-unread::after{content:'';position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px rgba(15,23,42,0.6)}
 body.meeting-only #erp .meet-media-error {
   background:rgba(248,113,113,0.12);
   border:1px solid rgba(248,113,113,0.35);

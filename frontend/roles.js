@@ -3086,6 +3086,7 @@ function initMeetingRoom(meetingId) {
   MEETING_RTC.displayName = getMeetingDisplayName();
   MEETING_RTC.names[MEETING_RTC.userId] = MEETING_RTC.displayName;
   syncLocalTile();
+  initMeetingChat();
   initMeetingMedia();
   fetchMeetingIceServers();
   setTimeout(function(){ initMeetingSocket(meetingId); }, 120);
@@ -3158,6 +3159,10 @@ function initMeetingSocket(meetingId) {
     if (id && MEETING_RTC.pinAuto && MEETING_RTC.pinnedId === id) {
       clearPin();
     }
+  });
+
+  socket.on('room:chat', function(payload) {
+    appendMeetingChatMessage(payload || {});
   });
 }
 
@@ -3644,6 +3649,87 @@ if (typeof window !== 'undefined') {
   window.refreshInvitePanel = refreshInvitePanel;
 }
 
+var MEETING_CHAT = { open:false, bound:false };
+
+function toggleMeetingChat(force) {
+  var panel = g('meet-chat-panel');
+  if (!panel) return;
+  var open = (typeof force === 'boolean') ? force : !panel.classList.contains('open');
+  panel.classList.toggle('open', open);
+  MEETING_CHAT.open = open;
+  var btn = g('meeting-chat-btn');
+  if (btn && open) btn.classList.remove('has-unread');
+  if (open) {
+    var input = g('meet-chat-input');
+    if (input) setTimeout(function(){ input.focus(); }, 50);
+  }
+}
+
+function formatChatTime(ts) {
+  if (!ts) return '';
+  try {
+    var d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toTimeString().slice(0, 5);
+  } catch(e) { return ''; }
+}
+
+function appendMeetingChatMessage(payload) {
+  var data = payload || {};
+  var list = g('meet-chat-list');
+  if (!list) return;
+  var name = safeTrim(data.name) || 'Participant';
+  var text = safeTrim(data.text);
+  if (!text) return;
+  var item = document.createElement('div');
+  item.className = 'meet-chat-msg' + (data.isOwn ? ' is-own' : '');
+  var time = formatChatTime(data.ts);
+  item.innerHTML =
+    '<div class="meet-chat-bubble">'
+    + '<div class="meet-chat-name">' + inviteEscape(name) + (time ? ' · ' + time : '') + '</div>'
+    + '<div class="meet-chat-text">' + inviteEscape(text) + '</div>'
+    + '</div>';
+  list.appendChild(item);
+  list.scrollTop = list.scrollHeight;
+  if (!MEETING_CHAT.open && !data.isOwn) {
+    var btn = g('meeting-chat-btn');
+    if (btn) btn.classList.add('has-unread');
+  }
+}
+
+function sendMeetingChat() {
+  var input = g('meet-chat-input');
+  if (!input) return;
+  var text = safeTrim(input.value);
+  if (!text) return;
+  input.value = '';
+  var payload = {
+    meetingId: MEETING_RTC.meetingId,
+    userId: MEETING_RTC.userId,
+    name: MEETING_RTC.displayName || 'You',
+    text: text
+  };
+  if (MEETING_RTC.socket) {
+    MEETING_RTC.socket.emit('room:chat', payload);
+  } else {
+    appendMeetingChatMessage({ ...payload, isOwn:true, ts: new Date().toISOString() });
+  }
+}
+
+function initMeetingChat() {
+  if (MEETING_CHAT.bound) return;
+  MEETING_CHAT.bound = true;
+  var input = g('meet-chat-input');
+  if (input) {
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMeetingChat();
+      }
+    });
+  }
+}
+
 function buildMeetingControls() {
   return '<div class="meeting-controls-bar">'
     + '<button class="meet-control" id="meeting-mic-btn" onclick="meetingToggle(\'mic\')" aria-label="Toggle microphone" title="Microphone">'
@@ -3714,7 +3800,7 @@ function buildMeetingRoom(meetingId) {
     + '<div class="meet-actions">'
     + '<span class="meet-pill">Live</span>'
     + '<span class="meet-pill meet-pill--neutral"><span id="meet-participant-count">' + count + '</span> Participants</span>'
-    + '<button class="meet-chip">Chat</button>'
+    + '<button class="meet-chip" id="meeting-chat-btn" onclick="toggleMeetingChat()">Chat</button>'
     + '<button class="meet-chip" id="meeting-invite-btn" onclick="toggleInvitePanel()">Invite</button>'
     + '<button class="meet-chip" onclick="copyMeetingInviteLink()">Copy Link</button>'
     + '</div>'
@@ -3726,6 +3812,18 @@ function buildMeetingRoom(meetingId) {
     + '</div>'
     + '<div class="meet-invite-divider"></div>'
     + '<div class="meet-invite-body" id="meet-invite-list"></div>'
+    + '</div>'
+    + '<div class="meet-chat-panel" id="meet-chat-panel">'
+    + '<div class="meet-chat-head">'
+    + '<div class="meet-chat-title">Meeting Chat</div>'
+    + '<button class="btn btn-sm" onclick="toggleMeetingChat(false)">Close</button>'
+    + '</div>'
+    + '<div class="meet-chat-divider"></div>'
+    + '<div class="meet-chat-body" id="meet-chat-list"></div>'
+    + '<div class="meet-chat-input">'
+    + '<input class="form-input" id="meet-chat-input" placeholder="Type a message..."/>'
+    + '<button class="btn btn-sm btn-primary" onclick="sendMeetingChat()">Send</button>'
+    + '</div>'
     + '</div>'
     + '<div class="meet-stage">'
     + buildVideoGrid(participants)
