@@ -7,9 +7,13 @@ const nodemailer = require('nodemailer');
 const db = require('../database/db/postgres');
 const createMeetingsRouter = require('./routes/meetings');
 const { initSignaling } = require('./socket/signaling');
+const { getIceServers, updateTurnHealth, getTurnHealth } = require('./utils/turnService');
+const SYSTEM_KEY_ID = 'system_key';
+const USERS_STORE_ID = 'users_store';
 
 const app = express();
 const PORT = 3001;
+const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 
 // SMTP configuration (Gmail App Password)
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
@@ -31,7 +35,209 @@ const mailer = nodemailer.createTransport({
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
+app.use(express.static(FRONTEND_DIR));
+// Keep legacy hash-based meetings routes working by redirecting /meetings to /#/meetings.
+app.get(/^\/meetings(\/.*)?$/, (req, res) => {
+  const rest = req.path.replace(/^\/meetings/, '');
+  const qsIndex = req.originalUrl.indexOf('?');
+  const qs = qsIndex >= 0 ? req.originalUrl.slice(qsIndex) : '';
+  const target = rest && rest !== '/' ? `/#/meetings${rest}${qs}` : `/#/meetings${qs}`;
+  res.redirect(302, target);
+});
+
+app.get('/calls/turn-health', (req, res) => {
+  return res.json(getTurnHealth());
+});
+
+app.get('/calls/ice-servers', async (req, res) => {
+  try {
+    const payload = await getIceServers();
+    return res.json(payload);
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to generate iceServers' });
+  }
+});
+
+app.get('/api/system-key', async (req, res) => {
+  try {
+    const data = await db.getAppState(SYSTEM_KEY_ID);
+    const key = data && data.key ? String(data.key) : null;
+    return res.json({ exists: !!key, key });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch system key' });
+  }
+});
+
+app.post('/api/system-key', async (req, res) => {
+  try {
+    const rawKey = String((req.body || {}).key || '').trim().toUpperCase();
+    if (!rawKey) return res.status(400).json({ error: 'key is required' });
+    const existing = await db.getAppState(SYSTEM_KEY_ID);
+    const existingKey = existing && existing.key ? String(existing.key).toUpperCase() : null;
+    if (existingKey && existingKey !== rawKey && !(req.body || {}).force) {
+      return res.status(409).json({ error: 'System key already set' });
+    }
+    await db.setAppState(SYSTEM_KEY_ID, { key: rawKey });
+    return res.json({ ok: true, key: rawKey });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to store system key' });
+  }
+});
+
+app.post('/api/system-key/verify', async (req, res) => {
+  try {
+    const rawKey = String((req.body || {}).key || '').trim().toUpperCase();
+    if (!rawKey) return res.status(400).json({ error: 'key is required' });
+    const existing = await db.getAppState(SYSTEM_KEY_ID);
+    const existingKey = existing && existing.key ? String(existing.key).toUpperCase() : null;
+    return res.json({ valid: !!existingKey && existingKey === rawKey });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to verify system key' });
+  }
+});
+
+async function getUserStore() {
+  const data = await db.getAppState(USERS_STORE_ID);
+  return data && typeof data === 'object'
+    ? { users: Array.isArray(data.users) ? data.users : [], auditLogs: Array.isArray(data.auditLogs) ? data.auditLogs : [] }
+    : { users: [], auditLogs: [] };
+}
+
+async function saveUserStore(store) {
+  await db.setAppState(USERS_STORE_ID, store || { users: [], auditLogs: [] });
+}
+
+app.get('/api/users', async (req, res) => {
+  try {
+    const store = await getUserStore();
+    const safeUsers = (store.users || []).map((user) => {
+      if (!user || typeof user !== 'object') return user;
+      const { password: _pw, ...safeUser } = user;
+      return safeUser;
+    });
+    return res.json(safeUsers);
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+app.post('/api/users/request-access', async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const name = String(payload.name || '').trim();
+    const email = String(payload.email || '').trim().toLowerCase();
+    const password = String(payload.password || '').trim();
+    const role = String(payload.role || 'Faculty').trim();
+    const dept = String(payload.dept || 'General').trim();
+    const institute = String(payload.institute || '').trim();
+    const key = String(payload.key || '').trim().toUpperCase();
+    if (!name || !email || !password || !key) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const sys = await db.getAppState(SYSTEM_KEY_ID);
+    const sysKey = sys && sys.key ? String(sys.key).toUpperCase() : null;
+    if (key !== 'EDU-DEMO-2026' && (!sysKey || key !== sysKey)) {
+      return res.status(403).json({ error: 'Invalid System Key' });
+    }
+
+    const store = await getUserStore();
+    const exists = store.users.find((u) => u.email && String(u.email).toLowerCase() === email);
+    if (exists) {
+      return res.status(409).json({ error: 'User already exists' });
+    }
+    const now = new Date();
+    const hasActiveHead = store.users.some((u) =>
+      String(u.role || '').toLowerCase() === 'head' && String(u.status || '') === 'Active'
+    );
+    const autoActivateHead = String(role || '').toLowerCase() === 'head' && !hasActiveHead;
+    const status = autoActivateHead ? 'Active' : 'Pending';
+    const user = {
+      id: Date.now(),
+      name,
+      email,
+      role,
+      requestedRole: role,
+      dept,
+      status,
+      lastLogin: '-',
+      institute,
+      password,
+      requestedOn: now.toISOString().split('T')[0]
+    };
+    store.users.push(user);
+    store.auditLogs = store.auditLogs || [];
+    store.auditLogs.unshift({
+      id: Date.now(),
+      user: name,
+      action: autoActivateHead ? 'Head Auto-Approved' : 'Access Requested',
+      target: role + ' - ' + dept,
+      timestamp: now.toLocaleString(),
+      note: institute
+    });
+    await saveUserStore(store);
+    const { password: _pw, ...safeUser } = user;
+    return res.json({ ok: true, user: safeUser });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to request access' });
+  }
+});
+
+app.post('/api/users/login', async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const email = String(payload.email || '').trim().toLowerCase();
+    const password = String(payload.password || '').trim();
+    if (!email || !password) {
+      return res.status(400).json({ ok: false, error: 'Missing credentials' });
+    }
+    const store = await getUserStore();
+    const user = store.users.find((u) =>
+      u.email && String(u.email).toLowerCase() === email && String(u.password || '') === password
+    );
+    if (!user) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
+    if (user.status && user.status !== 'Active') {
+      return res.json({ ok: false, status: user.status });
+    }
+    user.lastLogin = new Date().toLocaleString();
+    await saveUserStore(store);
+    const { password: _pw, ...safeUser } = user;
+    return res.json({ ok: true, user: safeUser });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: 'Login failed' });
+  }
+});
+
+app.post('/api/users/approve', async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const id = payload.id != null ? Number(payload.id) : null;
+    const email = String(payload.email || '').trim().toLowerCase();
+    const status = String(payload.status || '').trim();
+    if (!status || (status !== 'Active' && status !== 'Rejected')) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+    const store = await getUserStore();
+    const user = store.users.find((u) =>
+      (id != null && Number(u.id) === id) || (email && String(u.email || '').toLowerCase() === email)
+    );
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.status = status;
+    if (status === 'Active') user.lastLogin = user.lastLogin || '-';
+    store.auditLogs = store.auditLogs || [];
+    store.auditLogs.unshift({
+      id: Date.now(),
+      user: user.name || email,
+      action: status === 'Active' ? 'Account Approved' : 'Account Rejected',
+      target: user.role || '',
+      timestamp: new Date().toLocaleString()
+    });
+    await saveUserStore(store);
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to update user' });
+  }
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -658,6 +864,12 @@ async function startServer(port) {
     const msg = err && err.message ? err.message : String(err);
     console.error('[DB] Unable to initialize database. Continuing without DB.');
     console.error('[DB] Details:', msg);
+  }
+  try {
+    await updateTurnHealth();
+  } catch (err) {
+    const msg = err && err.message ? err.message : String(err);
+    console.warn('[TURN] Unable to update TURN health:', msg);
   }
   return server.listen(usePort, () => {
     console.log(`Server is running on http://localhost:${usePort}`);

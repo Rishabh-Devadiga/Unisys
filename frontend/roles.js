@@ -552,6 +552,79 @@ function dbReset() {
 
 var SESSION_KEY = 'edusys_session';
 
+function setSessionFromUser(user) {
+  if (!user) return false;
+  var institute = user.institute || getCurrentInstitute();
+  if (user.role === 'Head' && institute) storeSet('edusys-college', institute);
+  storeSet(SESSION_KEY, JSON.stringify({
+    email: user.email,
+    role: user.role,
+    name: user.name,
+    dept: user.dept,
+    title: user.title || user.role,
+    institute: institute
+  }));
+  showToast('Logged in as ' + user.name + ' (' + user.role + ')');
+  return true;
+}
+
+async function authLoginServer(email, password, role) {
+  try {
+    var res = await fetch('/api/users/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    var data = await res.json();
+    if (!res.ok || !data || !data.ok) {
+      if (data && data.status) {
+        var msg = data.status === 'Pending'
+          ? 'Account pending approval'
+          : data.status === 'Rejected'
+            ? 'Account request rejected'
+            : 'Account ' + String(data.status).toLowerCase();
+        showToast(msg, 'warning');
+      } else {
+        showToast('Invalid email or password', 'error');
+      }
+      return false;
+    }
+    var user = data.user || null;
+    if (role && user && user.role !== role) {
+      showToast('This account does not have the ' + role + ' role', 'error');
+      return false;
+    }
+    return setSessionFromUser(user);
+  } catch (e) {
+    return false;
+  }
+}
+
+function syncUsersFromServer() {
+  fetch('/api/users')
+    .then(function(res) { return res.ok ? res.json() : null; })
+    .then(function(list) {
+      if (!Array.isArray(list)) return;
+      var db = dbGet();
+      db.users = list;
+      dbSave(db);
+    })
+    .catch(function() {});
+}
+
+function updateUserStatusServer(user, status) {
+  if (!user) return;
+  fetch('/api/users/approve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: user.id,
+      email: user.email,
+      status: status
+    })
+  }).catch(function() {});
+}
+
 
 
 function authLogin(email, password, role) {
@@ -771,7 +844,7 @@ function bindAccessApprovalHint() {
 
 
 
-function requestAccess() {
+async function requestAccess() {
 
   var errEl = document.getElementById('access-signup-error');
 
@@ -783,7 +856,7 @@ function requestAccess() {
 
     if (errEl) {
 
-      errEl.textContent = '✖ ' + msg;
+      errEl.textContent = '? ' + msg;
 
       errEl.style.display = 'block';
 
@@ -797,7 +870,7 @@ function requestAccess() {
 
     if (okEl) {
 
-      okEl.textContent = '✓ ' + msg;
+      okEl.textContent = '? ' + msg;
 
       okEl.style.display = 'block';
 
@@ -839,72 +912,88 @@ function requestAccess() {
 
 
   var storedKey = (typeof storeGet === 'function') ? storeGet('edusys-key') : null;
+  var keyNorm = key.toUpperCase();
+  var storedNorm = storedKey ? String(storedKey).toUpperCase() : null;
+  var keyValid = false;
 
-  var keyValid = (storedKey && key === storedKey) || key === 'EDU-DEMO-2026';
+  if (keyNorm === 'EDU-DEMO-2026') {
+    keyValid = true;
+  } else if (storedNorm && keyNorm === storedNorm) {
+    keyValid = true;
+  } else {
+    try {
+      var res = await fetch('/api/system-key/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: keyNorm })
+      });
+      if (!res.ok) throw new Error('verify failed');
+      var data = await res.json();
+      keyValid = !!(data && data.valid);
+      if (keyValid && typeof storeSet === 'function') storeSet('edusys-key', keyNorm);
+    } catch (e) {
+      return showErr('Unable to verify System Key. Ensure the server is running.');
+    }
+  }
 
   if (!keyValid) return showErr('Invalid System Key. Contact the Head for the correct key.');
 
-
-
-  var db = dbGet();
-
-  var existsDemo = DEMO_USERS.some(function(u) { return u.email.toLowerCase() === email; });
-
-  var existsDb = db.users.some(function(u) { return u.email && u.email.toLowerCase() === email; });
-
-  if (existsDemo || existsDb) return showErr('An account with this email already exists.');
-
-
-
-  var now = new Date();
-
-  db.users.push({
-
-    id: Date.now(),
-
-    name: name,
-
-    email: email,
-
-    role: role,
-
-    requestedRole: role,
-
-    dept: dept,
-
-    status: 'Pending',
-
-    lastLogin: '—',
-
-    institute: institute,
-
-    password: password,
-
-    requestedOn: now.toISOString().split('T')[0]
-
-  });
-
-  db.auditLogs = db.auditLogs || [];
-
-  db.auditLogs.unshift({
-
-    id: Date.now(),
-
-    user: name,
-
-    action: 'Access Requested',
-
-    target: role + ' — ' + dept,
-
-    timestamp: now.toLocaleString(),
-
-    ip: '127.0.0.1'
-
-  });
-
-  dbSave(db);
-
-
+  try {
+    var res2 = await fetch('/api/users/request-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        email: email,
+        password: password,
+        role: role,
+        dept: dept,
+        institute: institute,
+        key: keyNorm
+      })
+    });
+    if (!res2.ok) throw new Error('request failed');
+    var data2 = await res2.json();
+    if (data2 && data2.user) {
+      var db = dbGet();
+      db.users = db.users || [];
+      if (!db.users.some(function(u) { return u.email && u.email.toLowerCase() === data2.user.email.toLowerCase(); })) {
+        db.users.push(data2.user);
+      }
+      db.auditLogs = db.auditLogs || [];
+      dbSave(db);
+    }
+  } catch (e) {
+    // Fallback to local-only mode
+    var dbLocal = dbGet();
+    var existsDemo = DEMO_USERS.some(function(u) { return u.email.toLowerCase() === email; });
+    var existsDb = dbLocal.users.some(function(u) { return u.email && u.email.toLowerCase() === email; });
+    if (existsDemo || existsDb) return showErr('An account with this email already exists.');
+    var now = new Date();
+    dbLocal.users.push({
+      id: Date.now(),
+      name: name,
+      email: email,
+      role: role,
+      requestedRole: role,
+      dept: dept,
+      status: 'Pending',
+      lastLogin: '?',
+      institute: institute,
+      password: password,
+      requestedOn: now.toISOString().split('T')[0]
+    });
+    dbLocal.auditLogs = dbLocal.auditLogs || [];
+    dbLocal.auditLogs.unshift({
+      id: Date.now(),
+      user: name,
+      action: 'Access Requested',
+      target: role + ' ? ' + dept,
+      timestamp: now.toLocaleString(),
+      ip: '127.0.0.1'
+    });
+    dbSave(dbLocal);
+  }
 
   var loginEmail = document.getElementById('access-email');
 
@@ -912,7 +1001,7 @@ function requestAccess() {
 
   if (loginEmail) loginEmail.value = email;
 
-  if (loginKey) loginKey.value = key;
+  if (loginKey) loginKey.value = keyNorm;
 
   var passEl = document.getElementById('signup-password');
 
@@ -920,14 +1009,15 @@ function requestAccess() {
 
 
 
-  showOk('Request submitted. Awaiting ' + (role === 'Faculty' ? 'HOD' : 'Head') + ' approval.');
+  if (data2 && data2.user && data2.user.status === 'Active') {
+    showOk('Head account activated. You can log in now.');
+  } else {
+    showOk('Request submitted. Awaiting ' + (role === 'Faculty' ? 'HOD' : 'Head') + ' approval.');
+  }
 
   setAccessMode('login');
 
 }
-
-
-
 function getSession() {
 
   try {
@@ -1785,6 +1875,8 @@ function principalApproveAccount(id, approve) {
 
   }
 
+  updateUserStatusServer(u, u.status);
+
   dbSave(db);
 
   renderRoleSection('role-accounts');
@@ -1885,6 +1977,7 @@ function hodApproveFaculty(id, approve) {
     u.status = 'Rejected';
     showToast('Faculty rejected: ' + u.name, 'warning');
   }
+  updateUserStatusServer(u, u.status);
   dbSave(db);
   renderRoleSection('role-hod-accounts');
 }
@@ -2693,7 +2786,9 @@ var MEETING_RTC = {
   meetingId: null,
   pinnedId: null,
   pinAuto: false,
-  localStream: null
+  localStream: null,
+  iceServers: null,
+  icePromise: null
 };
 
 function meetingsGetRoutePath() {
@@ -2909,9 +3004,34 @@ function cleanupMeeting() {
 }
 
 function openMeetingWindow(meetingId) {
-  var base = String(window.location.href || '').split('#')[0].split('?')[0];
+  var base = (window.location && window.location.origin)
+    ? window.location.origin
+    : (String(window.location.protocol || '') + '//' + String(window.location.host || ''));
+  if (base && base.charAt(base.length - 1) !== '/') base += '/';
   var url = base + '#/meetings/' + meetingId + '?meetingOnly=1';
   window.open(url, '_blank', 'noopener');
+}
+
+function getMeetingInviteUrl(meetingId) {
+  if (!meetingId) return '';
+  var base = (window.location && window.location.origin)
+    ? window.location.origin
+    : (String(window.location.protocol || '') + '//' + String(window.location.host || ''));
+  if (base && base.charAt(base.length - 1) !== '/') base += '/';
+  return base + '#/meetings/' + meetingId + '?meetingOnly=1';
+}
+
+function copyMeetingInviteLink() {
+  var meetingId = MEETING_RTC && MEETING_RTC.meetingId ? MEETING_RTC.meetingId : null;
+  if (!meetingId) { showToast('No meeting ID yet', 'error'); return; }
+  var url = getMeetingInviteUrl(meetingId);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url)
+      .then(function() { showToast('Invite link copied'); })
+      .catch(function() { window.prompt('Copy invite link:', url); });
+  } else {
+    window.prompt('Copy invite link:', url);
+  }
 }
 
 function isMeetingOnlyWindow() {
@@ -2940,6 +3060,7 @@ function initMeetingRoom(meetingId) {
   MEETING_RTC.userId = getMeetingUserId();
   syncLocalTile();
   initMeetingMedia();
+  fetchMeetingIceServers();
   setTimeout(function(){ initMeetingSocket(meetingId); }, 120);
   if (!MEETING_RTC._boundUnload) {
     window.addEventListener('beforeunload', cleanupMeeting);
@@ -3004,10 +3125,26 @@ function initMeetingSocket(meetingId) {
   });
 }
 
+function fetchMeetingIceServers() {
+  if (MEETING_RTC.icePromise) return MEETING_RTC.icePromise;
+  MEETING_RTC.icePromise = fetch('/calls/ice-servers')
+    .then(function(res) { return res.ok ? res.json() : null; })
+    .then(function(data) {
+      if (data && Array.isArray(data.iceServers) && data.iceServers.length) {
+        MEETING_RTC.iceServers = data.iceServers;
+      }
+      return MEETING_RTC.iceServers;
+    })
+    .catch(function() { return null; });
+  return MEETING_RTC.icePromise;
+}
+
 function createPeerConnection(remoteId, isInitiator) {
   if (!remoteId || MEETING_RTC.peers[remoteId]) return;
   var pc = new RTCPeerConnection({
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    iceServers: (MEETING_RTC.iceServers && MEETING_RTC.iceServers.length)
+      ? MEETING_RTC.iceServers
+      : [{ urls: 'stun:stun.l.google.com:19302' }]
   });
   MEETING_RTC.peers[remoteId] = pc;
   addLocalTracks(pc);
@@ -3524,7 +3661,7 @@ function meetIconScreenShare() {
 }
 
 function meetIconLeave() {
-  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17v-2h4v-2h-4v-2l-3 3 3 3Zm9-12h-8a2 2 0 0 0-2 2v3h2V7h8v10h-8v-3H9v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"/></svg>';
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 4.5A2.5 2.5 0 0 1 4.5 2h2A2.5 2.5 0 0 1 9 4.5v2A2.5 2.5 0 0 1 6.5 9H6a10 10 0 0 0 9 9v-0.5A2.5 2.5 0 0 1 17.5 15h2A2.5 2.5 0 0 1 22 17.5v2A2.5 2.5 0 0 1 19.5 22h-1A16.5 16.5 0 0 1 2 5.5v-1Z" transform="rotate(135 12 12)"/></svg>';
 }
 
 function buildMeetingRoom(meetingId) {
@@ -3541,6 +3678,7 @@ function buildMeetingRoom(meetingId) {
     + '<span class="meet-pill meet-pill--neutral"><span id="meet-participant-count">' + count + '</span> Participants</span>'
     + '<button class="meet-chip">Chat</button>'
     + '<button class="meet-chip" id="meeting-invite-btn" onclick="toggleInvitePanel()">Invite</button>'
+    + '<button class="meet-chip" onclick="copyMeetingInviteLink()">Copy Link</button>'
     + '</div>'
     + '</div>'
     + '<div class="meet-invite-panel" id="meet-invite-panel">'
@@ -4604,6 +4742,7 @@ function initRoleDashboard() {
   var sess = getSession();
 
   if (!sess) return; /* No session — default behavior */
+  syncUsersFromServer();
 
   var role = sess.role;
 
@@ -4649,13 +4788,14 @@ function initRoleDashboard() {
 
 /* Override enterERP to support role-based login */
 
-function enterERP() {
+async function enterERP() {
 
   var email    = ((g('access-email')||{}).value||'').trim();
 
   var password = ((g('access-password')||{}).value||'').trim();
 
   var key      = ((g('access-key')||{}).value||'').trim();
+  var roleSel  = ((g('access-role')||{}).value||'').trim();
 
   var errEl    = g('access-error');
 
@@ -4663,7 +4803,8 @@ function enterERP() {
 
   /* Demo key bypass (original behavior) */
 
-  if (key === 'EDU-DEMO-2026') {
+  var keyNorm = key.toUpperCase();
+  if (keyNorm === 'EDU-DEMO-2026') {
 
     if (errEl) errEl.style.display = 'none';
 
@@ -4680,8 +4821,9 @@ function enterERP() {
   /* Stored key match */
 
   var stored = storeGet('edusys-key');
+  var storedNorm = stored ? String(stored).toUpperCase() : null;
 
-  if (stored && key === stored) {
+  if (storedNorm && keyNorm === storedNorm) {
 
     if (errEl) errEl.style.display = 'none';
 
@@ -4693,11 +4835,42 @@ function enterERP() {
 
   }
 
+  if (keyNorm) {
+    try {
+      var res = await fetch('/api/system-key/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: keyNorm })
+      });
+      if (!res.ok) throw new Error('verify failed');
+      var data = await res.json();
+      if (data && data.valid) {
+        if (typeof storeSet === 'function') storeSet('edusys-key', keyNorm);
+        if (errEl) errEl.style.display = 'none';
+        authLoginAsRole('Admin');
+        showPage('erp');
+        return;
+      }
+    } catch (e) {
+      // fall through to email/password or error
+    }
+  }
+
   /* Email + password login */
 
   if (email && password) {
 
-    if (authLogin(email, password)) {
+    if (await authLoginServer(email, password, roleSel)) {
+
+      if (errEl) errEl.style.display = 'none';
+
+      showPage('erp');
+
+      return;
+
+    }
+
+    if (authLogin(email, password, roleSel)) {
 
       if (errEl) errEl.style.display = 'none';
 

@@ -199,6 +199,17 @@ async function verifyOtpForSignup() {
     storeSet('edusys-key', key);
     storeSet('edusys-college', college);
 
+    // Persist key in database (best-effort)
+    try {
+      await fetch('/api/system-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: key })
+      });
+    } catch (e) {
+      // Ignore DB failures; local key still works
+    }
+
     // Display success page with key
     const otpPanel = document.getElementById('otp-verify-panel');
     const keyPanel = document.getElementById('key-panel');

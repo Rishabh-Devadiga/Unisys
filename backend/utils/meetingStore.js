@@ -1,12 +1,28 @@
-const { v4: uuidv4 } = require('uuid');
-
 const meetings = new Map();
 const scheduledMeetings = new Map();
 const meetingInvites = new Map();
 
+function generateMeetingId() {
+  const len = 8 + Math.floor(Math.random() * 3);
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let id = '';
+  for (let i = 0; i < len; i += 1) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id;
+}
+
+function getUniqueMeetingId() {
+  let id = generateMeetingId();
+  while (meetings.has(id)) {
+    id = generateMeetingId();
+  }
+  return id;
+}
+
 function createMeeting(options) {
   const opts = options || {};
-  const meetingId = opts.meetingId || uuidv4();
+  const meetingId = opts.meetingId || getUniqueMeetingId();
   const meeting = {
     meetingId,
     hostId: opts.hostId || null,
@@ -83,7 +99,7 @@ function getScreenShareUserId(meetingId) {
 
 function scheduleMeeting(options) {
   const opts = options || {};
-  const meetingId = opts.meetingId || uuidv4();
+  const meetingId = opts.meetingId || getUniqueMeetingId();
   const scheduledAt = opts.scheduledAt || null;
   if (!meetings.has(meetingId)) {
     createMeeting({ hostId: opts.hostId, meetingId, scheduledAt });
