@@ -111,6 +111,14 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .toast-error .toast-icon{background:rgba(248,113,113,0.2);color:var(--red)}
 .toast-warning .toast-icon{background:rgba(251,191,36,0.2);color:var(--yellow)}
 .toast-info .toast-icon{background:rgba(109,139,255,0.2);color:var(--accent)}
+
+.call-invite{position:fixed;bottom:90px;right:24px;z-index:9998;width:300px;background:linear-gradient(135deg,#0b1220,#101a2b);color:var(--text);border-radius:18px;padding:14px 16px;box-shadow:0 12px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(109,139,255,0.3);transform:translateY(20px);opacity:0;pointer-events:none;transition:all 0.35s cubic-bezier(.22,1,.36,1)}
+.call-invite.show{transform:translateY(0);opacity:1;pointer-events:auto}
+.call-invite-head{font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
+.call-invite-body{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.call-invite-name{font-weight:600;font-size:14px}
+.call-invite-meta{font-size:12px;color:var(--text2)}
+.call-invite-actions{display:flex;gap:8px;justify-content:flex-end}
 /* MODALS */
 .modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex;animation:fadeIn 0.2s ease}

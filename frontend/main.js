@@ -491,6 +491,86 @@ function initNotifications() {
   loadNotificationsFromApi();
 }
 
+var CALL_INVITE_STATE = { timer: null, meetingId: null };
+
+function ensureCallInviteBox() {
+  var existing = document.getElementById('call-invite');
+  if (existing) return existing;
+  var wrap = document.createElement('div');
+  wrap.id = 'call-invite';
+  wrap.className = 'call-invite';
+  wrap.innerHTML =
+    '<div class="call-invite-head">Incoming Call</div>'
+    + '<div class="call-invite-body">'
+      + '<div class="call-invite-name" id="call-invite-name">Someone is calling…</div>'
+      + '<div class="call-invite-meta" id="call-invite-meta">Meeting ID: —</div>'
+    + '</div>'
+    + '<div class="call-invite-actions">'
+      + '<button class="btn btn-sm" data-action="decline">Decline</button>'
+      + '<button class="btn btn-sm btn-primary" data-action="accept">Join</button>'
+    + '</div>';
+  document.body.appendChild(wrap);
+  wrap.addEventListener('click', function(e) {
+    var btn = e.target && e.target.closest ? e.target.closest('button[data-action]') : null;
+    if (!btn) return;
+    var action = btn.getAttribute('data-action');
+    if (action === 'accept') acceptMeetingInvite();
+    if (action === 'decline') hideMeetingInvite();
+  });
+  return wrap;
+}
+
+function parseInvitedBy(message) {
+  var msg = String(message || '').trim();
+  var idx = msg.indexOf(' invited you');
+  if (idx > 0) return msg.slice(0, idx).trim();
+  return '';
+}
+
+function showMeetingInvite(payload) {
+  var data = payload || {};
+  var meetingId = data.meetingId || data.meeting_id;
+  if (!meetingId) return;
+  var invitedBy = data.invitedBy || data.invited_by || parseInvitedBy(data.message);
+  var name = invitedBy || 'Someone';
+  var box = ensureCallInviteBox();
+  CALL_INVITE_STATE.meetingId = meetingId;
+  var nameEl = document.getElementById('call-invite-name');
+  var metaEl = document.getElementById('call-invite-meta');
+  if (nameEl) nameEl.textContent = name + ' is calling…';
+  if (metaEl) metaEl.textContent = 'Meeting ID: ' + meetingId;
+  box.classList.add('show');
+  if (CALL_INVITE_STATE.timer) clearTimeout(CALL_INVITE_STATE.timer);
+  CALL_INVITE_STATE.timer = setTimeout(function() {
+    hideMeetingInvite();
+  }, 45000);
+}
+
+function hideMeetingInvite() {
+  var box = document.getElementById('call-invite');
+  if (box) box.classList.remove('show');
+  if (CALL_INVITE_STATE.timer) {
+    clearTimeout(CALL_INVITE_STATE.timer);
+    CALL_INVITE_STATE.timer = null;
+  }
+  CALL_INVITE_STATE.meetingId = null;
+}
+
+function acceptMeetingInvite() {
+  var meetingId = CALL_INVITE_STATE.meetingId;
+  if (!meetingId) return;
+  hideMeetingInvite();
+  if (typeof openMeetingWindow === 'function') {
+    openMeetingWindow(meetingId);
+    return;
+  }
+  if (typeof meetingsNavigate === 'function') {
+    meetingsNavigate('/meetings/' + meetingId);
+    return;
+  }
+  window.location.hash = '#/meetings/' + meetingId + '?meetingOnly=1';
+}
+
 function getERPUser() {
   if (ERP_USER) return ERP_USER;
   var sess = (typeof getSession === 'function') ? getSession() : null;
@@ -530,7 +610,14 @@ function initPresenceSocket() {
   });
 
   ERP_SOCKET.on('notification', function(payload) {
+    if (payload && payload.title === 'Meeting Invite' && payload.meetingId) {
+      showMeetingInvite(payload);
+    }
     pushNotification(payload);
+  });
+
+  ERP_SOCKET.on('meeting:invite', function(payload) {
+    showMeetingInvite(payload);
   });
 }
 

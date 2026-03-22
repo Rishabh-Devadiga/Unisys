@@ -115,7 +115,10 @@ function createMeetingsRouter(io) {
         notificationStore.addNotification(notif);
         if (io) {
           const socketId = presenceStore.getSocketId(invitedUserId);
-          if (socketId) io.to(socketId).emit('notification', notif);
+          if (socketId) {
+            io.to(socketId).emit('meeting:invite', { meetingId, invitedBy });
+            io.to(socketId).emit('notification', notif);
+          }
         }
       })
       .catch(() => {});
