@@ -1,5 +1,43 @@
 // OTP Verification Functions - Integrated with EduSys Registration Form
 
+// Route /api/* calls to backend when frontend is served separately (e.g., :5173)
+(function() {
+  if (window.__edusysFetchPatched) return;
+  var base = '';
+  try {
+    base = window.EDUSYS_API_BASE || localStorage.getItem('edusys-api-base') || '';
+  } catch (e) {
+    base = window.EDUSYS_API_BASE || '';
+  }
+  if (!base) {
+    var loc = window.location;
+    if ((loc.hostname === 'localhost' || loc.hostname === '127.0.0.1') && loc.port && loc.port !== '3001') {
+      base = loc.protocol + '//' + loc.hostname + ':3001';
+    }
+  }
+  if (!base) {
+    window.__edusysFetchPatched = true;
+    return;
+  }
+  window.EDUSYS_API_BASE = base;
+  var _fetch = window.fetch;
+  window.fetch = function(input, init) {
+    try {
+      if (typeof input === 'string') {
+        if (input.indexOf('/api/') === 0) input = base + input;
+      } else if (input && typeof input === 'object' && typeof input.url === 'string') {
+        if (input.url.indexOf('/api/') === 0) {
+          input = new Request(base + input.url, input);
+        } else if (input.url.indexOf(window.location.origin + '/api/') === 0) {
+          input = new Request(base + input.url.slice(window.location.origin.length), input);
+        }
+      }
+    } catch (e) {}
+    return _fetch(input, init);
+  };
+  window.__edusysFetchPatched = true;
+})();
+
 // Get Supabase client - made available globally in index.html
 function getSupabaseClient() {
   if (window.supabase_client) {
