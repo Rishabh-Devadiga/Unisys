@@ -430,13 +430,142 @@ function isKnownDept(name) {
 
 var _dbCache = null;
 var _dbSyncing = false;
+var _dbSaveInFlight = null;
+var _dbSaveTimer = null;
+var _dbSaveBackoff = 1000;
+var _dbSaveLastStatus = null;
+var DB_SAVE_QUEUE_KEY = 'edusys_db_save_queue';
 
 function dbSaveLocal(data) {
   try { storeSet(DEMO_DB_KEY, JSON.stringify(data)); } catch(e) {}
 }
 
+function safeStoreGet(key) {
+  try {
+    if (typeof storeGet === 'function') return storeGet(key);
+    if (typeof localStorage !== 'undefined') return localStorage.getItem(key);
+  } catch(e) {}
+  return null;
+}
+
+function safeStoreSet(key, value) {
+  try {
+    if (typeof storeSet === 'function') return storeSet(key, value);
+    if (typeof localStorage !== 'undefined') return localStorage.setItem(key, value);
+  } catch(e) {}
+}
+
+function safeStoreRemove(key) {
+  try {
+    if (typeof storeRemove === 'function') return storeRemove(key);
+    if (typeof localStorage !== 'undefined') return localStorage.removeItem(key);
+  } catch(e) {}
+}
+
+function getQueuedSave() {
+  try {
+    var raw = safeStoreGet(DB_SAVE_QUEUE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function setQueuedSave(state) {
+  try {
+    safeStoreSet(DB_SAVE_QUEUE_KEY, JSON.stringify({ state: state, ts: Date.now() }));
+  } catch(e) {}
+}
+
+function clearQueuedSave() {
+  safeStoreRemove(DB_SAVE_QUEUE_KEY);
+}
+
+function ensureSaveStatusEl() {
+  var el = document.getElementById('db-save-status');
+  if (el) return el;
+  el = document.createElement('div');
+  el.id = 'db-save-status';
+  el.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;max-width:320px;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.3;box-shadow:0 6px 18px rgba(0,0,0,0.15);display:none;';
+  document.body.appendChild(el);
+  return el;
+}
+
+function setSaveStatus(state, message, autoHide) {
+  var el = ensureSaveStatusEl();
+  if (!el) return;
+  if (state === _dbSaveLastStatus && !autoHide) return;
+  _dbSaveLastStatus = state;
+  if (state === 'saving') {
+    el.style.background = '#e6f0ff';
+    el.style.color = '#1e3a8a';
+    el.style.border = '1px solid #bfdbfe';
+  } else if (state === 'error') {
+    el.style.background = '#fee2e2';
+    el.style.color = '#991b1b';
+    el.style.border = '1px solid #fecaca';
+  } else {
+    el.style.background = '#dcfce7';
+    el.style.color = '#166534';
+    el.style.border = '1px solid #bbf7d0';
+  }
+  el.textContent = message || '';
+  el.style.display = 'block';
+  if (autoHide) {
+    setTimeout(function() {
+      if (el && _dbSaveLastStatus === 'ok') el.style.display = 'none';
+    }, 2500);
+  }
+}
+
+function saveToBackend(state) {
+  return fetch('/api/app-state', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ state: state })
+  }).then(function(res) {
+    if (!res.ok) {
+      return res.json().catch(function() { return {}; }).then(function(payload) {
+        var msg = (payload && payload.error) ? payload.error : ('Save failed with ' + res.status);
+        throw new Error(msg);
+      });
+    }
+    return res.json().catch(function() { return {}; });
+  });
+}
+
+function scheduleDbRetry() {
+  if (_dbSaveTimer) return;
+  var delay = _dbSaveBackoff;
+  _dbSaveBackoff = Math.min(_dbSaveBackoff * 2, 30000);
+  _dbSaveTimer = setTimeout(function() {
+    _dbSaveTimer = null;
+    flushDbSaveQueue();
+  }, delay);
+}
+
+function flushDbSaveQueue() {
+  var pending = getQueuedSave();
+  if (!pending || !pending.state) return Promise.resolve(true);
+  if (_dbSaveInFlight) return _dbSaveInFlight;
+  setSaveStatus('saving', 'Saving changes...');
+  _dbSaveInFlight = saveToBackend(pending.state)
+    .then(function() {
+      clearQueuedSave();
+      _dbSaveBackoff = 1000;
+      setSaveStatus('ok', 'All changes saved', true);
+      return true;
+    })
+    .catch(function(err) {
+      setSaveStatus('error', 'Save failed. Retrying...');
+      scheduleDbRetry();
+      return false;
+    })
+    .finally(function() { _dbSaveInFlight = null; });
+  return _dbSaveInFlight;
+}
+
 function dbSyncFromBackend() {
   if (_dbSyncing) return;
+  if (getQueuedSave()) return;
   _dbSyncing = true;
   fetch('/api/app-state')
     .then(function(res) { return res.json(); })
@@ -461,17 +590,36 @@ function dbLoad() {
     _dbCache = raw ? JSON.parse(raw) : null;
   } catch(e) { _dbCache = null; }
   dbSyncFromBackend();
+  flushDbSaveQueue();
   return _dbCache;
 }
 
 function dbSave(data) {
   _dbCache = data;
   dbSaveLocal(data);
-  fetch('/api/app-state', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ state: data })
-  }).catch(function() {});
+  setQueuedSave(data);
+  return flushDbSaveQueue();
+}
+
+function dbSaveWithToast(data, message, type) {
+  var p = dbSave(data);
+  if (typeof showToast !== 'function') return p;
+  if (p && typeof p.then === 'function') {
+    p.then(function(ok) {
+      if (ok) showToast(message, type || 'success');
+      else showToast('Saved locally. Syncing...', 'info');
+    });
+  } else {
+    showToast(message, type || 'success');
+  }
+  return p;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', function() { flushDbSaveQueue(); });
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) flushDbSaveQueue();
+  });
 }
 
 function dbGet() {
@@ -4137,7 +4285,7 @@ function adminDeleteUser(id) {
 
   db.users.splice(idx,1);
 
-  dbSave(db); showToast(name + ' deleted', 'info');
+  dbSaveWithToast(db, name + ' deleted', 'info');
 
   renderRoleSection('role-users');
 
@@ -4215,7 +4363,7 @@ function hodApproveLeave(id, approve) {
 
   l.status = approve ? 'Approved' : 'Rejected';
 
-  dbSave(db); showToast('Leave ' + l.status.toLowerCase());
+  dbSaveWithToast(db, 'Leave ' + l.status.toLowerCase());
 
   renderRoleSection(getCurrentRoleSection());
 
@@ -4241,7 +4389,7 @@ function hodAssignCourse() {
 
   if (f && !f.courses.includes(code)) f.courses.push(code);
 
-  dbSave(db); showToast(code + ' assigned to ' + faculty);
+  dbSaveWithToast(db, code + ' assigned to ' + faculty);
 
   renderRoleSection('role-dept');
 
@@ -4261,7 +4409,7 @@ function hodSubmitProposal() {
 
     title:title, description:desc||'—', status:'Pending', date:new Date().toISOString().split('T')[0] });
 
-  dbSave(db); showToast('Proposal submitted to Head');
+  dbSaveWithToast(db, 'Proposal submitted to Head');
 
   renderRoleSection('role-dept');
 
@@ -4299,7 +4447,7 @@ function facultyMarkAttendance() {
 
   db.attendance.push({ id:Date.now(), cls:cls, course:course, date:date, present:present, total:total, pct:pct });
 
-  dbSave(db); showToast('Attendance recorded — ' + pct + '%');
+  dbSaveWithToast(db, 'Attendance recorded — ' + pct + '%');
 
   renderRoleSection('role-attendance');
 
@@ -4329,7 +4477,7 @@ function facultyAddMark() {
 
   db.marks.push({ id:Date.now(), course:course, exam:exam, student:student, roll:roll, marks:marks, maxMarks:max, grade:grade });
 
-  dbSave(db); showToast('Mark added for ' + student);
+  dbSaveWithToast(db, 'Mark added for ' + student);
 
   renderRoleSection('role-marks');
 
@@ -4357,7 +4505,7 @@ function facultyCreateAssignment() {
 
     submitted:0, total:(c?c.enrolled:40), status:'Active' });
 
-  dbSave(db); showToast('Assignment created: ' + title);
+  dbSaveWithToast(db, 'Assignment created: ' + title);
 
   renderRoleSection('role-assignments');
 
@@ -4381,7 +4529,7 @@ function facultyUploadMaterial() {
 
     faculty:sess.name, date:new Date().toISOString().split('T')[0], size:'—' });
 
-  dbSave(db); showToast('Material uploaded: ' + title);
+  dbSaveWithToast(db, 'Material uploaded: ' + title);
 
   renderRoleSection('role-materials');
 
@@ -4405,7 +4553,7 @@ function facultyPostAnnouncement() {
 
     audience:audience, date:new Date().toISOString().split('T')[0], priority:priority, content:content });
 
-  dbSave(db); showToast('Announcement posted: ' + title);
+  dbSaveWithToast(db, 'Announcement posted: ' + title);
 
   renderRoleSection('role-announce');
 
