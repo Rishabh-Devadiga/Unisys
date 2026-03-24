@@ -20,6 +20,7 @@ const createMarksRouter = require('./routes/marks');
 const createNotificationsRouter = require('./routes/notifications');
 const createPresenceRouter = require('./routes/presence');
 const createErpStateRouter = require('./routes/erpState');
+const createAttendanceUploadsRouter = require('./routes/attendanceUploads');
 const { getIceServers, updateTurnHealth, getTurnHealth } = require('./utils/turnService');
 const { getUserFromSession, getUserFromHeaders } = require('./services/auth');
 const SYSTEM_KEY_ID = 'system_key';
@@ -416,6 +417,7 @@ app.use('/api/marks', createMarksRouter());
 app.use('/api/notifications', createNotificationsRouter(io));
 app.use('/api/presence', createPresenceRouter());
 app.use('/api/erp-state', createErpStateRouter());
+app.use('/', createAttendanceUploadsRouter());
 
 const SAFE_OPERATORS = new Set(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'in', 'between']);
 const SAFE_AGGREGATIONS = new Set(['sum', 'avg', 'count', 'min', 'max']);

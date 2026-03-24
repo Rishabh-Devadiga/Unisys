@@ -24,11 +24,17 @@
   window.fetch = function(input, init) {
     try {
       if (typeof input === 'string') {
-        if (input.indexOf('/api/') === 0) input = base + input;
+        if (input.indexOf('/api/') === 0 || input.indexOf('/upload-attendance') === 0 || input.indexOf('/attendance-uploads') === 0) {
+          input = base + input;
+        }
       } else if (input && typeof input === 'object' && typeof input.url === 'string') {
-        if (input.url.indexOf('/api/') === 0) {
+        if (input.url.indexOf('/api/') === 0 || input.url.indexOf('/upload-attendance') === 0 || input.url.indexOf('/attendance-uploads') === 0) {
           input = new Request(base + input.url, input);
-        } else if (input.url.indexOf(window.location.origin + '/api/') === 0) {
+        } else if (
+          input.url.indexOf(window.location.origin + '/api/') === 0 ||
+          input.url.indexOf(window.location.origin + '/upload-attendance') === 0 ||
+          input.url.indexOf(window.location.origin + '/attendance-uploads') === 0
+        ) {
           input = new Request(base + input.url.slice(window.location.origin.length), input);
         }
       }
