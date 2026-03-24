@@ -2370,7 +2370,7 @@ function buildAttendanceTrackingShared() {
 
   var who = sess ? (sess.role + ' — ' + sess.name) : 'Demo User';
 
-  return '<div class=\"module-header\"><div class=\"module-title\">Attendance Tracking (Daily, Per Subject)</div>'
+  return '<div class=\"module-header\"><div class=\"module-title\">Attendance Upload (Daily, Per Subject)</div>'
     + '<div class=\"module-sub\">Mark attendance, save/update by student+subject+date, and view summaries. Logged as: <strong>' + who + '</strong></div></div>'
     + '<div class=\"panel\"><div class=\"form-section-title\">Inputs</div>'
     + '<div class=\"form-grid\">'
@@ -2844,7 +2844,7 @@ function buildFacultyDetailedAttendance() {
     + '<tbody id="fac-det-att-body">' + (body || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">No students</td></tr>') + '</tbody>'
     + '</table></div>';
 
-  return '<div class="module-header"><div class="module-title">Attendance Tracking (Detailed)</div>'
+  return '<div class="module-header"><div class="module-title">Attendance Upload (Detailed)</div>'
     + '<div class="module-sub">Mark daily attendance with present/absent/late/excused for each student.</div></div>'
     + '<div class="panel"><div class="form-section-title">Select Class</div>'
     + '<div class="form-grid">'
@@ -3060,7 +3060,7 @@ ROLE_NAV.Head = ROLE_NAV.Head.concat([
   { id:'role-comms',             icon:'📣', label:'Comm. Hub',             section:'Head — Admin' }
 ]);
 ROLE_NAV.HOD = ROLE_NAV.HOD.concat([
-  { id:'role-hod-attendance', icon:'📍', label:'Attendance Tracking',  section:'HOD — Student Mgmt' },
+  { id:'role-hod-attendance', icon:'📍', label:'Attendance Upload',  section:'HOD — Student Mgmt' },
   { id:'role-hod-defaulters', icon:'⚠️', label:'Defaulters',         section:'HOD — Student Mgmt' },
   { id:'role-hod-cia-ese',    icon:'📝', label:'CIA & ESE',           section:'HOD — Student Mgmt' },
   { id:'role-hod-behavior',   icon:'🏷', label:'Behavior',            section:'HOD — Student Mgmt' },
@@ -3080,7 +3080,7 @@ ROLE_NAV.Faculty = ROLE_NAV.Faculty.concat([
   { id:'role-obe-report',       icon:'📄', label:'OBE Reports',         section:'OBE Tools' },
   { id:'role-research',         icon:'🔬', label:'Research & Pubs',     section:'Faculty — Profile' },
   { id:'role-workload',         icon:'⚖',  label:'Leave & Workload',    section:'Faculty — Profile' },
-  { id:'role-faculty-attendance', icon:'📍', label:'Attendance Tracking', section:'Faculty — Student Mgmt' },
+  { id:'role-faculty-attendance', icon:'📍', label:'Attendance Upload', section:'Faculty — Student Mgmt' },
   { id:'role-faculty-defaulters', icon:'⚠️', label:'Defaulters',        section:'Faculty — Student Mgmt' },
   { id:'role-faculty-cia-ese',    icon:'📝', label:'CIA & ESE',          section:'Faculty — Student Mgmt' },
   { id:'role-faculty-behavior',   icon:'🏷', label:'Behavior',           section:'Faculty — Student Mgmt' },

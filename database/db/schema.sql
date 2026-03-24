@@ -74,6 +74,15 @@ CREATE TABLE IF NOT EXISTS attendance_records (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS attendance_uploads (
+  id SERIAL PRIMARY KEY,
+  student_name TEXT NOT NULL,
+  attendance JSONB,
+  uploaded_by TEXT,
+  upload_date TIMESTAMP DEFAULT NOW(),
+  source_file TEXT
+);
+
 CREATE TABLE IF NOT EXISTS marks (
   id SERIAL PRIMARY KEY,
   student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,

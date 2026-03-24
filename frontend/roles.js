@@ -688,6 +688,134 @@ function dbReset() {
 
 }
 
+/* ── ATTENDANCE UPLOADS (SERVER) ─────────────────────────── */
+var _attendanceUploads = null;
+var _attendanceUploadsLoading = false;
+
+function formatAttendanceInfo(att) {
+  if (att == null) return '—';
+  if (typeof att === 'number' || typeof att === 'string') return String(att);
+  if (typeof att === 'object') {
+    var keys = Object.keys(att || {});
+    if (!keys.length) return '—';
+    var totalLect = null;
+    keys.forEach(function(k) {
+      if (String(k).toLowerCase().indexOf('total') >= 0) {
+        var v = Number(att[k]);
+        if (!Number.isNaN(v) && v) totalLect = v;
+      }
+    });
+    var lectureKeys = keys.filter(function(k) { return /^\d+$/.test(String(k).trim()); });
+    var present = 0;
+    lectureKeys.forEach(function(k) {
+      var v = String(att[k] == null ? '' : att[k]).trim().toLowerCase();
+      if (v === 'p' || v === 'present') present += 1;
+    });
+    var total = lectureKeys.length || (totalLect || 0);
+    var absent = total ? Math.max(0, total - present) : 0;
+    if (total) {
+      var presentPct = Math.round((present / total) * 100);
+      var absentPct = Math.round((absent / total) * 100);
+      return 'Present: ' + present + '/' + total + ' (' + presentPct + '%) | Absent: ' + absent + '/' + total + ' (' + absentPct + '%)';
+    }
+    var parts = keys.slice(0, 3).map(function(k) {
+      return k + ': ' + (att[k] == null ? '—' : att[k]);
+    });
+    return parts.join(' | ') + (keys.length > 3 ? ' …' : '');
+  }
+  return String(att);
+}
+
+function renderAttendanceUploadsTable(list) {
+  if (!list || !list.length) {
+    return '<div style="color:var(--text3);text-align:center;padding:20px">No uploaded attendance yet.</div>';
+  }
+  return widgetTable(
+    ['Student Name','Attendance Info','Uploaded By','Upload Date'],
+    list.map(function(item) {
+      var when = item.upload_date || item.uploadDate || item.uploaded_at || '';
+      return [
+        item.student_name || item.studentName || '—',
+        formatAttendanceInfo(item.attendance),
+        item.uploaded_by || item.uploadedBy || '—',
+        when ? String(when).replace('T', ' ').replace('Z', '') : '—'
+      ];
+    })
+  );
+}
+
+function updateAttendanceUploadsUI(list) {
+  var wrap = document.getElementById('attendance-uploads-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = renderAttendanceUploadsTable(list || []);
+}
+
+function loadAttendanceUploads() {
+  if (_attendanceUploadsLoading) return;
+  _attendanceUploadsLoading = true;
+  fetch('/attendance-uploads')
+    .then(function(res) { return res.ok ? res.json() : null; })
+    .then(function(payload) {
+      var items = payload && payload.items ? payload.items : (Array.isArray(payload) ? payload : []);
+      _attendanceUploads = items || [];
+      updateAttendanceUploadsUI(_attendanceUploads);
+    })
+    .catch(function() {
+      updateAttendanceUploadsUI([]);
+    })
+    .finally(function() { _attendanceUploadsLoading = false; });
+}
+
+function filterAttendanceUploads() {
+  var input = document.getElementById('attendance-upload-search');
+  if (!input) return;
+  var term = safeTrim(input.value).toLowerCase();
+  if (!term) return updateAttendanceUploadsUI(_attendanceUploads || []);
+  var filtered = (_attendanceUploads || []).filter(function(item) {
+    var name = String(item.student_name || item.studentName || '').toLowerCase();
+    return name.indexOf(term) >= 0;
+  });
+  updateAttendanceUploadsUI(filtered);
+}
+
+function triggerAttendanceUpload(prefix) {
+  var input = document.getElementById(prefix + '-att-upload-input');
+  if (input) input.click();
+}
+
+async function handleAttendanceUpload(input, prefix) {
+  var file = input && input.files ? input.files[0] : null;
+  var statusEl = document.getElementById(prefix + '-att-upload-status');
+  if (!file) return;
+  if (!/\.xlsx$/i.test(file.name) && !/\.xls$/i.test(file.name)) {
+    if (statusEl) statusEl.textContent = 'Please upload a .xlsx or .xls file only.';
+    return;
+  }
+  if (statusEl) statusEl.textContent = 'Uploading...';
+  try {
+    var form = new FormData();
+    form.append('file', file);
+    var res = await fetch('/upload-attendance', { method: 'POST', body: form });
+    var data = await res.json().catch(function() { return null; });
+    if (!res.ok || !data || !data.ok) {
+      throw new Error((data && data.error) || 'Upload failed');
+    }
+    if (statusEl) statusEl.textContent = 'Upload successful: ' + (data.inserted || 0) + ' records saved.';
+    loadAttendanceUploads();
+  } catch (e) {
+    var msg = e && e.message ? e.message : 'Upload failed. Please check the file format.';
+    if (statusEl) statusEl.textContent = msg;
+  } finally {
+    if (input) input.value = '';
+  }
+}
+
+function initAttendanceUploadsUI() {
+  if (document.getElementById('attendance-uploads-wrap')) {
+    loadAttendanceUploads();
+  }
+}
+
 
 
 /* ── AUTH ────────────────────────────────────────────────────
@@ -1306,6 +1434,7 @@ var ROLE_NAV = {
 
     { id:'role-hod-accounts', icon:'',  label:'Faculty Approvals',   section:'HOD Tools' },
     { id:'role-leave',     icon:'📅',  label:'Leave Requests',     section:'HOD Tools' },
+    { id:'role-attendance', icon:'', label:'Attendance Upload',  section:'HOD Tools' },
 
     { id:'role-marks',     icon:'',  label:'Internal Marks',     section:'HOD Tools' },
     { id:'role-marks-viewer', icon:'', label:'Marks Viewer',     section:'HOD Tools' },
@@ -1318,7 +1447,7 @@ var ROLE_NAV = {
     { id:'role-mycourses',  icon:'📚', label:'My Courses',         section:'My Dashboard' },
 
     { id:'role-schedule',   icon:'🗓', label:'My Schedule',        section:'My Dashboard' },
-    { id:'role-attendance', icon:'', label:'Take Attendance',    section:'My Dashboard' },
+    { id:'role-attendance', icon:'', label:'Attendance Upload',    section:'My Dashboard' },
     { id:'role-assignments',icon:'📋', label:'Assignments',        section:'My Dashboard' },
     { id:'role-marks',      icon:'', label:'Enter Marks',        section:'My Dashboard' },
     { id:'role-marks-viewer', icon:'', label:'Marks Viewer',     section:'My Dashboard' },
@@ -2608,9 +2737,17 @@ function buildFacultyAttendance() {
 
 
 
-  return '<div class="module-header"><div class="module-title">Take Attendance</div>'
+  return '<div class="module-header"><div class="module-title">Attendance Upload</div>'
 
-    + '<div class="module-sub">Record geofence-verified attendance for your classes.</div></div>'
+    + '<div class="module-sub">Upload and review attendance records for your classes.</div></div>'
+
+    + '<div class="panel" style="margin-bottom:16px">'
+    + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Upload Attendance</h3>'
+    + '<p style="color:var(--text2);font-size:13px;margin-bottom:12px">Upload a .xlsx file to sync student attendance.</p>'
+    + '<input type="file" id="fac-att-upload-input" accept=".xlsx,.xls" style="display:none" onchange="handleAttendanceUpload(this,\'fac\')"/>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="triggerAttendanceUpload(\'fac\')">Upload Attendance</button></div>'
+    + '<div id="fac-att-upload-status" style="color:var(--text3);font-size:12px;margin-top:8px"></div>'
+    + '</div>'
 
     + '<div class="panel">'
 
@@ -2656,6 +2793,13 @@ function buildFacultyAttendance() {
 
         }))
 
+    + '</div>'
+    + '<div class="panel">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    + '<h3 style="font-family:var(--font-head);margin-bottom:0">Attendance Uploads</h3>'
+    + '<input class="form-input" id="attendance-upload-search" placeholder="Search student name" oninput="filterAttendanceUploads()" style="max-width:260px"/>'
+    + '</div>'
+    + '<div id="attendance-uploads-wrap" style="min-height:80px;color:var(--text3)">Loading uploads…</div>'
     + '</div>';
 
 }
@@ -4693,6 +4837,7 @@ function renderRoleSection(sectionId) {
   }
 
   el.innerHTML = builder();
+  if (typeof initAttendanceUploadsUI === 'function') initAttendanceUploadsUI();
 
   /* Show this section, hide others */
 
