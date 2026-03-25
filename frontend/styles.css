@@ -160,6 +160,17 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .notif-panel{position:absolute;top:calc(100% + 12px);right:0;width:350px;height:400px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);display:flex;flex-direction:column;padding:14px 14px 12px;opacity:0;transform:translateY(-6px);pointer-events:none;transition:all 0.18s ease;z-index:120}
 .notif-panel.open{opacity:1;transform:translateY(0);pointer-events:auto}
 .notif-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.att-uploads-head{align-items:flex-start}
+.panel-title-lg{font-family:var(--font-head);font-size:20px;font-weight:600;margin:0;line-height:1.2;transform:translateY(-4px)}
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filter-label{font-size:12px;color:var(--text2)}
+.filter-bar-att{display:grid;grid-template-columns:auto;gap:6px;justify-items:end}
+.filter-row{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;justify-content:flex-end}
+.filter-bar .filter-field{width:160px;height:32px}
+.filter-bar .filter-input{width:190px;height:32px}
+.filter-row-actions{justify-content:flex-end;width:100%}
+.filter-bar .filter-clear{height:30px;padding:0 12px}
 .notif-panel-title{font-family:var(--font-head);font-size:14px;font-weight:700}
 .notif-panel-divider{height:1px;background:var(--border);margin:10px 0}
 .notif-panel-body{flex:1;overflow-y:auto;padding-right:6px}
