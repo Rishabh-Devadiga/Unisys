@@ -692,9 +692,18 @@ function dbReset() {
 var _attendanceUploads = null;
 var _attendanceUploadsLoading = false;
 
-function formatAttendanceInfo(att) {
+function formatAttendancePercentage(att) {
   if (att == null) return '—';
-  if (typeof att === 'number' || typeof att === 'string') return String(att);
+  if (typeof att === 'number') {
+    return Number.isFinite(att) ? Math.round(att) + '%' : '—';
+  }
+  if (typeof att === 'string') {
+    var trimmed = att.trim();
+    if (!trimmed) return '—';
+    if (trimmed.indexOf('%') >= 0) return trimmed;
+    var num = Number(trimmed);
+    return Number.isFinite(num) ? Math.round(num) + '%' : trimmed;
+  }
   if (typeof att === 'object') {
     var keys = Object.keys(att || {});
     if (!keys.length) return '—';
@@ -712,11 +721,9 @@ function formatAttendanceInfo(att) {
       if (v === 'p' || v === 'present') present += 1;
     });
     var total = lectureKeys.length || (totalLect || 0);
-    var absent = total ? Math.max(0, total - present) : 0;
     if (total) {
       var presentPct = Math.round((present / total) * 100);
-      var absentPct = Math.round((absent / total) * 100);
-      return 'Present: ' + present + '/' + total + ' (' + presentPct + '%) | Absent: ' + absent + '/' + total + ' (' + absentPct + '%)';
+      return presentPct + '%';
     }
     var parts = keys.slice(0, 3).map(function(k) {
       return k + ': ' + (att[k] == null ? '—' : att[k]);
@@ -731,12 +738,12 @@ function renderAttendanceUploadsTable(list) {
     return '<div style="color:var(--text3);text-align:center;padding:20px">No uploaded attendance yet.</div>';
   }
   return widgetTable(
-    ['Student Name','Attendance Info','Uploaded By','Upload Date'],
+    ['Student Name','Attendance Percentage','Uploaded By','Upload Date'],
     list.map(function(item) {
       var when = item.upload_date || item.uploadDate || item.uploaded_at || '';
       return [
         item.student_name || item.studentName || '—',
-        formatAttendanceInfo(item.attendance),
+        formatAttendancePercentage(item.attendance),
         item.uploaded_by || item.uploadedBy || '—',
         when ? String(when).replace('T', ' ').replace('Z', '') : '—'
       ];
