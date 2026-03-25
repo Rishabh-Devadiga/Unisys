@@ -757,6 +757,24 @@ function updateAttendanceUploadsUI(list) {
   wrap.innerHTML = renderAttendanceUploadsTable(list || []);
 }
 
+function getAttendanceUploadFilterValue(item, field) {
+  if (!item) return '';
+  var when = item.upload_date || item.uploadDate || item.uploaded_at || '';
+  if (field === 'student') return String(item.student_name || item.studentName || '');
+  if (field === 'attendance') return String(formatAttendancePercentage(item.attendance));
+  if (field === 'uploadedBy') return String(item.uploaded_by || item.uploadedBy || '');
+  if (field === 'uploadDate') return when ? String(when).replace('T', ' ').replace('Z', '') : '';
+  if (field === 'all') {
+    return [
+      String(item.student_name || item.studentName || ''),
+      String(formatAttendancePercentage(item.attendance)),
+      String(item.uploaded_by || item.uploadedBy || ''),
+      when ? String(when).replace('T', ' ').replace('Z', '') : ''
+    ].join(' ');
+  }
+  return '';
+}
+
 function loadAttendanceUploads() {
   if (_attendanceUploadsLoading) return;
   _attendanceUploadsLoading = true;
@@ -774,15 +792,25 @@ function loadAttendanceUploads() {
 }
 
 function filterAttendanceUploads() {
-  var input = document.getElementById('attendance-upload-search');
-  if (!input) return;
+  var input = document.getElementById('attendance-upload-filter-value');
+  var fieldSelect = document.getElementById('attendance-upload-filter-field');
+  if (!input || !fieldSelect) return;
   var term = safeTrim(input.value).toLowerCase();
+  var field = fieldSelect.value || 'all';
   if (!term) return updateAttendanceUploadsUI(_attendanceUploads || []);
   var filtered = (_attendanceUploads || []).filter(function(item) {
-    var name = String(item.student_name || item.studentName || '').toLowerCase();
-    return name.indexOf(term) >= 0;
+    var hay = getAttendanceUploadFilterValue(item, field).toLowerCase();
+    return hay.indexOf(term) >= 0;
   });
   updateAttendanceUploadsUI(filtered);
+}
+
+function clearAttendanceUploadsFilter() {
+  var input = document.getElementById('attendance-upload-filter-value');
+  var fieldSelect = document.getElementById('attendance-upload-filter-field');
+  if (input) input.value = '';
+  if (fieldSelect) fieldSelect.value = 'all';
+  updateAttendanceUploadsUI(_attendanceUploads || []);
 }
 
 function triggerAttendanceUpload(prefix) {
@@ -2804,7 +2832,18 @@ function buildFacultyAttendance() {
     + '<div class="panel">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
     + '<h3 style="font-family:var(--font-head);margin-bottom:0">Attendance Uploads</h3>'
-    + '<input class="form-input" id="attendance-upload-search" placeholder="Search student name" oninput="filterAttendanceUploads()" style="max-width:260px"/>'
+    + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    + '<span style="color:var(--text2);font-size:12px">Filter by</span>'
+    + '<select class="form-select" id="attendance-upload-filter-field" onchange="filterAttendanceUploads()" style="max-width:180px">'
+    + '<option value="all">All Columns</option>'
+    + '<option value="student">Student Name</option>'
+    + '<option value="attendance">Attendance Percentage</option>'
+    + '<option value="uploadedBy">Uploaded By</option>'
+    + '<option value="uploadDate">Upload Date</option>'
+    + '</select>'
+    + '<input class="form-input" id="attendance-upload-filter-value" placeholder="Type a value" oninput="filterAttendanceUploads()" style="max-width:220px"/>'
+    + '<button class="btn btn-sm" onclick="clearAttendanceUploadsFilter()">Clear</button>'
+    + '</div>'
     + '</div>'
     + '<div id="attendance-uploads-wrap" style="min-height:80px;color:var(--text3)">Loading uploads…</div>'
     + '</div>';
