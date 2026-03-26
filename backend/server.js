@@ -1,3 +1,4 @@
+require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const http = require('http');
@@ -878,7 +879,7 @@ app.post('/send-emails', async (req, res) => {
                   <h2 style="margin: 0; color: #c73030;">⚠️ Attendance Alert</h2>
                 </div>
                 
-                <p>Dear <strong>${defaulter.name}</strong>,</p>
+                <p>Dear <strong>Student</strong>,</p>
                 
                 <div class="alert">
                   <p><strong>Your current attendance is ${defaulter.attendance}%</strong></p>
@@ -984,7 +985,7 @@ app.post('/send-test-email', async (req, res) => {
         <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
           <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #c73030; margin-top: 0;">Attendance Alert</h2>
-            <p>Dear <strong>${studentName}</strong>,</p>
+            <p>Dear <strong>Student</strong>,</p>
             <p>Your current attendance is <strong>${attendance}%</strong>, which is below the required threshold of <strong>${threshold}%</strong>.</p>
             <p>Please attend classes regularly and contact your class mentor/HOD if you need support.</p>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 16px 0;" />
