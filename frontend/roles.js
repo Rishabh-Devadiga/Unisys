@@ -691,7 +691,8 @@ function dbReset() {
 /* ── ATTENDANCE UPLOADS (SERVER) ─────────────────────────── */
 var _attendanceUploads = null;
 var _attendanceUploadsLoading = false;
-var _attUploadFlow = { visible: false, dept: null, subject: null };
+var _attUploadFlow = { visible: false, year: null, dept: null, subject: null };
+var ATTENDANCE_UPLOAD_YEARS = ['FY', 'SY', 'TY', 'BE'];
 var ATTENDANCE_UPLOAD_DEPTS = ['CSE', 'AI/ML', 'AI&DS', 'IOT', 'Electrical', 'Mechanical'];
 var ATTENDANCE_UPLOAD_SUBJECTS = {
   'CSE': ['Data Structures', 'DBMS', 'Operating Systems', 'Computer Networks'],
@@ -769,19 +770,32 @@ function updateAttendanceUploadsUI(list) {
 
 function renderAttendanceUploadFlow(prefix) {
   if (!_attUploadFlow.visible) return '';
+  var year = _attUploadFlow.year;
   var dept = _attUploadFlow.dept;
   var subject = _attUploadFlow.subject;
   var header = '';
-  if (dept) {
+  if (year || dept || subject) {
     header = '<div class="att-upload-selected">'
+      + (year ? '<span class="badge badge-purple">' + year + '</span>' : '')
       + '<span class="badge badge-blue">' + dept + '</span>'
       + (subject ? '<span class="badge badge-green">' + subject + '</span>' : '')
       + '<button class="btn btn-sm btn-secondary" onclick="resetAttendanceUploadFlow()">Change</button>'
       + '</div>';
   }
 
+  if (!year) {
+    return '<div class="att-upload-flow">'
+      + '<div class="att-upload-step">Select Academic Year</div>'
+      + '<div class="att-upload-grid">'
+      + ATTENDANCE_UPLOAD_YEARS.map(function(y){
+          return '<div class="att-upload-card" onclick="selectAttendanceUploadYear(\'' + y + '\')">' + y + '</div>';
+        }).join('')
+      + '</div></div>';
+  }
+
   if (!dept) {
     return '<div class="att-upload-flow">'
+      + header
       + '<div class="att-upload-step">Select Department</div>'
       + '<div class="att-upload-grid">'
       + ATTENDANCE_UPLOAD_DEPTS.map(function(d){
@@ -823,9 +837,17 @@ function openAttendanceUploadFlow(prefix) {
 }
 
 function resetAttendanceUploadFlow() {
+  _attUploadFlow.year = null;
   _attUploadFlow.dept = null;
   _attUploadFlow.subject = null;
   _attUploadFlow.visible = true;
+  updateAttendanceUploadFlow('fac');
+}
+
+function selectAttendanceUploadYear(year) {
+  _attUploadFlow.year = year;
+  _attUploadFlow.dept = null;
+  _attUploadFlow.subject = null;
   updateAttendanceUploadFlow('fac');
 }
 
