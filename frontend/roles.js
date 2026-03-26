@@ -691,6 +691,16 @@ function dbReset() {
 /* ── ATTENDANCE UPLOADS (SERVER) ─────────────────────────── */
 var _attendanceUploads = null;
 var _attendanceUploadsLoading = false;
+var _attUploadFlow = { visible: false, dept: null, subject: null };
+var ATTENDANCE_UPLOAD_DEPTS = ['CSE', 'AI/ML', 'AI&DS', 'IOT', 'Electrical', 'Mechanical'];
+var ATTENDANCE_UPLOAD_SUBJECTS = {
+  'CSE': ['Data Structures', 'DBMS', 'Operating Systems', 'Computer Networks'],
+  'AI/ML': ['Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision'],
+  'AI&DS': ['Data Mining', 'Big Data', 'Statistics', 'Python for DS'],
+  'IOT': ['Embedded Systems', 'Sensors', 'IoT Networks', 'Cloud IoT'],
+  'Electrical': ['Circuits', 'Power Systems', 'Machines', 'Control Systems'],
+  'Mechanical': ['Thermodynamics', 'Fluid Mechanics', 'Manufacturing', 'Design']
+};
 
 function formatAttendancePercentage(att) {
   if (att == null) return '—';
@@ -755,6 +765,79 @@ function updateAttendanceUploadsUI(list) {
   var wrap = document.getElementById('attendance-uploads-wrap');
   if (!wrap) return;
   wrap.innerHTML = renderAttendanceUploadsTable(list || []);
+}
+
+function renderAttendanceUploadFlow(prefix) {
+  if (!_attUploadFlow.visible) return '';
+  var dept = _attUploadFlow.dept;
+  var subject = _attUploadFlow.subject;
+  var header = '';
+  if (dept) {
+    header = '<div class="att-upload-selected">'
+      + '<span class="badge badge-blue">' + dept + '</span>'
+      + (subject ? '<span class="badge badge-green">' + subject + '</span>' : '')
+      + '<button class="btn btn-sm btn-secondary" onclick="resetAttendanceUploadFlow()">Change</button>'
+      + '</div>';
+  }
+
+  if (!dept) {
+    return '<div class="att-upload-flow">'
+      + '<div class="att-upload-step">Select Department</div>'
+      + '<div class="att-upload-grid">'
+      + ATTENDANCE_UPLOAD_DEPTS.map(function(d){
+          return '<div class="att-upload-card" onclick="selectAttendanceUploadDept(\'' + d + '\')">' + d + '</div>';
+        }).join('')
+      + '</div></div>';
+  }
+
+  if (!subject) {
+    var subjects = ATTENDANCE_UPLOAD_SUBJECTS[dept] || [];
+    return '<div class="att-upload-flow">'
+      + header
+      + '<div class="att-upload-step">Select Subject</div>'
+      + '<div class="att-upload-grid">'
+      + subjects.map(function(s){
+          return '<div class="att-upload-card" onclick="selectAttendanceUploadSubject(\'' + s + '\')">' + s + '</div>';
+        }).join('')
+      + '</div></div>';
+  }
+
+  return '<div class="att-upload-flow">'
+    + header
+    + '<div class="att-upload-step">Upload File</div>'
+    + '<input type="file" id="' + prefix + '-att-upload-input" accept=".xlsx,.xls" style="display:none" onchange="handleAttendanceUpload(this,\'' + prefix + '\')"/>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="triggerAttendanceUpload(\'' + prefix + '\')">Upload Attendance</button></div>'
+    + '<div id="' + prefix + '-att-upload-status" style="color:var(--text3);font-size:12px;margin-top:8px"></div>'
+    + '</div>';
+}
+
+function updateAttendanceUploadFlow(prefix) {
+  var wrap = document.getElementById(prefix + '-att-upload-flow');
+  if (!wrap) return;
+  wrap.innerHTML = renderAttendanceUploadFlow(prefix);
+}
+
+function openAttendanceUploadFlow(prefix) {
+  _attUploadFlow.visible = true;
+  updateAttendanceUploadFlow(prefix);
+}
+
+function resetAttendanceUploadFlow() {
+  _attUploadFlow.dept = null;
+  _attUploadFlow.subject = null;
+  _attUploadFlow.visible = true;
+  updateAttendanceUploadFlow('fac');
+}
+
+function selectAttendanceUploadDept(dept) {
+  _attUploadFlow.dept = dept;
+  _attUploadFlow.subject = null;
+  updateAttendanceUploadFlow('fac');
+}
+
+function selectAttendanceUploadSubject(subject) {
+  _attUploadFlow.subject = subject;
+  updateAttendanceUploadFlow('fac');
 }
 
 function getAttendanceUploadFilterValue(item, field) {
@@ -2778,10 +2861,9 @@ function buildFacultyAttendance() {
 
     + '<div class="panel" style="margin-bottom:16px">'
     + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Upload Attendance</h3>'
-    + '<p style="color:var(--text2);font-size:13px;margin-bottom:12px">Upload a .xlsx file to sync student attendance.</p>'
-    + '<input type="file" id="fac-att-upload-input" accept=".xlsx,.xls" style="display:none" onchange="handleAttendanceUpload(this,\'fac\')"/>'
-    + '<div class="form-actions"><button class="btn btn-primary" onclick="triggerAttendanceUpload(\'fac\')">Upload Attendance</button></div>'
-    + '<div id="fac-att-upload-status" style="color:var(--text3);font-size:12px;margin-top:8px"></div>'
+    + '<p style="color:var(--text2);font-size:13px;margin-bottom:12px">Choose department and subject before uploading a .xlsx file.</p>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="openAttendanceUploadFlow(\'fac\')">Upload Attendance</button></div>'
+    + '<div id="fac-att-upload-flow"></div>'
     + '</div>'
 
     + '<div class="panel">'

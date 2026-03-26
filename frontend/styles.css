@@ -171,6 +171,12 @@ button{font-family:var(--font-body);cursor:pointer} input,select,textarea{font-f
 .filter-bar .filter-input{width:190px;height:32px}
 .filter-row-actions{justify-content:flex-end;width:100%}
 .filter-bar .filter-clear{height:30px;padding:0 12px}
+.att-upload-flow{margin-top:12px;padding-top:8px;border-top:1px dashed var(--border)}
+.att-upload-step{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);margin-bottom:8px}
+.att-upload-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.att-upload-card{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:rgba(12,18,30,0.6);color:var(--text1);text-align:center;font-weight:600;cursor:pointer;transition:transform .15s ease,border-color .15s ease,background .15s ease}
+.att-upload-card:hover{transform:translateY(-2px);border-color:rgba(99,102,241,0.6);background:rgba(24,32,54,0.7)}
+.att-upload-selected{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
 .notif-panel-title{font-family:var(--font-head);font-size:14px;font-weight:700}
 .notif-panel-divider{height:1px;background:var(--border);margin:10px 0}
 .notif-panel-body{flex:1;overflow-y:auto;padding-right:6px}
