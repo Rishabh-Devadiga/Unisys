@@ -7,6 +7,25 @@
    ============================================================ */
 window.__edusysFeaturesVersion = '2026-03-17-firebase-email-queue-v1';
 
+function smGetApiBase() {
+  if (window.FeatureDataClient && typeof window.FeatureDataClient.getApiBase === 'function') {
+    return window.FeatureDataClient.getApiBase();
+  }
+  if (window.__ERP_API_BASE) return window.__ERP_API_BASE;
+  var host = (window.location && window.location.hostname) ? window.location.hostname : '';
+  if (!host || host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+    return 'http://localhost:3001';
+  }
+  return window.location.origin;
+}
+
+function smApiUrl(path) {
+  var base = smGetApiBase().replace(/\/$/, '');
+  if (!path) return base;
+  if (/^https?:\/\//i.test(path)) return path;
+  return base + path;
+}
+
 /* ══════════════════════════════════════════════════════════
    EXTENDED SEED DATA
    Appended to dbGet() output on first access.
@@ -1767,7 +1786,7 @@ function smEmailDefaulters(list, dept, threshold) {
     return;
   }
 
-  fetch('http://localhost:3001/send-emails', {
+  fetch(smApiUrl('/send-emails'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -1796,7 +1815,7 @@ function smEmailMeAsDefaulter(toEmail, dept, threshold) {
   var pct = (s && s.id) ? smMonthlyPct(db, s.id, null) : null;
   if (pct === null) pct = smAttendancePct(s);
 
-  fetch('http://localhost:3001/send-test-email', {
+  fetch(smApiUrl('/send-test-email'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -1825,7 +1844,7 @@ function hodEmailDefaulters() {
   var dept = smMyDept();
   var threshold = hodGetThreshold();
   
-  fetch('http://localhost:3001/send-emails', {
+  fetch(smApiUrl('/send-emails'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -2440,7 +2459,7 @@ function facEmailDefaulters() {
   var dept = smMyDept();
   var threshold = facGetThreshold();
   
-  fetch('http://localhost:3001/send-emails', {
+  fetch(smApiUrl('/send-emails'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

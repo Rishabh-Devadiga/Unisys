@@ -691,30 +691,10 @@ function dbReset() {
 /* ── ATTENDANCE UPLOADS (SERVER) ─────────────────────────── */
 var _attendanceUploads = null;
 var _attendanceUploadsLoading = false;
-var _attUploadFlow = { visible: false, year: null, dept: null, subject: null };
-var ATTENDANCE_UPLOAD_YEARS = ['FY', 'SY', 'TY', 'BE'];
-var ATTENDANCE_UPLOAD_DEPTS = ['CSE', 'AI/ML', 'AI&DS', 'IOT', 'Electrical', 'Mechanical'];
-var ATTENDANCE_UPLOAD_SUBJECTS = {
-  'CSE': ['Data Structures', 'DBMS', 'Operating Systems', 'Computer Networks'],
-  'AI/ML': ['Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision'],
-  'AI&DS': ['Data Mining', 'Big Data', 'Statistics', 'Python for DS'],
-  'IOT': ['Embedded Systems', 'Sensors', 'IoT Networks', 'Cloud IoT'],
-  'Electrical': ['Circuits', 'Power Systems', 'Machines', 'Control Systems'],
-  'Mechanical': ['Thermodynamics', 'Fluid Mechanics', 'Manufacturing', 'Design']
-};
 
-function formatAttendancePercentage(att) {
+function formatAttendanceInfo(att) {
   if (att == null) return '—';
-  if (typeof att === 'number') {
-    return Number.isFinite(att) ? Math.round(att) + '%' : '—';
-  }
-  if (typeof att === 'string') {
-    var trimmed = att.trim();
-    if (!trimmed) return '—';
-    if (trimmed.indexOf('%') >= 0) return trimmed;
-    var num = Number(trimmed);
-    return Number.isFinite(num) ? Math.round(num) + '%' : trimmed;
-  }
+  if (typeof att === 'number' || typeof att === 'string') return String(att);
   if (typeof att === 'object') {
     var keys = Object.keys(att || {});
     if (!keys.length) return '—';
@@ -732,9 +712,11 @@ function formatAttendancePercentage(att) {
       if (v === 'p' || v === 'present') present += 1;
     });
     var total = lectureKeys.length || (totalLect || 0);
+    var absent = total ? Math.max(0, total - present) : 0;
     if (total) {
       var presentPct = Math.round((present / total) * 100);
-      return presentPct + '%';
+      var absentPct = Math.round((absent / total) * 100);
+      return 'Present: ' + present + '/' + total + ' (' + presentPct + '%) | Absent: ' + absent + '/' + total + ' (' + absentPct + '%)';
     }
     var parts = keys.slice(0, 3).map(function(k) {
       return k + ': ' + (att[k] == null ? '—' : att[k]);
@@ -749,12 +731,12 @@ function renderAttendanceUploadsTable(list) {
     return '<div style="color:var(--text3);text-align:center;padding:20px">No uploaded attendance yet.</div>';
   }
   return widgetTable(
-    ['Student Name','Attendance Percentage','Uploaded By','Upload Date'],
+    ['Student Name','Attendance Info','Uploaded By','Upload Date'],
     list.map(function(item) {
       var when = item.upload_date || item.uploadDate || item.uploaded_at || '';
       return [
         item.student_name || item.studentName || '—',
-        formatAttendancePercentage(item.attendance),
+        formatAttendanceInfo(item.attendance),
         item.uploaded_by || item.uploadedBy || '—',
         when ? String(when).replace('T', ' ').replace('Z', '') : '—'
       ];
@@ -766,118 +748,6 @@ function updateAttendanceUploadsUI(list) {
   var wrap = document.getElementById('attendance-uploads-wrap');
   if (!wrap) return;
   wrap.innerHTML = renderAttendanceUploadsTable(list || []);
-}
-
-function renderAttendanceUploadFlow(prefix) {
-  if (!_attUploadFlow.visible) return '';
-  var year = _attUploadFlow.year;
-  var dept = _attUploadFlow.dept;
-  var subject = _attUploadFlow.subject;
-  var header = '';
-  if (year || dept || subject) {
-    header = '<div class="att-upload-selected">'
-      + (year ? '<span class="badge badge-purple">' + year + '</span>' : '')
-      + '<span class="badge badge-blue">' + dept + '</span>'
-      + (subject ? '<span class="badge badge-green">' + subject + '</span>' : '')
-      + '<button class="btn btn-sm btn-secondary" onclick="resetAttendanceUploadFlow()">Change</button>'
-      + '</div>';
-  }
-
-  if (!year) {
-    return '<div class="att-upload-flow">'
-      + '<div class="att-upload-step">Select Academic Year</div>'
-      + '<div class="att-upload-grid">'
-      + ATTENDANCE_UPLOAD_YEARS.map(function(y){
-          return '<div class="att-upload-card" onclick="selectAttendanceUploadYear(\'' + y + '\')">' + y + '</div>';
-        }).join('')
-      + '</div></div>';
-  }
-
-  if (!dept) {
-    return '<div class="att-upload-flow">'
-      + header
-      + '<div class="att-upload-step">Select Department</div>'
-      + '<div class="att-upload-grid">'
-      + ATTENDANCE_UPLOAD_DEPTS.map(function(d){
-          return '<div class="att-upload-card" onclick="selectAttendanceUploadDept(\'' + d + '\')">' + d + '</div>';
-        }).join('')
-      + '</div></div>';
-  }
-
-  if (!subject) {
-    var subjects = ATTENDANCE_UPLOAD_SUBJECTS[dept] || [];
-    return '<div class="att-upload-flow">'
-      + header
-      + '<div class="att-upload-step">Select Subject</div>'
-      + '<div class="att-upload-grid">'
-      + subjects.map(function(s){
-          return '<div class="att-upload-card" onclick="selectAttendanceUploadSubject(\'' + s + '\')">' + s + '</div>';
-        }).join('')
-      + '</div></div>';
-  }
-
-  return '<div class="att-upload-flow">'
-    + header
-    + '<div class="att-upload-step">Upload File</div>'
-    + '<input type="file" id="' + prefix + '-att-upload-input" accept=".xlsx,.xls" style="display:none" onchange="handleAttendanceUpload(this,\'' + prefix + '\')"/>'
-    + '<div class="form-actions"><button class="btn btn-primary" onclick="triggerAttendanceUpload(\'' + prefix + '\')">Upload Attendance</button></div>'
-    + '<div id="' + prefix + '-att-upload-status" style="color:var(--text3);font-size:12px;margin-top:8px"></div>'
-    + '</div>';
-}
-
-function updateAttendanceUploadFlow(prefix) {
-  var wrap = document.getElementById(prefix + '-att-upload-flow');
-  if (!wrap) return;
-  wrap.innerHTML = renderAttendanceUploadFlow(prefix);
-}
-
-function openAttendanceUploadFlow(prefix) {
-  _attUploadFlow.visible = true;
-  updateAttendanceUploadFlow(prefix);
-}
-
-function resetAttendanceUploadFlow() {
-  _attUploadFlow.year = null;
-  _attUploadFlow.dept = null;
-  _attUploadFlow.subject = null;
-  _attUploadFlow.visible = true;
-  updateAttendanceUploadFlow('fac');
-}
-
-function selectAttendanceUploadYear(year) {
-  _attUploadFlow.year = year;
-  _attUploadFlow.dept = null;
-  _attUploadFlow.subject = null;
-  updateAttendanceUploadFlow('fac');
-}
-
-function selectAttendanceUploadDept(dept) {
-  _attUploadFlow.dept = dept;
-  _attUploadFlow.subject = null;
-  updateAttendanceUploadFlow('fac');
-}
-
-function selectAttendanceUploadSubject(subject) {
-  _attUploadFlow.subject = subject;
-  updateAttendanceUploadFlow('fac');
-}
-
-function getAttendanceUploadFilterValue(item, field) {
-  if (!item) return '';
-  var when = item.upload_date || item.uploadDate || item.uploaded_at || '';
-  if (field === 'student') return String(item.student_name || item.studentName || '');
-  if (field === 'attendance') return String(formatAttendancePercentage(item.attendance));
-  if (field === 'uploadedBy') return String(item.uploaded_by || item.uploadedBy || '');
-  if (field === 'uploadDate') return when ? String(when).replace('T', ' ').replace('Z', '') : '';
-  if (field === 'all') {
-    return [
-      String(item.student_name || item.studentName || ''),
-      String(formatAttendancePercentage(item.attendance)),
-      String(item.uploaded_by || item.uploadedBy || ''),
-      when ? String(when).replace('T', ' ').replace('Z', '') : ''
-    ].join(' ');
-  }
-  return '';
 }
 
 function loadAttendanceUploads() {
@@ -897,25 +767,15 @@ function loadAttendanceUploads() {
 }
 
 function filterAttendanceUploads() {
-  var input = document.getElementById('attendance-upload-filter-value');
-  var fieldSelect = document.getElementById('attendance-upload-filter-field');
-  if (!input || !fieldSelect) return;
+  var input = document.getElementById('attendance-upload-search');
+  if (!input) return;
   var term = safeTrim(input.value).toLowerCase();
-  var field = fieldSelect.value || 'all';
   if (!term) return updateAttendanceUploadsUI(_attendanceUploads || []);
   var filtered = (_attendanceUploads || []).filter(function(item) {
-    var hay = getAttendanceUploadFilterValue(item, field).toLowerCase();
-    return hay.indexOf(term) >= 0;
+    var name = String(item.student_name || item.studentName || '').toLowerCase();
+    return name.indexOf(term) >= 0;
   });
   updateAttendanceUploadsUI(filtered);
-}
-
-function clearAttendanceUploadsFilter() {
-  var input = document.getElementById('attendance-upload-filter-value');
-  var fieldSelect = document.getElementById('attendance-upload-filter-field');
-  if (input) input.value = '';
-  if (fieldSelect) fieldSelect.value = 'all';
-  updateAttendanceUploadsUI(_attendanceUploads || []);
 }
 
 function triggerAttendanceUpload(prefix) {
@@ -954,6 +814,566 @@ function initAttendanceUploadsUI() {
   if (document.getElementById('attendance-uploads-wrap')) {
     loadAttendanceUploads();
   }
+}
+
+/* ── OVERALL ATTENDANCE (CLIENT) ─────────────────────────── */
+var OVERALL_ATT_STATE_KEY = 'edusys_overall_att_state';
+
+function overallAttGetState() {
+  try {
+    var raw = storeGet(OVERALL_ATT_STATE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function overallAttSetState(patch) {
+  var st = overallAttGetState();
+  Object.keys(patch || {}).forEach(function(k) { st[k] = patch[k]; });
+  storeSet(OVERALL_ATT_STATE_KEY, JSON.stringify(st));
+  if (getCurrentRoleSection) {
+    var cur = getCurrentRoleSection();
+    if (cur === 'role-attendance' || cur === 'role-attendance-year') {
+      renderRoleSection(cur);
+    }
+  }
+}
+
+function overallAttSetYear(year) {
+  overallAttSetState({ year: year, subject: '', uploaded: false });
+}
+
+function overallAttSetSubject(subject) {
+  overallAttSetState({ subject: subject });
+}
+
+function overallAttEnsureXLSX(cb) {
+  if (window.XLSX && window.XLSX.utils) return cb();
+  var existing = document.getElementById('xlsx-lib');
+  if (existing) {
+    existing.onload = cb;
+    return;
+  }
+  var s = document.createElement('script');
+  s.id = 'xlsx-lib';
+  s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  s.onload = cb;
+  s.onerror = function() { showToast('Failed to load XLSX parser', 'error'); };
+  document.head.appendChild(s);
+}
+
+function overallAttTriggerUpload(inputId) {
+  var input = document.getElementById(inputId);
+  if (input) input.click();
+}
+
+function overallAttParseRows(rows) {
+  if (!rows || rows.length < 2) return [];
+  var header = rows[0].map(function(h) { return String(h || '').trim(); });
+  var lower = header.map(function(h) { return h.toLowerCase(); });
+
+  // Detect "ATTENDANCE REPORT" style sheet (lecture numbers + date row)
+  var lectureRowIdx = -1;
+  var dateRowIdx = -1;
+  for (var i = 0; i < Math.min(rows.length, 6); i += 1) {
+    var r = rows[i] || [];
+    var joined = r.map(function(c){ return String(c || '').toLowerCase(); }).join(' ');
+    if (joined.indexOf('lecture number') >= 0) lectureRowIdx = i;
+    if (joined.indexOf('date ->') >= 0 || joined.indexOf('date ->') >= 0 || joined.indexOf('date') >= 0 && joined.indexOf('->') >= 0) dateRowIdx = i;
+  }
+  if (lectureRowIdx >= 0) {
+    var lectureRow = rows[lectureRowIdx] || [];
+    var dateRow = dateRowIdx >= 0 ? (rows[dateRowIdx] || []) : [];
+    var lectureCols = [];
+    for (var c = 0; c < lectureRow.length; c += 1) {
+      var v = lectureRow[c];
+      if (typeof v === 'number') lectureCols.push(c);
+    }
+    var activeCols = lectureCols.filter(function(c) {
+      return dateRow && dateRow[c] != null && String(dateRow[c]).trim() !== '';
+    });
+    if (!activeCols.length) activeCols = lectureCols.slice();
+
+    var out = [];
+    rows.forEach(function(r) {
+      if (!r || !r.length) return;
+      var roll = r[0];
+      var name = r[1];
+      if (!(typeof roll === 'number' || (typeof roll === 'string' && String(roll).trim()))) return;
+      if (!name || String(name).trim() === '') return;
+      var present = 0;
+      activeCols.forEach(function(c) {
+        var cell = r[c];
+        var v = String(cell == null ? '' : cell).trim().toLowerCase();
+        if (v === 'p' || v === 'present' || v === 'l' || v === 'late' || v === 'e' || v === 'excused') {
+          present += 1;
+        }
+      });
+      var total = activeCols.length;
+      var pct = total ? Math.round((present / total) * 100) : 0;
+      out.push({
+        roll: String(roll || '').trim(),
+        name: String(name || '').trim(),
+        present: present,
+        total: total,
+        pct: pct
+      });
+    });
+    return out;
+  }
+
+  function findCol(matchers) {
+    for (var i = 0; i < lower.length; i += 1) {
+      var key = lower[i];
+      for (var j = 0; j < matchers.length; j += 1) {
+        if (key.indexOf(matchers[j]) >= 0) return i;
+      }
+    }
+    return -1;
+  }
+
+  var colRoll = findCol(['roll', 'reg', 'usn', 'student id', 'studentid']);
+  var colName = findCol(['name', 'student name']);
+  var colPresent = findCol(['present', 'attended']);
+  var colTotal = findCol(['total', 'classes', 'lectures']);
+  var colPct = findCol(['attendance %', 'attendance%', 'percent', 'percentage', 'attendance']);
+
+  function valueAt(row, idx) { return idx >= 0 ? row[idx] : null; }
+
+  function computeFromMarkers(row) {
+    var present = 0;
+    var total = 0;
+    row.forEach(function(cell, idx) {
+      if (idx === colRoll || idx === colName) return;
+      var v = String(cell == null ? '' : cell).trim().toLowerCase();
+      if (!v) return;
+      if (v === 'p' || v === 'present' || v === 'l' || v === 'late' || v === 'e' || v === 'excused') {
+        present += 1;
+        total += 1;
+      } else if (v === 'a' || v === 'absent') {
+        total += 1;
+      }
+    });
+    return { present: present, total: total };
+  }
+
+  var out = [];
+  rows.slice(1).forEach(function(row) {
+    if (!row || !row.length) return;
+    var roll = valueAt(row, colRoll);
+    var name = valueAt(row, colName);
+    if (!roll && !name) return;
+
+    var present = Number(valueAt(row, colPresent));
+    var total = Number(valueAt(row, colTotal));
+    var pct = Number(valueAt(row, colPct));
+
+    if (!Number.isFinite(pct) || pct <= 0) {
+      if (Number.isFinite(present) && Number.isFinite(total) && total > 0) {
+        pct = Math.round((present / total) * 100);
+      } else {
+        var marker = computeFromMarkers(row);
+        present = marker.present;
+        total = marker.total;
+        pct = total ? Math.round((present / total) * 100) : 0;
+      }
+    }
+    if (!Number.isFinite(present)) present = 0;
+    if (!Number.isFinite(total)) total = 0;
+
+    out.push({
+      roll: String(roll || '').trim(),
+      name: String(name || '').trim(),
+      present: present,
+      total: total,
+      pct: pct
+    });
+  });
+  return out;
+}
+
+function overallAttHandleUpload(input) {
+  var file = input && input.files ? input.files[0] : null;
+  var statusEl = document.getElementById('overall-att-upload-status');
+  if (!file) return;
+  if (!/\.xlsx$/i.test(file.name) && !/\.xls$/i.test(file.name)) {
+    if (statusEl) statusEl.textContent = 'Please upload a .xlsx or .xls file only.';
+    return;
+  }
+  if (statusEl) statusEl.textContent = 'Parsing file...';
+  overallAttEnsureXLSX(function() {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, { type: 'array' });
+        var sheetName = wb.SheetNames[0];
+        var sheet = wb.Sheets[sheetName];
+        var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        var parsed = overallAttParseRows(rows);
+        var db = dbGet();
+        var sess = getSession();
+        var st = overallAttGetState();
+        var year = st.year || 'First Year';
+        var subject = st.subject || 'General';
+        var now = new Date().toISOString();
+        db.attendanceOverall = db.attendanceOverall || [];
+        parsed.forEach(function(p) {
+          db.attendanceOverall.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            year: year,
+            subject: subject,
+            roll: p.roll,
+            name: p.name,
+            present: p.present,
+            total: p.total,
+            pct: p.pct,
+            uploadedAt: now,
+            uploadedBy: sess ? sess.name : 'Faculty'
+          });
+        });
+        dbSave(db);
+        if (statusEl) statusEl.textContent = 'Upload successful: ' + parsed.length + ' students processed.';
+        overallAttRenderList();
+      } catch (err) {
+        if (statusEl) statusEl.textContent = 'Upload failed. Please check the file format.';
+      } finally {
+        if (input) input.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function overallAttHandleUploadFor(input, yearLabel, subjectSelectId, statusId) {
+  var file = input && input.files ? input.files[0] : null;
+  var statusEl = statusId ? document.getElementById(statusId) : document.getElementById('overall-att-upload-status');
+  if (!file) return;
+  if (!/\.xlsx$/i.test(file.name) && !/\.xls$/i.test(file.name)) {
+    if (statusEl) statusEl.textContent = 'Please upload a .xlsx or .xls file only.';
+    return;
+  }
+  if (statusEl) statusEl.textContent = 'Parsing file...';
+  overallAttEnsureXLSX(function() {
+    if (!window.XLSX || !window.XLSX.utils) {
+      if (statusEl) statusEl.textContent = 'XLSX parser failed to load. Please use a local server and refresh.';
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, { type: 'array' });
+        var sheetName = wb.SheetNames[0];
+        var sheet = wb.Sheets[sheetName];
+        var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        var parsed = overallAttParseRows(rows);
+        if (!parsed.length) {
+          if (statusEl) statusEl.textContent = 'No valid rows found. Please check the header and data format.';
+          return;
+        }
+        var db = dbGet();
+        var sess = getSession();
+        var subjectSel = subjectSelectId ? document.getElementById(subjectSelectId) : null;
+        var subject = subjectSel ? String(subjectSel.value || '').trim() : '';
+        if (!subject) subject = 'General';
+        var now = new Date().toISOString();
+        db.attendanceOverall = db.attendanceOverall || [];
+        parsed.forEach(function(p) {
+          db.attendanceOverall.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            year: yearLabel,
+            subject: subject,
+            roll: p.roll,
+            name: p.name,
+            present: p.present,
+            total: p.total,
+            pct: p.pct,
+            uploadedAt: now,
+            uploadedBy: sess ? sess.name : 'Faculty'
+          });
+        });
+        dbSave(db);
+        if (statusEl) statusEl.textContent = 'Upload successful: ' + parsed.length + ' students processed.';
+        overallAttSetState({ year: yearLabel, subject: subject || '' });
+        if (!document.getElementById('year-att-list')) {
+          renderRoleSection('role-attendance-year');
+        }
+        setTimeout(function() {
+          if (document.getElementById('year-att-list')) {
+            overallAttRenderYearList(yearLabel, subjectSelectId);
+          } else {
+            overallAttRenderList();
+          }
+        }, 0);
+      } catch (err) {
+        if (statusEl) statusEl.textContent = 'Upload failed. Please check the file format.';
+      } finally {
+        if (input) input.value = '';
+      }
+    };
+    reader.onerror = function() {
+      if (statusEl) statusEl.textContent = 'Failed to read file. Please try again.';
+      if (input) input.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function overallAttRenderList() {
+  var wrap = document.getElementById('overall-att-list');
+  if (!wrap) return;
+  var db = dbGet();
+  var st = overallAttGetState();
+  var year = st.year || 'First Year';
+  var subject = st.subject || '';
+  var list = (db.attendanceOverall || []).filter(function(a) {
+    if (year && a.year !== year) return false;
+    if (subject && a.subject !== subject) return false;
+    return true;
+  });
+
+  var search = safeTrim((g('overall-att-search') || {}).value || '').toLowerCase();
+  var minPct = Number((g('overall-att-min') || {}).value);
+  var maxPct = Number((g('overall-att-max') || {}).value);
+  var dateFilter = (g('overall-att-date') || {}).value || '';
+  var sortBy = (g('overall-att-sort') || {}).value || 'pct_asc';
+
+  if (search) {
+    list = list.filter(function(a) {
+      return String(a.name || '').toLowerCase().indexOf(search) >= 0
+        || String(a.roll || '').toLowerCase().indexOf(search) >= 0;
+    });
+  }
+  if (!Number.isNaN(minPct)) {
+    list = list.filter(function(a) { return Number(a.pct || 0) >= minPct; });
+  }
+  if (!Number.isNaN(maxPct) && maxPct > 0) {
+    list = list.filter(function(a) { return Number(a.pct || 0) <= maxPct; });
+  }
+  if (dateFilter) {
+    list = list.filter(function(a) {
+      var when = a.uploadedAt || a.uploaded_at || '';
+      var day = when ? String(when).split('T')[0] : '';
+      return day === dateFilter;
+    });
+  }
+
+  list.sort(function(a, b) {
+    if (sortBy === 'pct_desc') return (b.pct || 0) - (a.pct || 0);
+    if (sortBy === 'name_asc') return String(a.name || '').localeCompare(String(b.name || ''));
+    if (sortBy === 'roll_asc') return String(a.roll || '').localeCompare(String(b.roll || ''));
+    return (a.pct || 0) - (b.pct || 0);
+  });
+
+  if (!list.length) {
+    wrap.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px">No overall attendance records found.</div>';
+    return;
+  }
+
+  wrap.innerHTML = widgetTable(
+    ['Roll','Name','Present','Total','%','Uploaded By','Uploaded At'],
+    list.map(function(a) {
+      var pc = a.pct >= 85 ? 'green' : a.pct >= 75 ? 'yellow' : 'red';
+      return [
+        a.roll || '—',
+        a.name || '—',
+        String(a.present || 0),
+        String(a.total || 0),
+        '<span class="badge badge-' + pc + '">' + (a.pct || 0) + '%</span>',
+        a.uploadedBy || '—',
+        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : '—'
+      ];
+    })
+  );
+}
+
+function overallAttRenderYearList(yearLabel, subjectSelectId) {
+  var wrap = document.getElementById('year-att-list');
+  if (!wrap) return;
+  var db = dbGet();
+  var subjectSel = subjectSelectId ? document.getElementById(subjectSelectId) : null;
+  var subject = subjectSel ? String(subjectSel.value || '').trim() : '';
+  var list = (db.attendanceOverall || []).filter(function(a) {
+    if (yearLabel && a.year !== yearLabel) return false;
+    if (subject && a.subject !== subject) return false;
+    return true;
+  });
+
+  var search = safeTrim((g('year-att-search') || {}).value || '').toLowerCase();
+  var minPct = Number((g('year-att-min') || {}).value);
+  var maxPct = Number((g('year-att-max') || {}).value);
+  var dateFilter = (g('year-att-date') || {}).value || '';
+  var sortBy = (g('year-att-sort') || {}).value || 'pct_asc';
+
+  if (search) {
+    list = list.filter(function(a) {
+      return String(a.name || '').toLowerCase().indexOf(search) >= 0
+        || String(a.roll || '').toLowerCase().indexOf(search) >= 0;
+    });
+  }
+  if (!Number.isNaN(minPct)) {
+    list = list.filter(function(a) { return Number(a.pct || 0) >= minPct; });
+  }
+  if (!Number.isNaN(maxPct) && maxPct > 0) {
+    list = list.filter(function(a) { return Number(a.pct || 0) <= maxPct; });
+  }
+  if (dateFilter) {
+    list = list.filter(function(a) {
+      var when = a.uploadedAt || a.uploaded_at || '';
+      var day = when ? String(when).split('T')[0] : '';
+      return day === dateFilter;
+    });
+  }
+
+  list.sort(function(a, b) {
+    if (sortBy === 'pct_desc') return (b.pct || 0) - (a.pct || 0);
+    if (sortBy === 'name_asc') return String(a.name || '').localeCompare(String(b.name || ''));
+    if (sortBy === 'roll_asc') return String(a.roll || '').localeCompare(String(b.roll || ''));
+    return (a.pct || 0) - (b.pct || 0);
+  });
+
+  if (!list.length) {
+    wrap.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px">No attendance records found for this subject.</div>';
+    return;
+  }
+
+  wrap.innerHTML = widgetTable(
+    ['Roll','Name','Present','Total','%','Uploaded By','Uploaded At'],
+    list.map(function(a) {
+      var pc = a.pct >= 85 ? 'green' : a.pct >= 75 ? 'yellow' : 'red';
+      return [
+        a.roll || '—',
+        a.name || '—',
+        String(a.present || 0),
+        String(a.total || 0),
+        '<span class="badge badge-' + pc + '">' + (a.pct || 0) + '%</span>',
+        a.uploadedBy || '—',
+        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : '—'
+      ];
+    })
+  );
+}
+
+function openYearAttendance(yearLabel) {
+  overallAttSetState({ year: yearLabel, subject: '' });
+  renderRoleSection('role-attendance-year');
+}
+
+function addSubjectForYear() {
+  var st = overallAttGetState();
+  var yearLabel = st.year || 'First Year';
+  var semMap = {
+    'First Year': ['1','2'],
+    'Second Year': ['3','4'],
+    'Third Year': ['5','6'],
+    'Fourth Year': ['7','8']
+  };
+  var semSelect = document.getElementById('year-subj-sem');
+  var codeInput = document.getElementById('year-subj-code');
+  var nameInput = document.getElementById('year-subj-name');
+  var sem = semSelect ? semSelect.value : (semMap[yearLabel] ? semMap[yearLabel][0] : '');
+  var code = safeTrim(codeInput && codeInput.value);
+  var name = safeTrim(nameInput && nameInput.value);
+  if (!code || !name) {
+    showToast('Enter subject code and name', 'warning');
+    return;
+  }
+  var db = dbGet();
+  db.courses = db.courses || [];
+  var exists = db.courses.some(function(c){ return String(c.code || '').toLowerCase() === code.toLowerCase(); });
+  if (exists) {
+    showToast('Subject code already exists', 'warning');
+    return;
+  }
+  db.courses.push({
+    id: Date.now(),
+    code: code,
+    name: name,
+    sem: sem,
+    dept: (getSession() && getSession().dept) || smMyDept() || 'CSE',
+    faculty: (getSession() && getSession().name) || 'Faculty',
+    enrolled: 0,
+    syllabus: 0
+  });
+  dbSave(db);
+  if (codeInput) codeInput.value = '';
+  if (nameInput) nameInput.value = '';
+  showToast('Subject added to ' + yearLabel, 'success');
+  renderRoleSection('role-attendance-year');
+}
+
+function buildYearAttendanceScreen() {
+  var db = dbGet();
+  var st = overallAttGetState();
+  var yearLabel = st.year || 'First Year';
+  var yearToSems = {
+    'First Year': ['1','2'],
+    'Second Year': ['3','4'],
+    'Third Year': ['5','6'],
+    'Fourth Year': ['7','8']
+  };
+  var sems = yearToSems[yearLabel] || [];
+  var yearSubjects = (db.courses || []).filter(function(c){
+    var sem = String(c.sem || '').trim();
+    return sems.indexOf(sem) >= 0;
+  });
+  var subjectOptions = yearSubjects.length
+    ? yearSubjects.map(function(c){
+        return '<option value=\"' + c.code + '\">' + c.code + ' – ' + c.name + '</option>';
+      }).join('')
+    : '<option value=\"\">No subjects available</option>';
+  var semOptions = sems.map(function(s){ return '<option value=\"' + s + '\">Semester ' + s + '</option>'; }).join('');
+
+  return '<div class="module-header"><div class="module-title">' + yearLabel + ' Attendance</div>'
+    + '<div class="module-sub">Select subject and upload attendance for ' + yearLabel + '.</div></div>'
+    + '<div class="panel" style="margin-bottom:16px">'
+    + '<div class="form-actions" style="gap:8px;flex-wrap:wrap">'
+    + '<button class="btn" onclick="renderRoleSection(\'role-attendance\')">← Back</button>'
+    + '</div>'
+    + '</div>'
+    + '<div class="panel" style="margin-bottom:16px">'
+    + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Subject Upload</h3>'
+    + '<div class="form-grid" style="margin-bottom:10px">'
+    + '<div class="form-group"><label class="form-label">Subject</label>'
+    + '<select class="form-select" id="year-att-subject">' + subjectOptions + '</select></div>'
+    + '</div>'
+    + '<input type="file" id="year-att-upload" accept=".xlsx,.xls" style="display:none" onchange="overallAttHandleUploadFor(this,\'' + yearLabel + '\',\'year-att-subject\',\'year-att-status\')"/>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="overallAttTriggerUpload(\'year-att-upload\')">Upload Attendance</button></div>'
+    + '<div id="year-att-status" style="color:var(--text3);font-size:12px;margin-top:8px"></div>'
+    + '</div>'
+
+    + '<div class="panel" style="margin-bottom:16px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    + '<h3 style="font-family:var(--font-head);margin-bottom:0">Sem Attendance List</h3>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + '<input class="form-input" id="year-att-search" placeholder="Search name / roll" oninput="overallAttRenderYearList(\'' + yearLabel + '\',\'year-att-subject\')" style="max-width:200px"/>'
+    + '<input class="form-input" id="year-att-min" type="number" placeholder="Min %" oninput="overallAttRenderYearList(\'' + yearLabel + '\',\'year-att-subject\')" style="width:90px"/>'
+    + '<input class="form-input" id="year-att-max" type="number" placeholder="Max %" oninput="overallAttRenderYearList(\'' + yearLabel + '\',\'year-att-subject\')" style="width:90px"/>'
+    + '<input class="form-input" id="year-att-date" type="date" onchange="overallAttRenderYearList(\'' + yearLabel + '\',\'year-att-subject\')" style="width:140px"/>'
+    + '<select class="form-select" id="year-att-sort" onchange="overallAttRenderYearList(\'' + yearLabel + '\',\'year-att-subject\')">'
+    + '<option value="pct_asc">% Low → High</option>'
+    + '<option value="pct_desc">% High → Low</option>'
+    + '<option value="name_asc">Name A → Z</option>'
+    + '<option value="roll_asc">Roll A → Z</option>'
+    + '</select>'
+    + '</div></div>'
+    + '<div id="year-att-list" style="min-height:80px;color:var(--text3)">Upload a file to view records.</div>'
+    + '<div class="form-actions" style="margin-top:12px">'
+    + '<button class="btn btn-primary" onclick="overallAttTriggerUpload(\'year-att-upload\')">Upload Attendance</button>'
+    + '</div>'
+    + '</div>'
+
+    + '<div class="panel">'
+    + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Add Subject</h3>'
+    + '<div class="form-grid">'
+    + '<div class="form-group"><label class="form-label">Subject Code</label><input class="form-input" id="year-subj-code" placeholder="CSE101"/></div>'
+    + '<div class="form-group"><label class="form-label">Subject Name</label><input class="form-input" id="year-subj-name" placeholder="Programming Basics"/></div>'
+    + '<div class="form-group"><label class="form-label">Semester</label><select class="form-select" id="year-subj-sem">' + semOptions + '</select></div>'
+    + '</div>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="addSubjectForYear()">+ Add Subject</button></div>'
+    + '</div>';
 }
 
 
@@ -1574,7 +1994,7 @@ var ROLE_NAV = {
 
     { id:'role-hod-accounts', icon:'',  label:'Faculty Approvals',   section:'HOD Tools' },
     { id:'role-leave',     icon:'📅',  label:'Leave Requests',     section:'HOD Tools' },
-    { id:'role-attendance', icon:'', label:'Attendance Upload',  section:'HOD Tools' },
+    { id:'role-attendance', icon:'', label:'Overall Attendance',  section:'HOD Tools' },
 
     { id:'role-marks',     icon:'',  label:'Internal Marks',     section:'HOD Tools' },
     { id:'role-marks-viewer', icon:'', label:'Marks Viewer',     section:'HOD Tools' },
@@ -2875,6 +3295,8 @@ function buildFacultyAttendance() {
 
   });
 
+  var st = overallAttGetState();
+  var year = st.year || 'First Year';
 
 
   return '<div class="module-header"><div class="module-title">Attendance Upload</div>'
@@ -2882,10 +3304,13 @@ function buildFacultyAttendance() {
     + '<div class="module-sub">Upload and review attendance records for your classes.</div></div>'
 
     + '<div class="panel" style="margin-bottom:16px">'
-    + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Upload Attendance</h3>'
-    + '<p style="color:var(--text2);font-size:13px;margin-bottom:12px">Choose department and subject before uploading a .xlsx file.</p>'
-    + '<div class="form-actions"><button class="btn btn-primary" onclick="openAttendanceUploadFlow(\'fac\')">Upload Attendance</button></div>'
-    + '<div id="fac-att-upload-flow"></div>'
+    + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Overall Attendance — Select Year</h3>'
+    + '<div class="form-actions" style="gap:8px;flex-wrap:wrap">'
+    + '<button class="' + (year === 'First Year' ? 'btn btn-primary' : 'btn') + '" onclick="openYearAttendance(\'First Year\')">First Year</button>'
+    + '<button class="' + (year === 'Second Year' ? 'btn btn-primary' : 'btn') + '" onclick="openYearAttendance(\'Second Year\')">Second Year</button>'
+    + '<button class="' + (year === 'Third Year' ? 'btn btn-primary' : 'btn') + '" onclick="openYearAttendance(\'Third Year\')">Third Year</button>'
+    + '<button class="' + (year === 'Fourth Year' ? 'btn btn-primary' : 'btn') + '" onclick="openYearAttendance(\'Fourth Year\')">Fourth Year</button>'
+    + '</div>'
     + '</div>'
 
     + '<div class="panel">'
@@ -2934,24 +3359,9 @@ function buildFacultyAttendance() {
 
     + '</div>'
     + '<div class="panel">'
-    + '<div class="panel-head att-uploads-head">'
-    + '<h3 class="panel-title-lg">Attendance Uploads</h3>'
-    + '<div class="filter-bar filter-bar-att">'
-    + '<span class="filter-label">Filter by</span>'
-    + '<div class="filter-row">'
-    + '<select class="form-select filter-field" id="attendance-upload-filter-field" onchange="filterAttendanceUploads()">'
-    + '<option value="all">All Columns</option>'
-    + '<option value="student">Student Name</option>'
-    + '<option value="attendance">Attendance Percentage</option>'
-    + '<option value="uploadedBy">Uploaded By</option>'
-    + '<option value="uploadDate">Upload Date</option>'
-    + '</select>'
-    + '<input class="form-input filter-input" id="attendance-upload-filter-value" placeholder="Type a value" oninput="filterAttendanceUploads()"/>'
-    + '</div>'
-    + '<div class="filter-row filter-row-actions">'
-    + '<button class="btn btn-sm filter-clear" onclick="clearAttendanceUploadsFilter()">Clear</button>'
-    + '</div>'
-    + '</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    + '<h3 style="font-family:var(--font-head);margin-bottom:0">Attendance Uploads</h3>'
+    + '<input class="form-input" id="attendance-upload-search" placeholder="Search student name" oninput="filterAttendanceUploads()" style="max-width:260px"/>'
     + '</div>'
     + '<div id="attendance-uploads-wrap" style="min-height:80px;color:var(--text3)">Loading uploads…</div>'
     + '</div>';
@@ -4929,6 +5339,7 @@ var SECTION_BUILDERS = {
   'role-mycourses':  buildFacultyMyCourses,
 
   'role-attendance': buildFacultyAttendance,
+  'role-attendance-year': buildYearAttendanceScreen,
 
   'role-assignments':buildFacultyAssignments,
 
@@ -4992,6 +5403,18 @@ function renderRoleSection(sectionId) {
 
   el.innerHTML = builder();
   if (typeof initAttendanceUploadsUI === 'function') initAttendanceUploadsUI();
+  if (sectionId === 'role-attendance-year') {
+    if (typeof overallAttEnsureXLSX === 'function') {
+      overallAttEnsureXLSX(function(){});
+    }
+    if (typeof overallAttRenderYearList === 'function') {
+      var st = overallAttGetState();
+      overallAttRenderYearList(st.year || 'First Year', 'year-att-subject');
+    }
+  }
+  if (sectionId === 'role-attendance' && typeof overallAttRenderList === 'function') {
+    overallAttRenderList();
+  }
 
   /* Show this section, hide others */
 

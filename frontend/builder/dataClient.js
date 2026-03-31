@@ -1,9 +1,14 @@
 (function () {
-  var DEFAULT_API_BASE = 'http://localhost:3001';
+  var DEFAULT_LOCAL_API = 'http://localhost:3001';
   var debounceTimers = {};
 
   function getApiBase() {
-    return window.__ERP_API_BASE || DEFAULT_API_BASE;
+    if (window.__ERP_API_BASE) return window.__ERP_API_BASE;
+    var host = (window.location && window.location.hostname) ? window.location.hostname : '';
+    if (!host || host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+      return DEFAULT_LOCAL_API;
+    }
+    return window.location.origin;
   }
 
   function buildUrl(path) {

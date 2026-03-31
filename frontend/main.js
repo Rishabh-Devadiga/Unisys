@@ -12,6 +12,25 @@ function storeRemove(key) {
   try { localStorage.removeItem(key); } catch(e) { delete window.__edusysMemStore[key]; }
 }
 
+function getErpApiBase() {
+  if (window.FeatureDataClient && typeof window.FeatureDataClient.getApiBase === 'function') {
+    return window.FeatureDataClient.getApiBase();
+  }
+  if (window.__ERP_API_BASE) return window.__ERP_API_BASE;
+  var host = (window.location && window.location.hostname) ? window.location.hostname : '';
+  if (!host || host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+    return 'http://localhost:3001';
+  }
+  return window.location.origin;
+}
+
+function erpApiUrl(path) {
+  var base = getErpApiBase().replace(/\/$/, '');
+  if (!path) return base;
+  if (/^https?:\/\//i.test(path)) return path;
+  return base + path;
+}
+
 /* ── THEME ─────────────────────────────────────── */
 const root = document.documentElement;
 root.setAttribute('data-theme', storeGet('unisys-theme') || 'dark');
@@ -1087,7 +1106,7 @@ function sendEmailsToDefaulters() {
   statusDiv.style.color = 'var(--text1)';
   
   // Call the backend endpoint
-  fetch('http://localhost:3001/send-emails', {
+  fetch(erpApiUrl('/send-emails'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({})
