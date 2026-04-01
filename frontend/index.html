@@ -627,7 +627,7 @@
           <div class="form-grid">
             <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="student-name" placeholder="Priya Sharma"/></div>
             <div class="form-group"><label class="form-label">Roll Number</label><input class="form-input" id="student-roll" placeholder="CSE-101"/></div>
-            <div class="form-group"><label class="form-label">Department</label><select class="form-select" id="student-dept"><option>CSE</option><option>ECE</option><option>ME</option><option>Civil</option><option>MBA</option></select></div>
+              <div class="form-group"><label class="form-label">Department</label><select class="form-select" id="student-dept"><option>AI&amp;DS</option><option>CSE</option><option>ECE</option><option>ME</option><option>Civil</option><option>MBA</option></select></div>
             <div class="form-group"><label class="form-label">Year</label><select class="form-select" id="student-year"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select></div>
             <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="student-status"><option>Active</option><option>On Hold</option><option>Alumni</option></select></div>
             <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="student-email" type="email" placeholder="student@college.edu"/></div>
@@ -637,7 +637,7 @@
             <button class="btn btn-danger" data-action="delete-student">Remove Last</button>
           </div>
         </div>
-        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Student List</h3><span class="badge badge-blue" id="stu-count">3 students</span></div><div class="table-wrap"><table class="table" id="student-table"></table></div></div>
+        <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:var(--font-head)">Student List</h3><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select class="form-select" id="student-filter-year" onchange="updateAll()" style="min-width:140px"><option value="All">All Years</option><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select><select class="form-select" id="student-filter-dept" onchange="updateAll()" style="min-width:140px"><option value="All">All Depts</option><option>AI&amp;DS</option><option>CSE</option><option>ECE</option><option>ME</option><option>Civil</option><option>MBA</option></select><span class="badge badge-blue" id="stu-count">3 students</span></div></div><div class="table-wrap"><table class="table" id="student-table"></table></div></div>
       </section>
 
       <!-- ACADEMICS -->
@@ -1141,6 +1141,8 @@
 <script src="builder/dataClient.js?v=2026-03-20-2"></script>
 <script src="renderer/featureRenderer.js?v=2026-03-20-2"></script>
 <script src="builder/featureBuilder.js?v=2026-03-21-1"></script>
+<script src="student-names.js?v=2026-04-01-1"></script>
+<script src="student-names-y2.js?v=2026-04-01-1"></script>
 <script src="main.js?v=2026-03-22-2"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="roles.js?v=2026-03-24-3"></script>

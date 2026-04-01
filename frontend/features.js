@@ -252,6 +252,49 @@ var EXT_SEED = {
   ]
 };
 
+function applyStudentNamesToExtDb(db) {
+  if (!db) return false;
+  var pool = (window.__STUDENT_NAMES && window.__STUDENT_NAMES.length) ? window.__STUDENT_NAMES : null;
+  if (!pool || !pool.length) return false;
+  var students = db.students || [];
+  if (!students.length) return false;
+  var idMap = {};
+  var rollMap = {};
+  students.forEach(function(s) {
+    if (!s) return;
+    if (s.id != null) idMap[s.id] = s.name;
+    if (s.roll) rollMap[s.roll] = s.name;
+  });
+  var changed = false;
+  function updateList(list, idField, nameField, rollField, deptField) {
+    if (!Array.isArray(list)) return;
+    list.forEach(function(item) {
+      if (!item) return;
+      var student = (idField && item[idField] != null) ? students.find(function(s) { return s.id === item[idField]; }) : null;
+      var name = student ? student.name : null;
+      if (!name && item.roll) name = rollMap[item.roll];
+      if (nameField && name && item[nameField] !== name) {
+        item[nameField] = name;
+        changed = true;
+      }
+      if (student && rollField && item[rollField] !== student.roll) {
+        item[rollField] = student.roll;
+        changed = true;
+      }
+      if (student && deptField && item[deptField] !== student.dept) {
+        item[deptField] = student.dept;
+        changed = true;
+      }
+    });
+  }
+  updateList(db.studentFlags, 'studentId', 'name', 'roll');
+  updateList(db.behaviorRecords, 'studentId', 'student', 'roll', 'dept');
+  updateList(db.ciaMarks, 'studentId', 'student', 'roll', 'dept');
+  updateList(db.eseMarks, 'studentId', 'student', 'roll', 'dept');
+  updateList(db.attendanceEntries, 'studentId', null, 'roll', 'dept');
+  return changed;
+}
+
 /* ── Extend dbGet to inject EXT_SEED fields on first access ── */
 var _origDbGet = window.dbGet;
 window.dbGet = function() {
@@ -263,6 +306,8 @@ window.dbGet = function() {
     if (!d[k]) { d[k] = JSON.parse(JSON.stringify(EXT_SEED[k])); changed = true; }
   });
   if (changed) dbSave(d);
+  var namesChanged = applyStudentNamesToExtDb(d);
+  if (namesChanged) dbSave(d);
   return d;
 };
 

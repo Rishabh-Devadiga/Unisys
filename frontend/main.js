@@ -242,6 +242,60 @@ const S = {
   ]
 };
 
+/* Apply real student names (from student-names.js) to demo data */
+function applyStudentNamesToMain() {
+  var pool = (window.__STUDENT_NAMES && window.__STUDENT_NAMES.length) ? window.__STUDENT_NAMES.slice() : null;
+  var poolY2 = (window.__STUDENT_NAMES_Y2 && window.__STUDENT_NAMES_Y2.length) ? window.__STUDENT_NAMES_Y2.slice() : null;
+  if ((!pool || !pool.length) && (!poolY2 || !poolY2.length)) return;
+  if (!S) return;
+  function pad3(n) { return String(n).padStart(3, '0'); }
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function emailFromName(name) {
+    return String(name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '.')
+      .replace(/^\.+|\.+$/g, '') + '@college.edu';
+  }
+  var students = [];
+  if (pool && pool.length) {
+    students = students.concat(pool.map(function(name, i) {
+      return {
+        id: i + 1,
+        name: name,
+        roll: 'AIDS-' + pad3(i + 1),
+        dept: 'AI&DS',
+        year: '3rd Year',
+        status: 'Active',
+        email: emailFromName(name)
+      };
+    }));
+  }
+  if (poolY2 && poolY2.length) {
+    var offset = students.length;
+    students = students.concat(poolY2.map(function(name, i) {
+      return {
+        id: offset + i + 1,
+        name: name,
+        roll: 'AIDS-2' + pad2(i + 1),
+        dept: 'AI&DS',
+        year: '2nd Year',
+        status: 'Active',
+        email: emailFromName(name)
+      };
+    }));
+  }
+  S.students = students;
+  (S.fees || []).forEach(function(f, i) {
+    var s = students[i % students.length];
+    if (f && s) f.student = s.name;
+  });
+  (S.hostel || []).forEach(function(h, i) {
+    var s = students[i % students.length];
+    if (h && s) h.student = s.name;
+  });
+}
+applyStudentNamesToMain();
+
 /* ── TABLE HELPERS ─────────────────────────────── */
 function sbadge(s) {
   const m = {
@@ -326,6 +380,7 @@ function applyErpState(state) {
       S[key] = state[key];
     }
   });
+  applyStudentNamesToMain();
 }
 
 function loadErpStateFromApi() {
@@ -644,8 +699,17 @@ function updateAll() {
   renderT('admission-table', ['Applicant','Program','Stage','Score'],
     S.admissions.map(function(a) { return [a.name, a.program, sbadge(a.stage), a.score]; }));
 
+  var yearFilter = (g('student-filter-year') || {}).value || 'All';
+  var deptFilter = (g('student-filter-dept') || {}).value || 'All';
+  var filteredStudents = (S.students || []).filter(function(s) {
+    if (!s) return false;
+    if (yearFilter !== 'All' && s.year !== yearFilter) return false;
+    if (deptFilter !== 'All' && s.dept !== deptFilter) return false;
+    return true;
+  });
+
   renderT('student-table', ['Name','Roll No','Dept','Year','Status','Email'],
-    S.students.map(function(s) { return [s.name, s.roll, s.dept, s.year, sbadge(s.status), s.email || '—']; }));
+    filteredStudents.map(function(s) { return [s.name, s.roll, s.dept, s.year, sbadge(s.status), s.email || '—']; }));
 
   renderT('course-table', ['Code','Course','Credits','Faculty','Sem','Certificate'],
     S.courses.map(function(c) { return [c.code, c.name, badge(c.credits + ' cr','blue'), c.faculty, 'Sem ' + c.sem, c.cert]; }));
@@ -707,7 +771,7 @@ function updateAll() {
   /* update count badges */
   const counts = {
     'adm-count': S.admissions.length + ' applicants',
-    'stu-count': S.students.length + ' students',
+    'stu-count': filteredStudents.length + ' students',
     'crs-count': S.courses.length + ' courses',
     'att-count': S.attendance.length + ' records',
     'exam-count': S.exams.length + ' exams',

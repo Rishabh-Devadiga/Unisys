@@ -96,7 +96,8 @@ var SEED_DATA = {
 
     { id:4, name:'Civil',hod:'Dr. Suman Roy',   students:200, faculty:10, courses:16, rating:3.9 },
 
-    { id:5, name:'MBA', hod:'Dr. Priya Nair',   students:160, faculty: 8, courses:14, rating:4.3 }
+    { id:5, name:'MBA', hod:'Dr. Priya Nair',   students:160, faculty: 8, courses:14, rating:4.3 },
+    { id:6, name:'AI&DS', hod:'Dr. Neha Kulkarni', students:70, faculty:10, courses:12, rating:4.4 }
 
   ],
 
@@ -351,6 +352,119 @@ var SEED_DATA = {
   ]
 
 };
+
+/* Apply real student names (from student-names.js) to seed + stored data */
+function getStudentNamePool() {
+  if (typeof window === 'undefined') return null;
+  return (window.__STUDENT_NAMES && window.__STUDENT_NAMES.length) ? window.__STUDENT_NAMES.slice() : null;
+}
+
+function getStudentNamePoolYear2() {
+  if (typeof window === 'undefined') return null;
+  return (window.__STUDENT_NAMES_Y2 && window.__STUDENT_NAMES_Y2.length) ? window.__STUDENT_NAMES_Y2.slice() : null;
+}
+
+function applyStudentNamesToData(data) {
+  if (!data) return false;
+  var pool = getStudentNamePool();
+  var poolY2 = getStudentNamePoolYear2();
+  if ((!pool || !pool.length) && (!poolY2 || !poolY2.length)) return false;
+  var changed = false;
+  function pad3(n) { return String(n).padStart(3, '0'); }
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function emailFromName(name) {
+    return String(name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '.')
+      .replace(/^\.+|\.+$/g, '') + '@college.edu';
+  }
+
+  var students = data.students || [];
+  var maxId = students.reduce(function(max, s) {
+    return (s && s.id && s.id > max) ? s.id : max;
+  }, 0);
+  var normalized = [];
+  if (pool && pool.length) {
+    pool.forEach(function(name, i) {
+      var existing = students[i] || {};
+      var id = (existing && existing.id != null) ? existing.id : (++maxId);
+      var roll = 'AIDS-' + pad3(i + 1);
+      var student = Object.assign({}, existing, {
+        id: id,
+        name: name,
+        roll: roll,
+        dept: 'AI&DS',
+        year: '3rd Year',
+        status: existing.status || 'Active',
+        email: existing.email || emailFromName(name)
+      });
+      if (!student.cgpa) student.cgpa = 7.5;
+      if (!student.attendance) student.attendance = 85;
+      normalized.push(student);
+    });
+  }
+  if (poolY2 && poolY2.length) {
+    poolY2.forEach(function(name, i) {
+      var idx = normalized.length;
+      var existing = students[idx] || {};
+      var id = (existing && existing.id != null) ? existing.id : (++maxId);
+      var roll = 'AIDS-2' + pad2(i + 1);
+      var student = Object.assign({}, existing, {
+        id: id,
+        name: name,
+        roll: roll,
+        dept: 'AI&DS',
+        year: '2nd Year',
+        status: existing.status || 'Active',
+        email: existing.email || emailFromName(name)
+      });
+      if (!student.cgpa) student.cgpa = 7.3;
+      if (!student.attendance) student.attendance = 83;
+      normalized.push(student);
+    });
+  }
+  data.students = normalized;
+  changed = true;
+
+  var byId = {};
+  var byRoll = {};
+  normalized.forEach(function(s) {
+    if (!s) return;
+    byId[s.id] = s;
+    byRoll[s.roll] = s;
+  });
+
+  function updateByStudentId(list, nameField, rollField, deptField, yearField) {
+    if (!Array.isArray(list)) return;
+    list.forEach(function(item) {
+      if (!item || item.studentId == null) return;
+      var s = byId[item.studentId];
+      if (!s) return;
+      if (nameField && item[nameField] !== s.name) item[nameField] = s.name;
+      if (rollField && item[rollField] !== s.roll) item[rollField] = s.roll;
+      if (deptField && item[deptField] !== s.dept) item[deptField] = s.dept;
+      if (yearField && item[yearField] !== s.year) item[yearField] = s.year;
+    });
+  }
+
+  updateByStudentId(data.studentFlags, 'name', 'roll');
+  updateByStudentId(data.behaviorRecords, 'student', 'roll', 'dept');
+  updateByStudentId(data.ciaMarks, 'student', 'roll', 'dept');
+  updateByStudentId(data.eseMarks, 'student', 'roll', 'dept');
+  updateByStudentId(data.attendanceEntries, null, 'roll', 'dept');
+
+  if (Array.isArray(data.marks)) {
+    data.marks.forEach(function(m, i) {
+      var s = normalized[i % normalized.length];
+      if (!m || !s) return;
+      m.student = s.name;
+      m.roll = s.roll;
+    });
+  }
+  return changed;
+}
+
+applyStudentNamesToData(SEED_DATA);
 
 
 
@@ -663,6 +777,9 @@ function dbGet() {
   }
 
   if (changed) dbSave(d);
+
+  var nameChanged = applyStudentNamesToData(d);
+  if (nameChanged) dbSave(d);
 
   // Sync missing students from SEED_DATA
   if (SEED_DATA && SEED_DATA.students && Array.isArray(SEED_DATA.students)) {
