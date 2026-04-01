@@ -1,0 +1,2 @@
+[SMTP] SMTP_PASS is not set. Email sending will be disabled.
+[SESSION] SESSION_SECRET not set. Using insecure default.
