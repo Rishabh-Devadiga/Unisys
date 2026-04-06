@@ -27,8 +27,12 @@ async function createStudent(payload) {
   const clean = {
     name: payload.name,
     email: payload.email || null,
+    roll: payload.roll || payload.rollNo || payload.roll_no || null,
     class: payload.class || payload.classId || null,
     dept: payload.dept || null,
+    year: payload.year || null,
+    cgpa: payload.cgpa || null,
+    phone: payload.phone || null,
     fees_due: payload.fees_due || payload.feesDue || 0,
     attendance: payload.attendance || 0,
     status: payload.status || 'Active',

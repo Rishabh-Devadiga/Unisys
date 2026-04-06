@@ -353,6 +353,17 @@ var SEED_DATA = {
 
 };
 
+function emptyStateFromSeed() {
+  var empty = {};
+  Object.keys(SEED_DATA || {}).forEach(function(key) {
+    var val = SEED_DATA[key];
+    if (Array.isArray(val)) empty[key] = [];
+    else if (val && typeof val === 'object') empty[key] = {};
+    else empty[key] = null;
+  });
+  return empty;
+}
+
 /* Apply real student names (from student-names.js) to seed + stored data */
 function getStudentNamePool() {
   if (typeof window === 'undefined') return null;
@@ -631,9 +642,18 @@ function setSaveStatus(state, message, autoHide) {
 }
 
 function saveToBackend(state) {
+  var headers = { 'Content-Type': 'application/json' };
+  if (typeof getSession === 'function') {
+    var sess = getSession();
+    if (sess && sess.institute) headers['x-erp-institute'] = sess.institute;
+  }
+  if (!headers['x-erp-institute']) {
+    var inst = storeGet ? storeGet('edusys-college') : null;
+    if (inst) headers['x-erp-institute'] = inst;
+  }
   return fetch('/api/app-state', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: headers,
     body: JSON.stringify({ state: state })
   }).then(function(res) {
     if (!res.ok) {
@@ -681,7 +701,16 @@ function dbSyncFromBackend() {
   if (_dbSyncing) return;
   if (getQueuedSave()) return;
   _dbSyncing = true;
-  fetch('/api/app-state')
+  var headers = {};
+  if (typeof getSession === 'function') {
+    var sess = getSession();
+    if (sess && sess.institute) headers['x-erp-institute'] = sess.institute;
+  }
+  if (!headers['x-erp-institute']) {
+    var inst = storeGet ? storeGet('edusys-college') : null;
+    if (inst) headers['x-erp-institute'] = inst;
+  }
+  fetch('/api/app-state', { headers: headers })
     .then(function(res) { return res.json(); })
     .then(function(payload) {
       if (payload && payload.state) {
@@ -740,56 +769,10 @@ function dbGet() {
 
   var d = dbLoad();
 
-  if (!d) { d = JSON.parse(JSON.stringify(SEED_DATA)); dbSave(d); }
-
-  var changed = false;
-
-  if (d && d.users && d.users.length) {
-
-    d.users.forEach(function(u) {
-
-      if (!safeTrim(u.institute)) { u.institute = DEFAULT_INSTITUTE; changed = true; }
-
-      if (!u.status) { u.status = 'Active'; changed = true; }
-
-    });
-
-    /* Seed mock faculty approvals if missing */
-    var mockFaculty = [
-      { name:'Prof. Arjun Mehta', email:'arjun.cse@edusys.in', role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:DEFAULT_INSTITUTE },
-      { name:'Dr. Kavya Iyer',   email:'kavya.cse@edusys.in', role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:DEFAULT_INSTITUTE },
-      { name:'Prof. Rahul Nair', email:'rahul.ece@edusys.in', role:'Faculty', dept:'ECE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-18', institute:DEFAULT_INSTITUTE },
-      { name:'Ms. Shruti Rao',   email:'shruti.mba@edusys.in', role:'Faculty', dept:'MBA', status:'Pending', lastLogin:'?', requestedRole:'Faculty', requestedOn:'2026-03-17', institute:DEFAULT_INSTITUTE }
-    ];
-    var existingEmails = d.users.map(function(u) { return (u.email || '').toLowerCase(); });
-    var nextId = d.users.reduce(function(maxId, u) {
-      return (u && u.id && u.id > maxId) ? u.id : maxId;
-    }, 0);
-    mockFaculty.forEach(function(m) {
-      if (existingEmails.indexOf(m.email.toLowerCase()) === -1) {
-        nextId += 1;
-        m.id = nextId;
-        d.users.push(m);
-        changed = true;
-      }
-    });
-
-  }
-
-  if (changed) dbSave(d);
-
-  var nameChanged = applyStudentNamesToData(d);
-  if (nameChanged) dbSave(d);
-
-  // Sync missing students from SEED_DATA
-  if (SEED_DATA && SEED_DATA.students && Array.isArray(SEED_DATA.students)) {
-    var existingIds = d.students ? d.students.map(function(s) { return s.id; }) : [];
-    var newStudents = SEED_DATA.students.filter(function(s) { return existingIds.indexOf(s.id) === -1; });
-    if (newStudents.length > 0) {
-      if (!d.students) d.students = [];
-      d.students = d.students.concat(newStudents);
-      dbSave(d);
-    }
+  if (!d) {
+    d = emptyStateFromSeed();
+    _dbCache = d;
+    dbSaveLocal(d);
   }
 
   return d;
@@ -1554,6 +1537,8 @@ async function authLoginServer(email, password, role) {
 }
 
 function syncUsersFromServer() {
+  var sess = getSession();
+  if (!sess || String(sess.role || '').toLowerCase() !== 'admin') return;
   fetch('/api/users')
     .then(function(res) { return res.ok ? res.json() : null; })
     .then(function(list) {

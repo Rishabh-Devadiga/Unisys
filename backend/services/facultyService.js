@@ -1,34 +1,28 @@
-const { v4: uuidv4 } = require('uuid');
-const { readListStore, writeListStore } = require('./appStateStore');
-
-const STORE_ID = 'erp_faculty_store';
-const MAX_ITEMS = 1000;
+const db = require('../../database/db/postgres');
 
 async function listFaculty() {
-  const store = await readListStore(STORE_ID);
-  return store.items;
+  const rows = await db.getTableRows('faculty');
+  return rows || [];
 }
 
 async function getFacultyById(id) {
-  const store = await readListStore(STORE_ID);
-  return store.items.find((item) => String(item.id) === String(id)) || null;
+  const result = await db.query('SELECT * FROM faculty WHERE id = $1', [Number(id)]);
+  return result.rows && result.rows[0] ? result.rows[0] : null;
 }
 
 async function createFaculty(payload) {
-  const store = await readListStore(STORE_ID);
-  const item = {
-    id: payload.id || uuidv4(),
+  const clean = {
+    id: payload.id || Date.now(),
     name: payload.name || 'Unnamed Faculty',
     dept: payload.dept || 'General',
-    role: payload.role || 'Faculty',
+    desig: payload.desig || payload.role || 'Faculty',
+    load: payload.load || 0,
     email: payload.email || '',
     status: payload.status || 'Active',
-    joinDate: payload.joinDate || new Date().toISOString().split('T')[0]
+    leave_balance: payload.leaveBalance || payload.leave_balance || 0,
+    courses: payload.courses || []
   };
-  store.items.unshift(item);
-  if (store.items.length > MAX_ITEMS) store.items.length = MAX_ITEMS;
-  await writeListStore(STORE_ID, store);
-  return item;
+  return db.insertRecord('faculty', clean);
 }
 
 module.exports = {

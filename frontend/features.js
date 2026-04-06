@@ -1525,14 +1525,12 @@ function facultyOBESubmitMarks() {
   var student = (g('obe-student')||{}).value;
   if (!roll) { showToast('Enter student roll number', 'error'); return; }
   showToast('Marks saved. CO attainment recalculated. Ready to submit to HOD.');
-  renderRoleSection('role-obe-marks');
 }
 function facultyEditCO(courseCode, coCode) {
   var db = dbGet();
   var co = (db.courseOutcomes||[]).find(function(c){return c.courseId===courseCode&&c.code===coCode;});
   if (!co) return;
   var newDesc = prompt('Edit CO description:', co.description);
-  if (newDesc) { co.description = newDesc; dbSave(db); showToast('CO updated — pending HOD approval'); renderRoleSection('role-co-mgmt'); }
 }
 function facultyAddCO(courseCode) {
   var desc = prompt('New CO description:');
@@ -1543,7 +1541,6 @@ function facultyAddCO(courseCode) {
   db.courseOutcomes = db.courseOutcomes || [];
   db.courseOutcomes.push({ id:Date.now(), courseId:courseCode, code:newCode, description:desc, bloom:'Application', target:70 });
   dbSave(db); showToast('CO'+newCode+' added — pending HOD approval');
-  renderRoleSection('role-co-mgmt');
 }
 function facultySaveSurvey() {
   var course = (g('survey-course')||{}).value;
@@ -1557,7 +1554,6 @@ function facultySaveSurvey() {
   var fakeResponses = Array.from({length:count}, function(){ return Math.round(score+Math.random()*0.6-0.3); });
   db.surveyResponses.push({ courseId:course, coCode:co, responses:fakeResponses });
   dbSave(db); showToast('Survey data saved for ' + course + ' ' + co);
-  renderRoleSection('role-exit-survey');
 }
 function facultyLogSession() {
   var course = (g('sl-course')||{}).value;
@@ -1571,7 +1567,6 @@ function facultyLogSession() {
   db.sessionLogs = db.sessionLogs || [];
   db.sessionLogs.push({ id:Date.now(), faculty:sess.name, course:course, date:date, topic:topic, coIds:[co], batch:batch, duration:dur });
   dbSave(db); showToast('Session logged: ' + topic);
-  renderRoleSection('role-session-map');
 }
 function facultySaveActionPlan() {
   var course  = (g('ap-course')||{}).value;
@@ -1585,11 +1580,9 @@ function facultySaveActionPlan() {
   db.actionPlans = db.actionPlans || [];
   db.actionPlans.push({ id:Date.now(), faculty:sess.name, course:course, coCode:co, semester:'2025-26 Even', issue:issue, action:action, targetSem:sem, status:status, createdOn:new Date().toISOString().split('T')[0] });
   dbSave(db); showToast('Action plan saved for ' + course + ' ' + co);
-  renderRoleSection('role-action-plan');
 }
 function facultyCreateActionPlan(courseCode) {
   /* Pre-fill and navigate to action plan section */
-  renderRoleSection('role-action-plan');
   setTimeout(function(){
     var el = g('ap-course');
     if (el) el.value = courseCode;
@@ -3047,7 +3040,6 @@ Object.assign(SECTION_BUILDERS, {
   'role-calendar':    buildPrincipalCalendar,
   'role-comms':       buildPrincipalComms,
   /* HOD new */
-  'role-hod-obe':     buildHODOBE,
   'role-hod-analytics': buildHODAnalytics,
   'role-hod-defaulters': buildHODDefaulters,
   'role-hod-cia-ese': buildHODCIAESE,
@@ -3055,17 +3047,9 @@ Object.assign(SECTION_BUILDERS, {
   'role-hod-reports': buildHODReports,
   'role-hod-attendance': buildAttendanceTrackingShared,
   'role-hod-performance': buildHODStudentPerformance,
-  /* Faculty OBE new */
-  'role-co-mgmt':     buildFacultyCO,
-  'role-co-po':       buildFacultyCOPO,
-  'role-obe-marks':   buildFacultyOBEMarks,
-  'role-attainment-view': buildFacultyAttainmentView,
-  'role-exit-survey': buildFacultyExitSurvey,
-  'role-session-map': buildFacultySessionMap,
-  'role-action-plan': buildFacultyActionPlan,
+  /* Faculty */
   'role-research':    buildFacultyResearch,
   'role-workload':    buildFacultyWorkload,
-  'role-obe-report':  buildFacultyOBEReport,
   /* Faculty Student Mgmt */
   'role-faculty-defaulters': buildFacultyDefaultersSMS,
   'role-faculty-cia-ese': buildFacultyCIAESE,
@@ -3085,13 +3069,12 @@ ROLE_MODULES.Head = ROLE_MODULES.Head.concat([
   'role-calendar','role-comms'
 ]);
 ROLE_MODULES.HOD = ROLE_MODULES.HOD.concat([
-  'role-hod-obe','role-hod-analytics',
+  'role-hod-analytics',
   'role-hod-attendance','role-hod-performance',
   'role-hod-defaulters','role-hod-cia-ese','role-hod-behavior','role-hod-reports'
 ]);
 ROLE_MODULES.Faculty = ROLE_MODULES.Faculty.concat([
-  'role-co-mgmt','role-co-po','role-obe-marks','role-attainment-view',
-  'role-exit-survey','role-session-map','role-action-plan','role-research','role-workload','role-obe-report',
+  'role-research','role-workload',
   'role-faculty-attendance','role-faculty-performance',
   'role-faculty-defaulters','role-faculty-cia-ese','role-faculty-behavior','role-faculty-reports'
 ]);
@@ -3130,18 +3113,9 @@ ROLE_NAV.HOD = ROLE_NAV.HOD.concat([
   { id:'role-hod-behavior',   icon:'🏷', label:'Behavior',            section:'HOD — Student Mgmt' },
   { id:'role-hod-performance', icon:'📈', label:'Student Performance', section:'HOD — Student Mgmt' },
   { id:'role-hod-reports',    icon:'📄', label:'Reports',             section:'HOD — Student Mgmt' },
-  { id:'role-hod-obe',       icon:'🎯', label:'OBE Roll-Up',         section:'HOD — OBE' },
-  { id:'role-hod-analytics', icon:'📊', label:'Dept Analytics',      section:'HOD — OBE' }
+  { id:'role-hod-analytics', icon:'📊', label:'Dept Analytics',      section:'HOD — Student Mgmt' }
 ]);
 ROLE_NAV.Faculty = ROLE_NAV.Faculty.concat([
-  { id:'role-co-mgmt',          icon:'🎯', label:'CO Management',       section:'OBE Tools' },
-  { id:'role-co-po',            icon:'🗺',  label:'CO-PO Mapping',       section:'OBE Tools' },
-  { id:'role-obe-marks',        icon:'📝', label:'OBE Mark Entry',      section:'OBE Tools' },
-  { id:'role-attainment-view',  icon:'📊', label:'Attainment View',     section:'OBE Tools' },
-  { id:'role-exit-survey',      icon:'📋', label:'Exit Survey',         section:'OBE Tools' },
-  { id:'role-session-map',      icon:'🗓', label:'Session CO Map',      section:'OBE Tools' },
-  { id:'role-action-plan',      icon:'🔧', label:'Action Plans',        section:'OBE Tools' },
-  { id:'role-obe-report',       icon:'📄', label:'OBE Reports',         section:'OBE Tools' },
   { id:'role-research',         icon:'🔬', label:'Research & Pubs',     section:'Faculty — Profile' },
   { id:'role-workload',         icon:'⚖',  label:'Leave & Workload',    section:'Faculty — Profile' },
   { id:'role-faculty-attendance', icon:'📍', label:'Attendance Upload', section:'Faculty — Student Mgmt' },

@@ -6,6 +6,8 @@ const helmet = require('helmet');
 const session = require('express-session');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const XLSX = require('xlsx');
 const { Server } = require('socket.io');
 const nodemailer = require('nodemailer');
 const db = require('../database/db/postgres');
@@ -22,7 +24,8 @@ const createPresenceRouter = require('./routes/presence');
 const createErpStateRouter = require('./routes/erpState');
 const createAttendanceUploadsRouter = require('./routes/attendanceUploads');
 const { getIceServers, updateTurnHealth, getTurnHealth } = require('./utils/turnService');
-const { getUserFromSession, getUserFromHeaders } = require('./services/auth');
+const { getUserFromSession, getUserFromHeaders, requireAuth } = require('./services/auth');
+const erpStateService = require('./services/erpStateService');
 const SYSTEM_KEY_ID = 'system_key';
 const USERS_STORE_ID = 'users_store';
 
@@ -30,6 +33,11 @@ const app = express();
 const PORT = 3001;
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 app.disable('x-powered-by');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 }
+});
 
 // SMTP configuration (Gmail App Password)
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
@@ -742,9 +750,310 @@ app.post('/api/records/:table', async (req, res) => {
   }
 });
 
+const ALLOWED_DB_TABLES = new Set([
+  'admissions','courses','exams','faculty','hr','library','hostel','transport',
+  'placements','research','facilities','inventory','procurement','service_requests',
+  'communications','compliance','departments','assignments','leave_requests',
+  'announcements','calendar_events','audit_logs','proposals','materials','timetable',
+  'attendance_summary','students','fees','attendance','marks','notifications',
+  'attendance_uploads'
+]);
+
+function quoteIdent(name) {
+  return `"${String(name).replace(/"/g, '""')}"`;
+}
+
+async function getIdColumn(tableName) {
+  const columns = await getTableColumns(tableName);
+  if (!columns) return null;
+  if (columns.includes('id')) return 'id';
+  if (columns.includes('meeting_id')) return 'meeting_id';
+  return null;
+}
+
+function normalizeTableName(raw) {
+  return String(raw || '').trim().toLowerCase();
+}
+
+function parseQueryFilters(query, allowedColumns) {
+  const filters = [];
+  const reserved = new Set(['limit', 'offset', 'order', 'orderby']);
+  if (!query) return filters;
+  Object.keys(query).forEach((key) => {
+    const normKey = String(key || '').trim();
+    if (!normKey || reserved.has(normKey.toLowerCase())) return;
+    if (!allowedColumns.includes(normKey)) return;
+    const raw = query[key];
+    if (raw == null || raw === '') return;
+    const value = Array.isArray(raw) ? raw : String(raw);
+    if (typeof value === 'string' && value.indexOf(',') >= 0) {
+      const parts = value.split(',').map((v) => v.trim()).filter(Boolean);
+      if (parts.length) {
+        filters.push({ field: normKey, op: 'in', value: parts });
+      }
+    } else {
+      filters.push({ field: normKey, op: 'eq', value });
+    }
+  });
+  return filters;
+}
+
+async function queryTableWithFilters(table, query) {
+  const columns = await getTableColumns(table);
+  if (!columns) return { rows: [], columns: [] };
+  const filters = parseQueryFilters(query, columns);
+  const params = [];
+  let sql = `SELECT * FROM ${quoteIdent(table)}`;
+  if (filters.length) {
+    const clauses = filters.map((f) => {
+      if (f.op === 'in') {
+        const start = params.length + 1;
+        params.push(...f.value);
+        const placeholders = f.value.map((_, i) => `$${start + i}`).join(', ');
+        return `${quoteIdent(f.field)} IN (${placeholders})`;
+      }
+      params.push(f.value);
+      return `${quoteIdent(f.field)} = $${params.length}`;
+    });
+    sql += ` WHERE ${clauses.join(' AND ')}`;
+  }
+
+  const orderBy = query && query.orderBy && columns.includes(String(query.orderBy)) ? String(query.orderBy) : null;
+  const orderDir = String(query && query.order ? query.order : 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+  if (orderBy) {
+    sql += ` ORDER BY ${quoteIdent(orderBy)} ${orderDir}`;
+  }
+
+  if (query && query.limit) {
+    const limit = Number(query.limit);
+    if (Number.isFinite(limit) && limit > 0) {
+      params.push(limit);
+      sql += ` LIMIT $${params.length}`;
+    }
+  }
+  if (query && query.offset) {
+    const offset = Number(query.offset);
+    if (Number.isFinite(offset) && offset >= 0) {
+      params.push(offset);
+      sql += ` OFFSET $${params.length}`;
+    }
+  }
+
+  const result = await db.query(sql, params);
+  return { rows: result.rows || [], columns };
+}
+
+function buildColumnMap(columns) {
+  const map = {};
+  columns.forEach((col) => {
+    map[String(col).toLowerCase()] = col;
+  });
+  return map;
+}
+
+async function insertRows(table, rows) {
+  const columns = await getTableColumns(table);
+  if (!columns) return { inserted: [], skipped: 0 };
+  const colMap = buildColumnMap(columns);
+  const inserted = [];
+  let skipped = 0;
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') {
+      skipped += 1;
+      continue;
+    }
+    const keys = Object.keys(row)
+      .map((k) => ({ raw: k, norm: String(k).trim().toLowerCase() }))
+      .map((k) => ({ raw: k.raw, col: colMap[k.norm] }))
+      .filter((k) => k.col);
+    if (!keys.length) {
+      skipped += 1;
+      continue;
+    }
+    const values = keys.map((k) => row[k.raw]);
+    const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+    const sql = `
+      INSERT INTO ${quoteIdent(table)} (${keys.map((k) => quoteIdent(k.col)).join(', ')})
+      VALUES (${placeholders})
+      RETURNING *;
+    `;
+    const result = await db.query(sql, values);
+    if (result.rows && result.rows[0]) inserted.push(result.rows[0]);
+  }
+  return { inserted, skipped };
+}
+
+app.get('/api/db/:table', requireAuth(['Admin', 'Faculty', 'Student']), async (req, res) => {
+  try {
+    const table = normalizeTableName(req.params.table);
+    if (!ALLOWED_DB_TABLES.has(table)) {
+      return res.status(404).json({ ok: false, error: 'Unknown table' });
+    }
+    const result = await queryTableWithFilters(table, req.query || {});
+    return res.json({ ok: true, rows: result.rows || [] });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Fetch failed' });
+  }
+});
+
+app.post('/api/db/:table/bulk', requireAuth(['Admin', 'Faculty']), async (req, res) => {
+  try {
+    const table = normalizeTableName(req.params.table);
+    if (!ALLOWED_DB_TABLES.has(table)) {
+      return res.status(404).json({ ok: false, error: 'Unknown table' });
+    }
+    const payload = req.body || {};
+    const rows = Array.isArray(payload) ? payload : payload.rows;
+    if (!Array.isArray(rows) || !rows.length) {
+      return res.status(400).json({ ok: false, error: 'rows array is required' });
+    }
+    const { inserted, skipped } = await insertRows(table, rows);
+    return res.status(201).json({ ok: true, count: inserted.length, skipped, rows: inserted });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Bulk insert failed' });
+  }
+});
+
+app.post('/api/db/:table/upload', requireAuth(['Admin', 'Faculty']), upload.single('file'), async (req, res) => {
+  try {
+    const table = normalizeTableName(req.params.table);
+    if (!ALLOWED_DB_TABLES.has(table)) {
+      return res.status(404).json({ ok: false, error: 'Unknown table' });
+    }
+    const file = req.file;
+    if (!file || !file.buffer) {
+      return res.status(400).json({ ok: false, error: 'file is required' });
+    }
+    let workbook;
+    try {
+      workbook = XLSX.read(file.buffer, { type: 'buffer', raw: true });
+    } catch (e) {
+      return res.status(400).json({ ok: false, error: 'Unable to parse file' });
+    }
+    const sheetName = workbook.SheetNames && workbook.SheetNames.length ? workbook.SheetNames[0] : null;
+    if (!sheetName) {
+      return res.status(400).json({ ok: false, error: 'No sheet found' });
+    }
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+    if (!rows.length) {
+      return res.status(400).json({ ok: false, error: 'No rows found in file' });
+    }
+    const { inserted, skipped } = await insertRows(table, rows);
+    return res.status(201).json({
+      ok: true,
+      count: inserted.length,
+      skipped,
+      rows: inserted
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Upload failed' });
+  }
+});
+
+app.get('/api/db/:table/:id', requireAuth(['Admin', 'Faculty', 'Student']), async (req, res) => {
+  try {
+    const table = normalizeTableName(req.params.table);
+    if (!ALLOWED_DB_TABLES.has(table)) {
+      return res.status(404).json({ ok: false, error: 'Unknown table' });
+    }
+    const idColumn = await getIdColumn(table);
+    if (!idColumn) {
+      return res.status(400).json({ ok: false, error: 'Table does not support id lookup' });
+    }
+    const rawId = req.params.id;
+    const param = idColumn === 'id' ? Number(rawId) : String(rawId);
+    const result = await db.query(
+      `SELECT * FROM ${quoteIdent(table)} WHERE ${quoteIdent(idColumn)} = $1 LIMIT 1`,
+      [param]
+    );
+    return res.json({ ok: true, row: result.rows[0] || null });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Fetch failed' });
+  }
+});
+
+app.post('/api/db/:table', requireAuth(['Admin', 'Faculty']), async (req, res) => {
+  try {
+    const table = normalizeTableName(req.params.table);
+    if (!ALLOWED_DB_TABLES.has(table)) {
+      return res.status(404).json({ ok: false, error: 'Unknown table' });
+    }
+    const payload = req.body || {};
+    const columns = await getTableColumns(table);
+    if (!columns) return res.status(400).json({ ok: false, error: 'Unknown table' });
+    const keys = Object.keys(payload).filter((key) => columns.includes(key));
+    if (!keys.length) return res.status(400).json({ ok: false, error: 'No valid fields provided' });
+    const vals = keys.map((k) => payload[k]);
+    const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+    const sql = `
+      INSERT INTO ${quoteIdent(table)} (${keys.map(quoteIdent).join(', ')})
+      VALUES (${placeholders})
+      RETURNING *;
+    `;
+    const result = await db.query(sql, vals);
+    return res.status(201).json({ ok: true, row: result.rows[0] || null });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Insert failed' });
+  }
+});
+
+app.put('/api/db/:table/:id', requireAuth(['Admin', 'Faculty']), async (req, res) => {
+  try {
+    const table = normalizeTableName(req.params.table);
+    if (!ALLOWED_DB_TABLES.has(table)) {
+      return res.status(404).json({ ok: false, error: 'Unknown table' });
+    }
+    const idColumn = await getIdColumn(table);
+    if (!idColumn) {
+      return res.status(400).json({ ok: false, error: 'Table does not support id updates' });
+    }
+    const payload = req.body || {};
+    const columns = await getTableColumns(table);
+    if (!columns) return res.status(400).json({ ok: false, error: 'Unknown table' });
+    const keys = Object.keys(payload).filter((key) => columns.includes(key) && key !== idColumn);
+    if (!keys.length) return res.status(400).json({ ok: false, error: 'No valid fields provided' });
+    const setSql = keys.map((key, i) => `${quoteIdent(key)} = $${i + 1}`).join(', ');
+    const rawId = req.params.id;
+    const param = idColumn === 'id' ? Number(rawId) : String(rawId);
+    const vals = keys.map((k) => payload[k]);
+    vals.push(param);
+    const result = await db.query(
+      `UPDATE ${quoteIdent(table)} SET ${setSql} WHERE ${quoteIdent(idColumn)} = $${vals.length} RETURNING *;`,
+      vals
+    );
+    return res.json({ ok: true, row: result.rows[0] || null });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Update failed' });
+  }
+});
+
+app.delete('/api/db/:table/:id', requireAuth(['Admin']), async (req, res) => {
+  try {
+    const table = normalizeTableName(req.params.table);
+    if (!ALLOWED_DB_TABLES.has(table)) {
+      return res.status(404).json({ ok: false, error: 'Unknown table' });
+    }
+    const idColumn = await getIdColumn(table);
+    if (!idColumn) {
+      return res.status(400).json({ ok: false, error: 'Table does not support id deletes' });
+    }
+    const rawId = req.params.id;
+    const param = idColumn === 'id' ? Number(rawId) : String(rawId);
+    await db.query(
+      `DELETE FROM ${quoteIdent(table)} WHERE ${quoteIdent(idColumn)} = $1`,
+      [param]
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || 'Delete failed' });
+  }
+});
+
 app.get('/api/app-state', async (req, res) => {
   try {
-    const state = await db.getAppState('default');
+    const scope = req.headers['x-erp-institute'] || '';
+    const state = await erpStateService.getErpState(scope);
     return res.json({ ok: true, state: state || null });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || 'Failed to load app state' });
@@ -757,7 +1066,8 @@ app.post('/api/app-state', async (req, res) => {
     if (!payload.state || typeof payload.state !== 'object') {
       return res.status(400).json({ ok: false, error: 'state payload is required' });
     }
-    await db.setAppState('default', payload.state);
+    const scope = req.headers['x-erp-institute'] || '';
+    await erpStateService.setErpState(scope, payload.state);
     return res.json({ ok: true });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || 'Failed to save app state' });
@@ -766,7 +1076,7 @@ app.post('/api/app-state', async (req, res) => {
 
 app.delete('/api/app-state', async (req, res) => {
   try {
-    await db.clearAppState('default');
+    await erpStateService.clearErpState();
     return res.json({ ok: true });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || 'Failed to clear app state' });

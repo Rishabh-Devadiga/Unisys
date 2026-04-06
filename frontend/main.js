@@ -168,78 +168,25 @@ function initLanding() {
 
 /* ── ERP STATE ─────────────────────────────────── */
 const S = {
-  admissions: [
-    { id:1, name:'Riya Patel', program:'B.Tech CSE', stage:'Applied', score:82 },
-    { id:2, name:'Aman Verma', program:'MBA', stage:'Offered', score:88 }
-  ],
-  students: [
-    { id:1, name:'Priya Sharma', roll:'CSE-101', dept:'CSE', year:'3rd Year', status:'Active', email:'priya@college.edu' },
-    { id:2, name:'Dev Malhotra', roll:'ME-204', dept:'ME', year:'2nd Year', status:'Active', email:'dev@college.edu' },
-    { id:3, name:'Anjali Singh', roll:'ECE-305', dept:'ECE', year:'3rd Year', status:'Active', email:'anjali@college.edu' }
-  ],
-  courses: [
-    { id:1, code:'CSE301', name:'Data Structures', credits:3, faculty:'Dr. Rao', sem:'5', cert:'DSA Certificate' },
-    { id:2, code:'CSE401', name:'Computer Networks', credits:4, faculty:'Prof. Singh', sem:'7', cert:'Networks Certificate' }
-  ],
-  attendance: [
-    { id:1, cls:'CSE A', course:'DSA', date:'2026-03-10', present:86 },
-    { id:2, cls:'ECE B', course:'Signals', date:'2026-03-10', present:91 }
-  ],
-  exams: [
-    { id:1, exam:'Mid Semester', course:'CSE301', date:'2026-04-02', hall:'H1', marks:100, inv:'Dr. Rao' },
-    { id:2, exam:'End Semester', course:'CSE401', date:'2026-05-10', hall:'H3', marks:100, inv:'Prof. Singh' }
-  ],
-  faculty: [
-    { id:1, name:'Dr. Rao', dept:'CSE', desig:'Professor', load:14, email:'rao@college.edu', status:'Active' },
-    { id:2, name:'Prof. Singh', dept:'ECE', desig:'Assoc. Professor', load:12, email:'singh@college.edu', status:'Active' }
-  ],
-  fees: [
-    { id:1, student:'Priya Sharma', type:'Tuition Fee', amount:45000, due:'2026-04-10', mode:'Online', status:'Pending' },
-    { id:2, student:'Dev Malhotra', type:'Tuition Fee', amount:45000, due:'2026-03-01', mode:'Online', status:'Paid' }
-  ],
-  hr: [
-    { id:1, name:'Rohit Jain', role:'Accountant', dept:'Finance', salary:55000, shift:'Day', status:'Active' },
-    { id:2, name:'Meena Patel', role:'Librarian', dept:'Library', salary:42000, shift:'Day', status:'Active' }
-  ],
-  library: [
-    { id:1, title:'Operating Systems', author:'Tanenbaum', isbn:'978-013', category:'Engineering', copies:4, status:'Available' },
-    { id:2, title:'Algorithm Design', author:'Kleinberg', isbn:'978-032', category:'Engineering', copies:2, status:'Issued' }
-  ],
-  hostel: [
-    { id:1, room:'B-210', block:'Block B', student:'Dev Malhotra', capacity:2, mess:'Full Board', status:'Occupied' },
-    { id:2, room:'A-105', block:'Block A', student:'', capacity:2, mess:'No Mess', status:'Vacant' }
-  ],
-  transport: [
-    { id:1, route:'North Loop', vehicle:'Bus 4', driver:'Mahesh', capacity:40, time:'07:30', status:'Active' }
-  ],
-  placements: [
-    { id:1, company:'TCS', role:'Analyst', pkg:6, date:'2026-04-05', type:'Full Time', status:'Scheduled' },
-    { id:2, company:'Infosys', role:'Developer', pkg:7.5, date:'2026-04-12', type:'Full Time', status:'Scheduled' }
-  ],
-  research: [
-    { id:1, project:'AI Lab', pi:'Dr. Iyer', agency:'DST', funding:250000, start:'2026-01-01', status:'Active' }
-  ],
-  facilities: [
-    { id:1, asset:'Generator', location:'Block A', tag:'ASSET-001', condition:'Good', ticket:'' }
-  ],
-  inventory: [
-    { id:1, item:'Projectors', qty:6, unit:'Pieces', store:'Main Store', reorder:2, status:'In Stock' },
-    { id:2, item:'Lab Computers', qty:30, unit:'Pieces', store:'Lab Store', reorder:5, status:'In Stock' }
-  ],
-  procurement: [
-    { id:1, vendor:'Tech Supplies', item:'Laptops', qty:10, amount:180000, date:'2026-04-15', status:'Requested' }
-  ],
-  service: [
-    { id:1, requester:'Library', category:'IT Support', subject:'Network issue', priority:'High', assigned:'IT Team', status:'Open' },
-    { id:2, requester:'Block C', category:'Facilities', subject:'AC not working', priority:'Medium', assigned:'Maintenance', status:'In Progress' },
-    { id:3, requester:'Finance Dept', category:'IT Support', subject:'Printer error', priority:'Low', assigned:'IT Team', status:'Open' }
-  ],
-  communications: [
-    { id:1, audience:'Students', channel:'Email', subject:'Mid-sem notice', message:'Mid-sem schedule released', date:'2026-03-18' }
-  ],
-  compliance: [
-    { id:1, title:'Criterion 1 Report', criterion:'Criterion 1', owner:'IQAC', type:'Document', status:'Submitted', file:'' }
-  ]
+  admissions: [],
+  students: [],
+  courses: [],
+  attendance: [],
+  exams: [],
+  faculty: [],
+  fees: [],
+  hr: [],
+  library: [],
+  hostel: [],
+  transport: [],
+  placements: [],
+  research: [],
+  facilities: [],
+  inventory: [],
+  procurement: [],
+  service: [],
+  communications: [],
+  compliance: []
 };
 
 /* Apply real student names (from student-names.js) to demo data */
@@ -294,7 +241,7 @@ function applyStudentNamesToMain() {
     if (h && s) h.student = s.name;
   });
 }
-applyStudentNamesToMain();
+// Demo name injection disabled for database-backed state.
 
 /* ── TABLE HELPERS ─────────────────────────────── */
 function sbadge(s) {
@@ -380,7 +327,6 @@ function applyErpState(state) {
       S[key] = state[key];
     }
   });
-  applyStudentNamesToMain();
 }
 
 function loadErpStateFromApi() {
@@ -389,7 +335,6 @@ function loadErpStateFromApi() {
     .then(function(res) { return res.ok ? res.json() : null; })
     .then(function(payload) {
       if (!payload || !payload.state) {
-        persistErpStateNow();
         return;
       }
       _erpStateLoading = true;
