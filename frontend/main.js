@@ -1061,7 +1061,8 @@ function enterERP() {
   const key = ((g('access-key') || {}).value || '').trim();
   const stored = storeGet('edusys-key');
   const errEl = g('access-error');
-  if ((stored && key === stored) || key === 'EDU-DEMO-2026') {
+  var allowDemo = (typeof window !== 'undefined' && window.DEMO_MODE && key === 'EDU-DEMO-2026');
+  if ((stored && key === stored) || allowDemo) {
     if (errEl) errEl.style.display = 'none';
     showPage('erp');
     showToast('Welcome to EduSys ERP!');
@@ -1069,12 +1070,22 @@ function enterERP() {
     if (errEl) errEl.style.display = 'block';
   }
 }
-function enterERPDemo() { showPage('erp'); showToast('Welcome to EduSys Demo!'); }
+function enterERPDemo() {
+  if (typeof window !== 'undefined' && window.DEMO_MODE) {
+    showPage('erp'); showToast('Welcome to EduSys Demo!');
+    return;
+  }
+  showToast('Demo mode is disabled', 'warning');
+}
 function fillDemo() {
-  const k = g('access-key'); if (k) k.value = 'EDU-DEMO-2026';
-  const e = g('access-email'); if (e) e.value = 'demo@edusys.in';
-  const p = g('access-password'); if (p) p.value = 'demo123';
-  showToast('Credentials filled — click Enter ERP', 'info');
+  if (typeof window !== 'undefined' && window.DEMO_MODE) {
+    const k = g('access-key'); if (k) k.value = 'EDU-DEMO-2026';
+    const e = g('access-email'); if (e) e.value = 'demo@edusys.in';
+    const p = g('access-password'); if (p) p.value = 'demo123';
+    showToast('Credentials filled � click Enter ERP', 'info');
+    return;
+  }
+  showToast('Demo mode is disabled', 'warning');
 }
 
 /* ── CREATE SYSTEM (WITH EMAIL OTP VERIFICATION) ─────────────────────────────── */

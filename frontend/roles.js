@@ -1,6 +1,6 @@
-﻿/* ============================================================
+/* ============================================================
 
-   roles.js — UniSys EduSys Role-Based Dashboard System
+   roles.js � UniSys EduSys Role-Based Dashboard System
 
    Extends main.js without modifying it.
 
@@ -12,13 +12,13 @@
 
 
 
-/* ── DEMO USERS ──────────────────────────────────────────────
+/* -- DEMO USERS ----------------------------------------------
 
    Pre-seeded accounts for demo login.
 
    Each has: email, password, role, name, dept (for HOD/Faculty)
 
-   ──────────────────────────────────────────────────────────── */
+   ------------------------------------------------------------ */
 
 var DEMO_USERS = [
 
@@ -26,9 +26,9 @@ var DEMO_USERS = [
 
   { email:'head@edusys.in', password:'head123', role:'Head', name:'Dr. Anita Sharma',   dept:'All',  title:'Head' },
 
-  { email:'hod@edusys.in',       password:'hod123',       role:'HOD',       name:'Dr. Rajiv Rao',      dept:'CSE',  title:'Head of Department — CSE' },
+  { email:'hod@edusys.in',       password:'hod123',       role:'HOD',       name:'Dr. Rajiv Rao',      dept:'CSE',  title:'Head of Department � CSE' },
 
-  { email:'faculty@edusys.in',   password:'faculty123',   role:'Faculty',   name:'Prof. Meera Singh',  dept:'CSE',  title:'Assistant Professor — CSE' },
+  { email:'faculty@edusys.in',   password:'faculty123',   role:'Faculty',   name:'Prof. Meera Singh',  dept:'CSE',  title:'Assistant Professor � CSE' },
 
   { email:'accounts@edusys.in',  password:'accounts123',  role:'Account',   name:'Ms. Kavita Shah',    dept:'Finance', title:'Accounts Officer' },
 
@@ -40,15 +40,19 @@ var DEMO_USERS = [
 
 
 
-/* ── DEMO DATA ──────────────────────────────────────────────
+/* -- DEMO DATA ----------------------------------------------
 
    Rich seed data shared across all role dashboards.
 
    Stored in / loaded from localStorage so changes persist.
 
-   ──────────────────────────────────────────────────────────── */
+   ------------------------------------------------------------ */
 
 var DEMO_DB_KEY = 'edusys_demo_db';
+var DEMO_MODE = true;
+if (typeof window !== 'undefined') {
+  window.DEMO_MODE = DEMO_MODE;
+}
 
 
 
@@ -76,9 +80,9 @@ var SEED_DATA = {
 
     { id:9, name:'Ms. Sana Ali',      email:'concession@edusys.in',role:'Railway Concession', dept:'Student Services', status:'Active', lastLogin:'2026-03-14 08:55' },
 
-    { id:10, name:'Prof. Arjun Mehta',  email:'arjun.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
-    { id:11, name:'Dr. Kavya Iyer',    email:'kavya.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
-    { id:12, name:'Prof. Rahul Nair',  email:'rahul.ece@edusys.in',  role:'Faculty', dept:'ECE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-18', institute:'EduSys Demo College' }
+    { id:10, name:'Prof. Arjun Mehta',  email:'arjun.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'�', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
+    { id:11, name:'Dr. Kavya Iyer',    email:'kavya.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'�', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
+    { id:12, name:'Prof. Rahul Nair',  email:'rahul.ece@edusys.in',  role:'Faculty', dept:'ECE', status:'Pending', lastLogin:'�', requestedRole:'Faculty', requestedOn:'2026-03-18', institute:'EduSys Demo College' }
 
   ],
 
@@ -229,7 +233,7 @@ var SEED_DATA = {
 
 
 
-  /* Leave requests (Faculty → HOD) */
+  /* Leave requests (Faculty ? HOD) */
 
   leaveRequests: [
 
@@ -247,15 +251,15 @@ var SEED_DATA = {
 
   announcements: [
 
-    { id:1, title:'Mid-Sem Exam Schedule Released',  author:'COE',       audience:'All',     date:'2026-03-12', priority:'High',   content:'Mid-semester exams will be held from April 2–10, 2026. Hall tickets available on portal.' },
+    { id:1, title:'Mid-Sem Exam Schedule Released',  author:'COE',       audience:'All',     date:'2026-03-12', priority:'High',   content:'Mid-semester exams will be held from April 2�10, 2026. Hall tickets available on portal.' },
 
-    { id:2, title:'Fee Submission Deadline Extended', author:'Finance',   audience:'Students',date:'2026-03-10', priority:'Medium', content:'Last date for fee submission extended to March 31, 2026. Late fee of ₹500 after deadline.' },
+    { id:2, title:'Fee Submission Deadline Extended', author:'Finance',   audience:'Students',date:'2026-03-10', priority:'Medium', content:'Last date for fee submission extended to March 31, 2026. Late fee of ?500 after deadline.' },
 
     { id:3, title:'Faculty Workshop: AI in Education', author:'Head',audience:'Faculty', date:'2026-03-08', priority:'Medium', content:'Mandatory workshop on March 20, 2026 in Seminar Hall B. Attendance compulsory.' },
 
-    { id:4, title:'Campus Placement Drive — TCS',     author:'T&P Cell',  audience:'Final Year', date:'2026-03-06', priority:'High', content:'TCS placement drive on April 5. Register on placement portal before March 25.' },
+    { id:4, title:'Campus Placement Drive � TCS',     author:'T&P Cell',  audience:'Final Year', date:'2026-03-06', priority:'High', content:'TCS placement drive on April 5. Register on placement portal before March 25.' },
 
-    { id:5, title:'HOD Meeting — Academic Planning',  author:'Head', audience:'HODs',    date:'2026-03-05', priority:'Medium', content:'Monthly HOD meeting on March 16 at 11 AM in Conference Room 1.' }
+    { id:5, title:'HOD Meeting � Academic Planning',  author:'Head', audience:'HODs',    date:'2026-03-05', priority:'Medium', content:'Monthly HOD meeting on March 16 at 11 AM in Conference Room 1.' }
 
   ],
 
@@ -287,13 +291,13 @@ var SEED_DATA = {
 
     { id:1, user:'Mr. Suresh Kumar', action:'User Created',     target:'Prof. Nisha Patel', timestamp:'2026-03-14 09:30', ip:'192.168.1.10' },
 
-    { id:2, user:'Dr. Rajiv Rao',    action:'Attendance Marked', target:'CSE301 — CSE A',   timestamp:'2026-03-14 09:15', ip:'192.168.1.22' },
+    { id:2, user:'Dr. Rajiv Rao',    action:'Attendance Marked', target:'CSE301 � CSE A',   timestamp:'2026-03-14 09:15', ip:'192.168.1.22' },
 
     { id:3, user:'Prof. Meera Singh',action:'Marks Uploaded',   target:'CSE301 Mid Sem',    timestamp:'2026-03-13 17:45', ip:'192.168.1.25' },
 
     { id:4, user:'Dr. Anita Sharma', action:'Announcement Posted',target:'Mid-Sem Schedule', timestamp:'2026-03-12 11:00', ip:'192.168.1.5'  },
 
-    { id:5, user:'Mr. Suresh Kumar', action:'Role Changed',     target:'Dr. Rajiv Rao → HOD', timestamp:'2026-03-10 14:20', ip:'192.168.1.10' }
+    { id:5, user:'Mr. Suresh Kumar', action:'Role Changed',     target:'Dr. Rajiv Rao ? HOD', timestamp:'2026-03-10 14:20', ip:'192.168.1.10' }
 
   ],
 
@@ -317,7 +321,7 @@ var SEED_DATA = {
 
   materials: [
 
-    { id:1, course:'CSE301', title:'Module 3 — Trees & Graphs',   type:'PDF',  faculty:'Prof. Meera Singh', date:'2026-03-13', size:'2.4 MB' },
+    { id:1, course:'CSE301', title:'Module 3 � Trees & Graphs',   type:'PDF',  faculty:'Prof. Meera Singh', date:'2026-03-13', size:'2.4 MB' },
 
     { id:2, course:'CSE401', title:'TCP/IP Layer Overview Slides', type:'PPT',  faculty:'Prof. Meera Singh', date:'2026-03-12', size:'5.1 MB' },
 
@@ -545,13 +549,13 @@ function isKnownDept(name) {
 
 
 
-/* ── DB HELPERS ──────────────────────────────────────────────
+/* -- DB HELPERS ----------------------------------------------
 
    Load / save demo DB from localStorage.
 
    First run seeds with SEED_DATA; subsequent runs use stored.
 
-   ──────────────────────────────────────────────────────────── */
+   ------------------------------------------------------------ */
 
 var _dbCache = null;
 var _dbSyncing = false;
@@ -728,10 +732,7 @@ function dbSyncFromBackend() {
 
 function dbLoad() {
   if (_dbCache) return _dbCache;
-  try {
-    var raw = storeGet(DEMO_DB_KEY);
-    _dbCache = raw ? JSON.parse(raw) : null;
-  } catch(e) { _dbCache = null; }
+  _dbCache = emptyStateFromSeed();
   dbSyncFromBackend();
   flushDbSaveQueue();
   return _dbCache;
@@ -772,7 +773,6 @@ function dbGet() {
   if (!d) {
     d = emptyStateFromSeed();
     _dbCache = d;
-    dbSaveLocal(d);
   }
 
   return d;
@@ -788,16 +788,16 @@ function dbReset() {
 
 }
 
-/* ── ATTENDANCE UPLOADS (SERVER) ─────────────────────────── */
+/* -- ATTENDANCE UPLOADS (SERVER) --------------------------- */
 var _attendanceUploads = null;
 var _attendanceUploadsLoading = false;
 
 function formatAttendanceInfo(att) {
-  if (att == null) return '—';
+  if (att == null) return '�';
   if (typeof att === 'number' || typeof att === 'string') return String(att);
   if (typeof att === 'object') {
     var keys = Object.keys(att || {});
-    if (!keys.length) return '—';
+    if (!keys.length) return '�';
     var totalLect = null;
     keys.forEach(function(k) {
       if (String(k).toLowerCase().indexOf('total') >= 0) {
@@ -819,9 +819,9 @@ function formatAttendanceInfo(att) {
       return 'Present: ' + present + '/' + total + ' (' + presentPct + '%) | Absent: ' + absent + '/' + total + ' (' + absentPct + '%)';
     }
     var parts = keys.slice(0, 3).map(function(k) {
-      return k + ': ' + (att[k] == null ? '—' : att[k]);
+      return k + ': ' + (att[k] == null ? '�' : att[k]);
     });
-    return parts.join(' | ') + (keys.length > 3 ? ' …' : '');
+    return parts.join(' | ') + (keys.length > 3 ? ' �' : '');
   }
   return String(att);
 }
@@ -835,10 +835,10 @@ function renderAttendanceUploadsTable(list) {
     list.map(function(item) {
       var when = item.upload_date || item.uploadDate || item.uploaded_at || '';
       return [
-        item.student_name || item.studentName || '—',
+        item.student_name || item.studentName || '�',
         formatAttendanceInfo(item.attendance),
-        item.uploaded_by || item.uploadedBy || '—',
-        when ? String(when).replace('T', ' ').replace('Z', '') : '—'
+        item.uploaded_by || item.uploadedBy || '�',
+        when ? String(when).replace('T', ' ').replace('Z', '') : '�'
       ];
     })
   );
@@ -916,7 +916,7 @@ function initAttendanceUploadsUI() {
   }
 }
 
-/* ── OVERALL ATTENDANCE (CLIENT) ─────────────────────────── */
+/* -- OVERALL ATTENDANCE (CLIENT) --------------------------- */
 var OVERALL_ATT_STATE_KEY = 'edusys_overall_att_state';
 
 function overallAttGetState() {
@@ -1277,13 +1277,13 @@ function overallAttRenderList() {
     list.map(function(a) {
       var pc = a.pct >= 85 ? 'green' : a.pct >= 75 ? 'yellow' : 'red';
       return [
-        a.roll || '—',
-        a.name || '—',
+        a.roll || '�',
+        a.name || '�',
         String(a.present || 0),
         String(a.total || 0),
         '<span class="badge badge-' + pc + '">' + (a.pct || 0) + '%</span>',
-        a.uploadedBy || '—',
-        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : '—'
+        a.uploadedBy || '�',
+        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : '�'
       ];
     })
   );
@@ -1344,13 +1344,13 @@ function overallAttRenderYearList(yearLabel, subjectSelectId) {
     list.map(function(a) {
       var pc = a.pct >= 85 ? 'green' : a.pct >= 75 ? 'yellow' : 'red';
       return [
-        a.roll || '—',
-        a.name || '—',
+        a.roll || '�',
+        a.name || '�',
         String(a.present || 0),
         String(a.total || 0),
         '<span class="badge badge-' + pc + '">' + (a.pct || 0) + '%</span>',
-        a.uploadedBy || '—',
-        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : '—'
+        a.uploadedBy || '�',
+        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : '�'
       ];
     })
   );
@@ -1421,7 +1421,7 @@ function buildYearAttendanceScreen() {
   });
   var subjectOptions = yearSubjects.length
     ? yearSubjects.map(function(c){
-        return '<option value=\"' + c.code + '\">' + c.code + ' – ' + c.name + '</option>';
+        return '<option value=\"' + c.code + '\">' + c.code + ' � ' + c.name + '</option>';
       }).join('')
     : '<option value=\"\">No subjects available</option>';
   var semOptions = sems.map(function(s){ return '<option value=\"' + s + '\">Semester ' + s + '</option>'; }).join('');
@@ -1430,7 +1430,7 @@ function buildYearAttendanceScreen() {
     + '<div class="module-sub">Select subject and upload attendance for ' + yearLabel + '.</div></div>'
     + '<div class="panel" style="margin-bottom:16px">'
     + '<div class="form-actions" style="gap:8px;flex-wrap:wrap">'
-    + '<button class="btn" onclick="renderRoleSection(\'role-attendance\')">← Back</button>'
+    + '<button class="btn" onclick="renderRoleSection(\'role-attendance\')">? Back</button>'
     + '</div>'
     + '</div>'
     + '<div class="panel" style="margin-bottom:16px">'
@@ -1453,10 +1453,10 @@ function buildYearAttendanceScreen() {
     + '<input class="form-input" id="year-att-max" type="number" placeholder="Max %" oninput="overallAttRenderYearList(\'' + yearLabel + '\',\'year-att-subject\')" style="width:90px"/>'
     + '<input class="form-input" id="year-att-date" type="date" onchange="overallAttRenderYearList(\'' + yearLabel + '\',\'year-att-subject\')" style="width:140px"/>'
     + '<select class="form-select" id="year-att-sort" onchange="overallAttRenderYearList(\'' + yearLabel + '\',\'year-att-subject\')">'
-    + '<option value="pct_asc">% Low → High</option>'
-    + '<option value="pct_desc">% High → Low</option>'
-    + '<option value="name_asc">Name A → Z</option>'
-    + '<option value="roll_asc">Roll A → Z</option>'
+    + '<option value="pct_asc">% Low ? High</option>'
+    + '<option value="pct_desc">% High ? Low</option>'
+    + '<option value="name_asc">Name A ? Z</option>'
+    + '<option value="roll_asc">Roll A ? Z</option>'
     + '</select>'
     + '</div></div>'
     + '<div id="year-att-list" style="min-height:80px;color:var(--text3)">Upload a file to view records.</div>'
@@ -1478,13 +1478,13 @@ function buildYearAttendanceScreen() {
 
 
 
-/* ── AUTH ────────────────────────────────────────────────────
+/* -- AUTH ----------------------------------------------------
 
    Login / logout / session stored in localStorage.
 
-   Key: edusys_session → { email, role, name, dept, title }
+   Key: edusys_session ? { email, role, name, dept, title }
 
-   ──────────────────────────────────────────────────────────── */
+   ------------------------------------------------------------ */
 
 var SESSION_KEY = 'edusys_session';
 
@@ -1569,11 +1569,11 @@ function authLogin(email, password, role) {
 
   /* Find user matching email+password (case-insensitive email) */
 
-  var user = DEMO_USERS.find(function(u) {
+  var user = DEMO_MODE ? DEMO_USERS.find(function(u) {
 
     return u.email.toLowerCase() === email.toLowerCase() && u.password === password;
 
-  });
+  }) : null;
 
   var fromDb = false;
 
@@ -1642,7 +1642,12 @@ function authLogin(email, password, role) {
 
 function authLoginAsRole(role) {
 
-  /* One-click demo login — picks the matching demo user */
+  /* One-click demo login � picks the matching demo user */
+
+  if (!DEMO_MODE) {
+    showToast('Demo mode is disabled', 'warning');
+    return false;
+  }
 
   var user = DEMO_USERS.find(function(u) { return u.role === role; });
 
@@ -1984,13 +1989,13 @@ function getRole() {
 
 
 
-/* ── ROLE PERMISSIONS ────────────────────────────────────────
+/* -- ROLE PERMISSIONS ----------------------------------------
 
    Map each role to the sidebar modules they can access.
 
-   Modules not listed → hidden via CSS (display:none on nav-item).
+   Modules not listed ? hidden via CSS (display:none on nav-item).
 
-   ──────────────────────────────────────────────────────────── */
+   ------------------------------------------------------------ */
 
 var ROLE_MODULES = {
 
@@ -2060,42 +2065,42 @@ var ROLE_MODULES = {
 
 
 
-/* ── ROLE-SPECIFIC SIDEBAR CONFIG ───────────────────────────
+/* -- ROLE-SPECIFIC SIDEBAR CONFIG ---------------------------
 
    Defines extra nav items injected per role into the sidebar.
 
-   ──────────────────────────────────────────────────────────── */
+   ------------------------------------------------------------ */
 
 var ROLE_NAV = {
 
   Admin: [
 
-    { id:'role-users',  icon:'👤', label:'User Management',    section:'Admin Tools' },
+    { id:'role-users',  icon:'??', label:'User Management',    section:'Admin Tools' },
 
-    { id:'role-audit',  icon:'📋', label:'Audit Logs',          section:'Admin Tools' },
+    { id:'role-audit',  icon:'??', label:'Audit Logs',          section:'Admin Tools' },
 
-    { id:'role-config', icon:'⚙',  label:'System Config',       section:'Admin Tools' },
+    { id:'role-config', icon:'?',  label:'System Config',       section:'Admin Tools' },
 
-    { id:'role-backup', icon:'💾', label:'Backup & Restore',    section:'Admin Tools' },
+    { id:'role-backup', icon:'??', label:'Backup & Restore',    section:'Admin Tools' },
     { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' }
 
   ],
 
   Head: [
-    { id:'role-perf',      icon:'📊', label:'Performance Review', section:'Head Tools' },
+    { id:'role-perf',      icon:'??', label:'Performance Review', section:'Head Tools' },
     { id:'role-proposals', icon:'', label:'HOD Proposals',      section:'Head Tools' },
-    { id:'role-users',  icon:'👤', label:'User Management',    section:'Head Tools' },
-    { id:'role-strategic', icon:'🗺', label:'Strategic Reports',  section:'Head Tools' },
+    { id:'role-users',  icon:'??', label:'User Management',    section:'Head Tools' },
+    { id:'role-strategic', icon:'??', label:'Strategic Reports',  section:'Head Tools' },
     { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' }
   ],
   HOD: [
 
     { id:'role-dept',      icon:'',  label:'Dept. Management',  section:'HOD Tools' },
 
-    { id:'role-timetable', icon:'🗓',  label:'Timetable',          section:'HOD Tools' },
+    { id:'role-timetable', icon:'??',  label:'Timetable',          section:'HOD Tools' },
 
     { id:'role-hod-accounts', icon:'',  label:'Faculty Approvals',   section:'HOD Tools' },
-    { id:'role-leave',     icon:'📅',  label:'Leave Requests',     section:'HOD Tools' },
+    { id:'role-leave',     icon:'??',  label:'Leave Requests',     section:'HOD Tools' },
     { id:'role-attendance', icon:'', label:'Overall Attendance',  section:'HOD Tools' },
 
     { id:'role-marks',     icon:'',  label:'Internal Marks',     section:'HOD Tools' },
@@ -2106,17 +2111,17 @@ var ROLE_NAV = {
 
   Faculty: [
 
-    { id:'role-mycourses',  icon:'📚', label:'My Courses',         section:'My Dashboard' },
+    { id:'role-mycourses',  icon:'??', label:'My Courses',         section:'My Dashboard' },
 
-    { id:'role-schedule',   icon:'🗓', label:'My Schedule',        section:'My Dashboard' },
+    { id:'role-schedule',   icon:'??', label:'My Schedule',        section:'My Dashboard' },
     { id:'role-attendance', icon:'', label:'Attendance Upload',    section:'My Dashboard' },
-    { id:'role-assignments',icon:'📋', label:'Assignments',        section:'My Dashboard' },
+    { id:'role-assignments',icon:'??', label:'Assignments',        section:'My Dashboard' },
     { id:'role-marks',      icon:'', label:'Enter Marks',        section:'My Dashboard' },
     { id:'role-marks-viewer', icon:'', label:'Marks Viewer',     section:'My Dashboard' },
     { id:'role-meetings', icon:'', label:'Video Meetings',       section:'My Dashboard' },
     { id:'role-materials',  icon:'', label:'Study Materials',    section:'My Dashboard' },
 
-    { id:'role-announce',   icon:'📣', label:'Post Announcement',  section:'My Dashboard' }
+    { id:'role-announce',   icon:'??', label:'Post Announcement',  section:'My Dashboard' }
 
   ],
 
@@ -2152,7 +2157,7 @@ var ROLE_NAV = {
 
 
 
-/* ── SHARED WIDGET HELPERS ─────────────────────────────────── */
+/* -- SHARED WIDGET HELPERS ----------------------------------- */
 
 function widgetKpi(label, value, sub, subType) {
 
@@ -2230,7 +2235,7 @@ function buildAdminOverride() {
 
   return '<div class="module-header"><div class="module-title">Admin Dashboard</div>'
 
-    + '<div class="module-sub">Full system control — Users, Departments, Analytics, Configuration</div></div>'
+    + '<div class="module-sub">Full system control � Users, Departments, Analytics, Configuration</div></div>'
 
     + '<div class="kpi-grid">'
 
@@ -2254,7 +2259,7 @@ function buildAdminOverride() {
 
         db.departments.map(function(d){
 
-          var stars = d.rating >= 4.4 ? '🟢' : d.rating >= 4.0 ? '🟡' : '🔴';
+          var stars = d.rating >= 4.4 ? '??' : d.rating >= 4.0 ? '??' : '??';
 
           return [d.name, d.hod, d.students, d.faculty, stars+' '+d.rating];
 
@@ -2396,9 +2401,9 @@ function buildAdminConfig() {
 
     + '<div class="form-group"><label class="form-label">Institution Name</label><input class="form-input" value="Northstar University" id="cfg-name"/></div>'
 
-    + '<div class="form-group"><label class="form-label">Academic Year</label><select class="form-select" id="cfg-year"><option>2025–2026</option><option>2026–2027</option></select></div>'
+    + '<div class="form-group"><label class="form-label">Academic Year</label><select class="form-select" id="cfg-year"><option>2025�2026</option><option>2026�2027</option></select></div>'
 
-    + '<div class="form-group"><label class="form-label">Current Semester</label><select class="form-select" id="cfg-sem"><option>Even (Jan–May)</option><option>Odd (Jul–Dec)</option></select></div>'
+    + '<div class="form-group"><label class="form-label">Current Semester</label><select class="form-select" id="cfg-sem"><option>Even (Jan�May)</option><option>Odd (Jul�Dec)</option></select></div>'
 
     + '<div class="form-group"><label class="form-label">Max Attendance Shortage %</label><input class="form-input" type="number" value="25" id="cfg-att"/></div>'
 
@@ -2458,7 +2463,7 @@ function buildAdminBackup() {
 
   return '<div class="module-header"><div class="module-title">Backup &amp; Restore</div>'
 
-    + '<div class="module-sub">Export demo data or restore to factory defaults using localStorage.</div></div>'
+    + '<div class="module-sub">Export ERP data or restore to factory defaults.</div></div>'
 
     + '<div class="grid grid-2">'
 
@@ -2466,13 +2471,13 @@ function buildAdminBackup() {
 
     + '<p style="color:var(--text2);font-size:14px;margin-bottom:16px">Download all ERP data as a JSON file for offline backup.</p>'
 
-    + '<div class="form-actions"><button class="btn btn-primary" onclick="adminExportData()">⬇ Export JSON</button></div></div>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="adminExportData()">? Export JSON</button></div></div>'
 
     + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Restore Defaults</h3>'
 
-    + '<p style="color:var(--text2);font-size:14px;margin-bottom:16px">Reset all demo data to the original seed values. This cannot be undone.</p>'
+    + '<p style="color:var(--text2);font-size:14px;margin-bottom:16px">Reset all ERP data to defaults. This cannot be undone.</p>'
 
-    + '<div class="form-actions"><button class="btn btn-danger" onclick="confirmReset()">↺ Restore Factory Data</button></div></div>'
+    + '<div class="form-actions"><button class="btn btn-danger" onclick="confirmReset()">? Restore Defaults</button></div></div>'
 
     + '</div>';
 
@@ -2492,15 +2497,33 @@ function buildPrincipalOverride() {
 
   var db = dbGet();
 
-  var avgAtt = Math.round(db.attendance.reduce(function(s,a){return s+a.pct;},0)/db.attendance.length);
+  var att = Array.isArray(db.attendance) ? db.attendance : [];
+  var avgAtt = att.length
+    ? Math.round(att.reduce(function(s,a){return s + Number(a.pct || a.attendance_pct || 0);},0) / att.length)
+    : 0;
 
-  var pendingProposals = db.proposals.filter(function(p){return p.status==='Pending';}).length;
+  var proposals = Array.isArray(db.proposals) ? db.proposals : [];
+  var pendingProposals = proposals.filter(function(p){return String(p.status || '').toLowerCase()==='pending';}).length;
+
+  var students = Array.isArray(db.students) ? db.students : [];
+  var activeStudents = students.filter(function(s){
+    var st = String(s.status || '').toLowerCase();
+    return !st || st === 'active';
+  }).length;
+  var enrollmentCount = activeStudents || students.length || 0;
+
+  var compliance = Array.isArray(db.compliance) ? db.compliance : [];
+  var done = compliance.filter(function(c){
+    var st = String(c.status || '').toLowerCase();
+    return st === 'submitted' || st === 'approved' || st === 'completed' || st === 'verified';
+  }).length;
+  var naacProgress = compliance.length ? Math.round((done / compliance.length) * 100) : 0;
 
 
 
   return '<div class="module-header"><div class="module-title">Head\'s Dashboard</div>'
 
-    + '<div class="module-sub">Institution performance at a glance — Departments, Faculty, Students, Compliance</div></div>'
+    + '<div class="module-sub">Institution performance at a glance � Departments, Faculty, Students, Compliance</div></div>'
 
     + '<div class="kpi-grid">'
 
@@ -2508,9 +2531,9 @@ function buildPrincipalOverride() {
 
     + widgetKpi('HOD Proposals', pendingProposals, 'Awaiting approval', pendingProposals>0?'down':'neutral')
 
-    + widgetKpi('Enrollment', '1,200', 'Total active students', 'up')
+    + widgetKpi('Enrollment', String(enrollmentCount), 'Total active students', 'up')
 
-    + widgetKpi('NAAC Progress', '64%', 'Evidence gathered', 'neutral')
+    + widgetKpi('NAAC Progress', naacProgress + '%', 'Evidence gathered', 'neutral')
 
     + '</div>'
 
@@ -2542,7 +2565,7 @@ function buildPrincipalOverride() {
 
           var pc = a.priority==='High'?'red':a.priority==='Medium'?'yellow':'gray';
 
-          return [a.title.substring(0,28)+'…', a.author, '<span class="badge badge-'+pc+'">'+a.priority+'</span>', a.date];
+          return [a.title.substring(0,28)+'�', a.author, '<span class="badge badge-'+pc+'">'+a.priority+'</span>', a.date];
 
         }))
 
@@ -2616,7 +2639,7 @@ function buildPrincipalProposals() {
 
             : '<span class="badge badge-'+(p.status==='Approved'?'green':'red')+'">'+p.status+'</span>';
 
-          return [p.hod, p.dept, p.title, p.description.substring(0,35)+'…', sbadge(p.status), act];
+          return [p.hod, p.dept, p.title, p.description.substring(0,35)+'�', sbadge(p.status), act];
 
         }))
 
@@ -2664,11 +2687,11 @@ function buildPrincipalStrategic() {
 
     + '<div class="bar-chart-wrap">'
 
-    + widgetBar('3–5 LPA', 35, '')
+    + widgetBar('3�5 LPA', 35, '')
 
-    + widgetBar('5–8 LPA', 45, 'bar-fill-green')
+    + widgetBar('5�8 LPA', 45, 'bar-fill-green')
 
-    + widgetBar('8–12 LPA', 15, 'bar-fill-green')
+    + widgetBar('8�12 LPA', 15, 'bar-fill-green')
 
     + widgetBar('12+ LPA', 5, 'bar-fill-green')
 
@@ -2737,7 +2760,7 @@ function buildPrincipalAccounts() {
 
       + '<button class="btn btn-sm btn-danger" onclick="principalApproveAccount('+u.id+',false)">Reject</button>';
 
-    return [u.name, u.email, u.dept, roleSelectHtml(u), u.requestedOn || '—', act];
+    return [u.name, u.email, u.dept, roleSelectHtml(u), u.requestedOn || '�', act];
 
   });
 
@@ -2806,7 +2829,7 @@ function principalApproveAccount(id, approve) {
 
     u.status = 'Active';
 
-    u.lastLogin = u.lastLogin || '—';
+    u.lastLogin = u.lastLogin || '�';
 
     showToast('Account approved: ' + u.name);
 
@@ -2874,7 +2897,7 @@ function buildHODAccounts() {
   var pendingRows = pending.map(function(u) {
     var act = '<button class="btn btn-sm btn-success" onclick="hodApproveFaculty('+u.id+',true)">Approve</button> '
       + '<button class="btn btn-sm btn-danger" onclick="hodApproveFaculty('+u.id+',false)">Reject</button>';
-    return [u.name, u.email, u.dept, u.requestedOn || '—', act];
+    return [u.name, u.email, u.dept, u.requestedOn || '�', act];
   });
 
   return '<div class="module-header"><div class="module-title">Faculty Accounts - ' + deptLabel + '</div>'
@@ -2914,7 +2937,7 @@ function hodApproveFaculty(id, approve) {
     u.role = 'Faculty';
     u.requestedRole = null;
     u.status = 'Active';
-    u.lastLogin = u.lastLogin || '—';
+    u.lastLogin = u.lastLogin || '�';
     showToast('Faculty approved: ' + u.name);
   } else {
     u.status = 'Rejected';
@@ -2983,9 +3006,9 @@ function buildHODOverride() {
 
 
 
-  return '<div class="module-header"><div class="module-title">HOD Dashboard — ' + myDept + '</div>'
+  return '<div class="module-header"><div class="module-title">HOD Dashboard � ' + myDept + '</div>'
 
-    + '<div class="module-sub">Department overview: ' + myDept + ' — Students, Faculty, Courses, Attendance</div></div>'
+    + '<div class="module-sub">Department overview: ' + myDept + ' � Students, Faculty, Courses, Attendance</div></div>'
 
     + '<div class="kpi-grid">'
 
@@ -3029,13 +3052,13 @@ function buildHODOverride() {
 
           var act = l.status==='Pending'
 
-            ? '<button class="btn btn-sm btn-success" onclick="hodApproveLeave('+l.id+',true)">✓</button> '
+            ? '<button class="btn btn-sm btn-success" onclick="hodApproveLeave('+l.id+',true)">?</button> '
 
-            + '<button class="btn btn-sm btn-danger" onclick="hodApproveLeave('+l.id+',false)">✕</button>'
+            + '<button class="btn btn-sm btn-danger" onclick="hodApproveLeave('+l.id+',false)">?</button>'
 
             : sbadge(l.status);
 
-          return [l.faculty.split(' ').pop(), l.from+' – '+l.to, l.days, l.reason, act];
+          return [l.faculty.split(' ').pop(), l.from+' � '+l.to, l.days, l.reason, act];
 
         }))
 
@@ -3055,7 +3078,7 @@ function buildHODDept() {
 
   var deptInfo = db.departments.find(function(d){return d.name===myDept;}) || {};
 
-  return '<div class="module-header"><div class="module-title">Department Management — ' + myDept + '</div>'
+  return '<div class="module-header"><div class="module-title">Department Management � ' + myDept + '</div>'
 
     + '<div class="module-sub">Manage faculty assignments, courses, and department configuration.</div></div>'
 
@@ -3067,7 +3090,7 @@ function buildHODDept() {
 
     + '<div class="form-group"><label class="form-label">Course</label><select class="form-select" id="hod-course">'
 
-    + db.courses.filter(function(c){return c.dept===myDept;}).map(function(c){return '<option>'+c.code+' – '+c.name+'</option>';}).join('')
+    + db.courses.filter(function(c){return c.dept===myDept;}).map(function(c){return '<option>'+c.code+' � '+c.name+'</option>';}).join('')
 
     + '</select></div>'
 
@@ -3083,19 +3106,19 @@ function buildHODDept() {
 
     + '<div class="form-grid">'
 
-    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Proposal Title</label><input class="form-input" id="hod-prop-title" placeholder="New course / Lab upgrade / Event…"/></div>'
+    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Proposal Title</label><input class="form-input" id="hod-prop-title" placeholder="New course / Lab upgrade / Event�"/></div>'
 
-    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Description</label><textarea class="form-textarea" id="hod-prop-desc" rows="2" placeholder="Details for Head review…"></textarea></div>'
+    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Description</label><textarea class="form-textarea" id="hod-prop-desc" rows="2" placeholder="Details for Head review�"></textarea></div>'
 
     + '</div><div class="form-actions"><button class="btn btn-primary" onclick="hodSubmitProposal()">Submit to Head</button></div></div></div>'
 
-    + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Faculty List — ' + myDept + '</h3>'
+    + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Faculty List � ' + myDept + '</h3>'
 
     + widgetTable(['Name','Designation','Load','Courses','Leave Balance','Status'],
 
         db.faculty.filter(function(f){return f.dept===myDept;}).map(function(f){
 
-          return [f.name, f.desig, f.load+' hrs', f.courses.join(', ')||'—', f.leaveBalance+' days', sbadge(f.status)];
+          return [f.name, f.desig, f.load+' hrs', f.courses.join(', ')||'�', f.leaveBalance+' days', sbadge(f.status)];
 
         }))
 
@@ -3149,7 +3172,7 @@ function buildHODTimetable() {
 
       } else {
 
-        table += '<td style="color:var(--text3);font-size:11px">—</td>';
+        table += '<td style="color:var(--text3);font-size:11px">�</td>';
 
       }
 
@@ -3163,7 +3186,7 @@ function buildHODTimetable() {
 
 
 
-  return '<div class="module-header"><div class="module-title">Department Timetable — ' + myDept + '</div>'
+  return '<div class="module-header"><div class="module-title">Department Timetable � ' + myDept + '</div>'
 
     + '<div class="module-sub">Weekly schedule for all courses and faculty in ' + myDept + ' department.</div></div>'
 
@@ -3209,7 +3232,7 @@ function buildHODLeave() {
 
             : sbadge(l.status);
 
-          return [l.faculty, l.appliedOn, l.from+' – '+l.to, l.days+'d', l.reason, sbadge(l.status), act];
+          return [l.faculty, l.appliedOn, l.from+' � '+l.to, l.days+'d', l.reason, sbadge(l.status), act];
 
         }))
 
@@ -3251,7 +3274,7 @@ function buildHODMarks() {
 
     + '<div class="form-actions" style="margin-top:14px">'
 
-    + '<button class="btn btn-success" onclick="hodApproveAllMarks()">✓ Approve All Submissions</button>'
+    + '<button class="btn btn-success" onclick="hodApproveAllMarks()">? Approve All Submissions</button>'
 
     + '</div></div>';
 
@@ -3289,7 +3312,7 @@ function buildFacultyOverride() {
 
   return '<div class="module-header"><div class="module-title">Faculty Dashboard</div>'
 
-    + '<div class="module-sub">Welcome, ' + myName + ' — Your courses, students, and tasks</div></div>'
+    + '<div class="module-sub">Welcome, ' + myName + ' � Your courses, students, and tasks</div></div>'
 
     + '<div class="kpi-grid">'
 
@@ -3327,7 +3350,7 @@ function buildFacultyOverride() {
 
           var pc = a.priority==='High'?'red':a.priority==='Medium'?'yellow':'gray';
 
-          return [a.title.substring(0,28)+'…', a.author, '<span class="badge badge-'+pc+'">'+a.priority+'</span>'];
+          return [a.title.substring(0,28)+'�', a.author, '<span class="badge badge-'+pc+'">'+a.priority+'</span>'];
 
         }))
 
@@ -3357,7 +3380,7 @@ function buildFacultyMyCourses() {
 
         return '<div class="panel"><div style="display:flex;justify-content:space-between;align-items:start">'
 
-          + '<div><h3 style="font-family:var(--font-head)">' + c.code + ' — ' + c.name + '</h3>'
+          + '<div><h3 style="font-family:var(--font-head)">' + c.code + ' � ' + c.name + '</h3>'
 
           + '<p style="color:var(--text2);font-size:13px">Credits: '+c.credits+' | Sem '+c.sem+' | '+c.enrolled+' students | '+c.dept+'</p></div>'
 
@@ -3406,7 +3429,7 @@ function buildFacultyAttendance() {
     + '<div class="module-sub">Upload and review attendance records for your classes.</div></div>'
 
     + '<div class="panel" style="margin-bottom:16px">'
-    + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Overall Attendance — Select Year</h3>'
+    + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Overall Attendance � Select Year</h3>'
     + '<div class="form-actions" style="gap:8px;flex-wrap:wrap">'
     + '<button class="' + (year === 'First Year' ? 'btn btn-primary' : 'btn') + '" onclick="openYearAttendance(\'First Year\')">First Year</button>'
     + '<button class="' + (year === 'Second Year' ? 'btn btn-primary' : 'btn') + '" onclick="openYearAttendance(\'Second Year\')">Second Year</button>'
@@ -3421,7 +3444,7 @@ function buildFacultyAttendance() {
 
     + '<div class="geo-ring"></div><div class="geo-ring"></div><div class="geo-ring"></div>'
 
-    + '<div class="geo-dot"></div><span class="geo-label">Campus geofence — verified location</span></div>'
+    + '<div class="geo-dot"></div><span class="geo-label">Campus geofence � verified location</span></div>'
 
     + '<div class="form-section-title">Record Today\'s Attendance</div>'
 
@@ -3429,7 +3452,7 @@ function buildFacultyAttendance() {
 
     + '<div class="form-group"><label class="form-label">Course</label><select class="form-select" id="fac-att-course">'
 
-    + myCourses.map(function(c){return '<option value="'+c.code+'">'+c.code+' – '+c.name+'</option>';}).join('')
+    + myCourses.map(function(c){return '<option value="'+c.code+'">'+c.code+' � '+c.name+'</option>';}).join('')
 
     + '</select></div>'
 
@@ -3445,7 +3468,7 @@ function buildFacultyAttendance() {
 
     + '</div>'
 
-    + '<div class="form-actions"><button class="btn btn-primary" onclick="facultyMarkAttendance()">✓ Submit Attendance</button></div></div>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="facultyMarkAttendance()">? Submit Attendance</button></div></div>'
 
     + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Recent Attendance Records</h3>'
 
@@ -3465,7 +3488,7 @@ function buildFacultyAttendance() {
     + '<h3 style="font-family:var(--font-head);margin-bottom:0">Attendance Uploads</h3>'
     + '<input class="form-input" id="attendance-upload-search" placeholder="Search student name" oninput="filterAttendanceUploads()" style="max-width:260px"/>'
     + '</div>'
-    + '<div id="attendance-uploads-wrap" style="min-height:80px;color:var(--text3)">Loading uploads…</div>'
+    + '<div id="attendance-uploads-wrap" style="min-height:80px;color:var(--text3)">Loading uploads�</div>'
     + '</div>';
 
 }
@@ -3516,7 +3539,7 @@ function buildFacultyMarks() {
 
     + '<div class="form-actions"><button class="btn btn-primary" onclick="facultyAddMark()">+ Add Mark</button>'
 
-    + '<button class="btn btn-success" onclick="facultySubmitMarks()">📤 Submit to HOD</button></div></div>'
+    + '<button class="btn btn-success" onclick="facultySubmitMarks()">?? Submit to HOD</button></div></div>'
 
     + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Marks Entered</h3>'
 
@@ -4487,7 +4510,7 @@ function inviteEscape(str) {
 function getInviteUsers() {
   var db = (typeof dbGet === 'function') ? dbGet() : null;
   var users = db && Array.isArray(db.users) ? db.users : [];
-  if (!users.length && typeof DEMO_USERS !== 'undefined') {
+  if (DEMO_MODE && !users.length && typeof DEMO_USERS !== 'undefined') {
     users = DEMO_USERS.map(function(u, idx) {
       return { id: idx + 1, name: u.name, email: u.email, role: u.role };
     });
@@ -4644,7 +4667,7 @@ function appendMeetingChatMessage(payload) {
   var time = formatChatTime(data.ts);
   item.innerHTML =
     '<div class="meet-chat-bubble">'
-    + '<div class="meet-chat-name">' + inviteEscape(name) + (time ? ' · ' + time : '') + '</div>'
+    + '<div class="meet-chat-name">' + inviteEscape(name) + (time ? ' � ' + time : '') + '</div>'
     + '<div class="meet-chat-text">' + inviteEscape(text) + '</div>'
     + '</div>';
   list.appendChild(item);
@@ -4913,7 +4936,7 @@ function buildFacultyMaterials() {
 
     + '</select></div>'
 
-    + '<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="fmat-title" placeholder="Module 4 — Sorting Algorithms"/></div>'
+    + '<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="fmat-title" placeholder="Module 4 � Sorting Algorithms"/></div>'
 
     + '<div class="form-group"><label class="form-label">File Type</label><select class="form-select" id="fmat-type"><option>PDF</option><option>PPT</option><option>Video</option><option>Link</option></select></div>'
 
@@ -4921,7 +4944,7 @@ function buildFacultyMaterials() {
 
     + '</div>'
 
-    + '<div class="form-actions"><button class="btn btn-primary" onclick="facultyUploadMaterial()">📤 Upload Material</button></div></div>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="facultyUploadMaterial()">?? Upload Material</button></div></div>'
 
     + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Uploaded Materials</h3>'
 
@@ -4995,17 +5018,17 @@ function buildFacultyAnnounce() {
 
     + '<div class="form-grid">'
 
-    + '<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="fann-title" placeholder="Assignment deadline reminder…"/></div>'
+    + '<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="fann-title" placeholder="Assignment deadline reminder�"/></div>'
 
     + '<div class="form-group"><label class="form-label">Audience</label><select class="form-select" id="fann-audience"><option>My Students</option><option>CSE Department</option><option>All Students</option></select></div>'
 
     + '<div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="fann-priority"><option>Low</option><option>Medium</option><option>High</option></select></div>'
 
-    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Message</label><textarea class="form-textarea" id="fann-content" rows="3" placeholder="Type your announcement…"></textarea></div>'
+    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Message</label><textarea class="form-textarea" id="fann-content" rows="3" placeholder="Type your announcement�"></textarea></div>'
 
     + '</div>'
 
-    + '<div class="form-actions"><button class="btn btn-primary" onclick="facultyPostAnnouncement()">📣 Post Announcement</button></div></div>'
+    + '<div class="form-actions"><button class="btn btn-primary" onclick="facultyPostAnnouncement()">?? Post Announcement</button></div></div>'
 
     + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Institution Notices</h3>'
 
@@ -5015,7 +5038,7 @@ function buildFacultyAnnounce() {
 
           var pc = a.priority==='High'?'red':a.priority==='Medium'?'yellow':'gray';
 
-          return [a.title.substring(0,30)+'…', a.author, a.audience,
+          return [a.title.substring(0,30)+'�', a.author, a.audience,
 
             '<span class="badge badge-'+pc+'">'+a.priority+'</span>', a.date];
 
@@ -5029,7 +5052,7 @@ function buildFacultyAnnounce() {
 
 /* 
 
-   ACTION HANDLERS — Role-specific button callbacks
+   ACTION HANDLERS � Role-specific button callbacks
 
     */
 
@@ -5133,7 +5156,7 @@ function adminExportData() {
 
 function confirmReset() {
 
-  if (confirm('Reset ALL demo data to factory defaults? This cannot be undone.')) { dbReset(); }
+  if (confirm('Reset ALL ERP data to defaults? This cannot be undone.')) { dbReset(); }
 
 }
 
@@ -5189,7 +5212,7 @@ function hodAssignCourse() {
 
   var db = dbGet();
 
-  var code = course.split('–')[0].trim();
+  var code = course.split('�')[0].trim();
 
   var c = db.courses.find(function(x){return x.code===code;});
 
@@ -5217,7 +5240,7 @@ function hodSubmitProposal() {
 
   db.proposals.unshift({ id:Date.now(), hod:sess.name, dept:sess.dept,
 
-    title:title, description:desc||'—', status:'Pending', date:new Date().toISOString().split('T')[0] });
+    title:title, description:desc||'�', status:'Pending', date:new Date().toISOString().split('T')[0] });
 
   dbSaveWithToast(db, 'Proposal submitted to Head');
 
@@ -5257,7 +5280,7 @@ function facultyMarkAttendance() {
 
   db.attendance.push({ id:Date.now(), cls:cls, course:course, date:date, present:present, total:total, pct:pct });
 
-  dbSaveWithToast(db, 'Attendance recorded — ' + pct + '%');
+  dbSaveWithToast(db, 'Attendance recorded � ' + pct + '%');
 
   renderRoleSection('role-attendance');
 
@@ -5337,7 +5360,7 @@ function facultyUploadMaterial() {
 
   db.materials.push({ id:Date.now(), course:course, title:title, type:type,
 
-    faculty:sess.name, date:new Date().toISOString().split('T')[0], size:'—' });
+    faculty:sess.name, date:new Date().toISOString().split('T')[0], size:'�' });
 
   dbSaveWithToast(db, 'Material uploaded: ' + title);
 
@@ -5371,7 +5394,7 @@ function facultyPostAnnouncement() {
 
 function facultyUpdateSyllabus(code) {
 
-  var pct = prompt('Enter new syllabus % for ' + code + ' (0–100):');
+  var pct = prompt('Enter new syllabus % for ' + code + ' (0�100):');
 
   if (!pct) return;
 
@@ -5393,7 +5416,7 @@ function facultyUpdateSyllabus(code) {
 
 /* 
 
-   ROLE ENGINE — Core wiring of roles into the ERP shell
+   ROLE ENGINE � Core wiring of roles into the ERP shell
 
     */
 
@@ -5475,7 +5498,7 @@ function getCurrentRoleSection() { return _currentRoleSection; }
 
 
 
-/* Main role section renderer — called when nav item is clicked */
+/* Main role section renderer � called when nav item is clicked */
 
 function renderRoleSection(sectionId) {
 
@@ -5839,17 +5862,17 @@ function showRoleBadge(sess) {
 
 
 
-/* ──────────────────────────────────────────────────────────
+/* ----------------------------------------------------------
 
-   MAIN ROLE INIT — called from initERP() hook
+   MAIN ROLE INIT � called from initERP() hook
 
-   ────────────────────────────────────────────────────────── */
+   ---------------------------------------------------------- */
 
 function initRoleDashboard() {
 
   var sess = getSession();
 
-  if (!sess) return; /* No session — default behavior */
+  if (!sess) return; /* No session � default behavior */
   syncUsersFromServer();
 
   var role = sess.role;
@@ -5872,7 +5895,7 @@ function initRoleDashboard() {
 
   showRoleBadge(sess);
 
-  /* 5. For Faculty — auto-navigate to their dashboard */
+  /* 5. For Faculty � auto-navigate to their dashboard */
 
   if (role === 'Faculty') {
 
@@ -5888,7 +5911,7 @@ function initRoleDashboard() {
 
 /* 
 
-   ENHANCED ACCESS PAGE — Role-based login
+   ENHANCED ACCESS PAGE � Role-based login
 
     */
 
@@ -5916,7 +5939,7 @@ async function enterERP() {
   var validKey = false;
 
   if (keyRequired && !keyNorm) {
-    if (errEl) { errEl.textContent = '⚠ System Key required for ' + roleSel + ' login.'; errEl.style.display = 'block'; }
+    if (errEl) { errEl.textContent = '? System Key required for ' + roleSel + ' login.'; errEl.style.display = 'block'; }
     return;
   }
 
@@ -5938,7 +5961,7 @@ async function enterERP() {
       }
     }
     if (!validKey) {
-      if (errEl) { errEl.textContent = '⚠ Invalid System Key.'; errEl.style.display = 'block'; }
+      if (errEl) { errEl.textContent = '? Invalid System Key.'; errEl.style.display = 'block'; }
       return;
     }
     if (typeof storeSet === 'function') storeSet('edusys-key', keyNorm);
@@ -5973,7 +5996,7 @@ async function enterERP() {
     }
 
     if (errEl) {
-      errEl.textContent = validKey ? '⚠ Invalid email, password, or role.' : '⚠ Invalid System Key.';
+      errEl.textContent = validKey ? '? Invalid email, password, or role.' : '? Invalid System Key.';
       errEl.style.display = 'block';
     }
 
@@ -5982,7 +6005,7 @@ async function enterERP() {
   }
 
   if (errEl) {
-    errEl.textContent = validKey ? '⚠ Please enter email and password.' : '⚠ Invalid System Key.';
+    errEl.textContent = validKey ? '? Please enter email and password.' : '? Invalid System Key.';
     errEl.style.display = 'block';
   }
 
@@ -5994,6 +6017,10 @@ async function enterERP() {
 
 function enterERPDemo() {
 
+  if (!DEMO_MODE) {
+    showToast('Demo mode is disabled', 'warning');
+    return;
+  }
   authLoginAsRole('Admin');
 
   showPage('erp');
@@ -6004,6 +6031,10 @@ function enterERPDemo() {
 
 function loginAsRole(role) {
 
+  if (!DEMO_MODE) {
+    showToast('Demo mode is disabled', 'warning');
+    return;
+  }
   authLoginAsRole(role);
 
   showPage('erp');
@@ -6016,8 +6047,9 @@ function loginAsRole(role) {
 
 function enhanceAccessPage() {
 
-  /* Guard: only inject once — check whole page not just first panel */
+  /* Guard: only inject once � check whole page not just first panel */
 
+  if (!DEMO_MODE) return;
   if (document.querySelector('#edusys-access .role-selector')) return;
 
   var panel = document.querySelector('#edusys-access .panel');
@@ -6136,7 +6168,7 @@ function buildRoleCard(role, icon, email, pass, color, desc) {
 
 
 
-/* ── BOOT ─────────────────────────────────────────────────── */
+/* -- BOOT --------------------------------------------------- */
 
 /* Restore role if already in ERP (e.g. page refresh with session in localStorage) */
 

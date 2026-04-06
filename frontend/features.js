@@ -841,32 +841,103 @@ function buildRailwayConcessionAppointments() {
 
 /* Head: Student Enrollment Statistics */
 function buildPrincipalEnrollment() {
+  var db = dbGet();
+  var students = Array.isArray(db.students) ? db.students : [];
+  var admissions = Array.isArray(db.admissions) ? db.admissions : [];
+  var departments = Array.isArray(db.departments) ? db.departments : [];
+  var total = students.length;
+  var active = students.filter(function(s){
+    var st = String(s.status || '').toLowerCase();
+    return !st || st === 'active';
+  }).length;
+  var enrollmentTotal = active || total || 0;
+
+  var now = new Date();
+  var currentYear = now.getFullYear();
+  function yearFromDate(val){
+    if (!val) return null;
+    var d = new Date(val);
+    if (!isNaN(d.getTime())) return d.getFullYear();
+    var m = String(val).match(/(20\d{2})/);
+    return m ? Number(m[1]) : null;
+  }
+  var newThisYear = students.filter(function(s){ return yearFromDate(s.created_at || s.createdAt) === currentYear; }).length;
+  var lastYear = currentYear - 1;
+  var lastYearCount = students.filter(function(s){ return yearFromDate(s.created_at || s.createdAt) === lastYear; }).length;
+  var growth = lastYearCount > 0 ? Math.round(((newThisYear - lastYearCount) / lastYearCount) * 100) : null;
+  var newThisYearSub = (growth === null) ? 'No prior-year data' : ((growth >= 0 ? '+' : '') + growth + '% vs last year');
+
+  var dropoutCount = students.filter(function(s){
+    var st = String(s.status || '').toLowerCase();
+    return st === 'inactive' || st === 'dropout' || st === 'withdrawn' || st === 'left';
+  }).length;
+  var dropoutRate = total ? (dropoutCount / total) * 100 : 0;
+  var dropoutText = (total ? dropoutRate.toFixed(1) + '%' : '0%');
+
+  var waitlisted = admissions.filter(function(a){
+    var st = String(a.stage || a.status || '').toLowerCase();
+    return st.indexOf('wait') >= 0;
+  }).length;
+
+  function buildTrendBars(){
+    var years = [currentYear-3, currentYear-2, currentYear-1, currentYear];
+    var counts = years.map(function(y){
+      return students.filter(function(s){ return yearFromDate(s.created_at || s.createdAt) === y; }).length;
+    });
+    var max = counts.reduce(function(m,v){ return v>m?v:m; }, 0);
+    return years.map(function(y, idx){
+      var count = counts[idx];
+      var pct = max ? Math.round((count / max) * 100) : 0;
+      var label = (y-1) + '-' + String(y).slice(-2);
+      var cls = pct >= 85 ? 'bar-fill-green' : '';
+      return widgetBar(label, pct, cls);
+    }).join('');
+  }
+
+  function buildDeptBars(){
+    var byDept = {};
+    if (departments.length) {
+      departments.forEach(function(d){
+        if (!d || !d.name) return;
+        var cnt = Number(d.students || d.student_count || 0);
+        byDept[d.name] = cnt;
+      });
+    } else {
+      students.forEach(function(s){
+        var dept = s.dept || 'General';
+        byDept[dept] = (byDept[dept] || 0) + 1;
+      });
+    }
+    var entries = Object.keys(byDept).map(function(k){ return { dept:k, count:byDept[k] }; });
+    entries.sort(function(a,b){ return b.count - a.count; });
+    entries = entries.slice(0, 6);
+    var max = entries.reduce(function(m,v){ return v.count>m?v.count:m; }, 0);
+    if (!entries.length) return widgetBar('No data', 0, '');
+    return entries.map(function(e){
+      var pct = max ? Math.round((e.count / max) * 100) : 0;
+      var cls = pct >= 85 ? 'bar-fill-green' : '';
+      return widgetBar(e.dept, pct, cls);
+    }).join('');
+  }
+
   return '<div class="module-header"><div class="module-title">Student Enrollment Statistics</div>'
     + '<div class="module-sub">Enrollment trends, demographic analytics, diversity metrics, and conversion funnel reporting.</div></div>'
     + '<div class="kpi-grid">'
-    + widgetKpi('Total Enrolled', '1,200', 'Active students', 'up')
-    + widgetKpi('New This Year', '342', '+8% vs last year', 'up')
-    + widgetKpi('Dropout Rate', '2.1%', 'Below national avg', 'up')
-    + widgetKpi('Waitlisted', '48', 'Pending seats', 'neutral')
+    + widgetKpi('Total Enrolled', String(enrollmentTotal), 'Active students', 'up')
+    + widgetKpi('New This Year', String(newThisYear), newThisYearSub, 'up')
+    + widgetKpi('Dropout Rate', dropoutText, 'Based on status', dropoutRate <= 5 ? 'up' : 'down')
+    + widgetKpi('Waitlisted', String(waitlisted), 'Pending seats', 'neutral')
     + '</div>'
     + '<div class="grid grid-2">'
     + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">4-Year Enrollment Trend</h3>'
     + '<div class="bar-chart-wrap">'
-    + widgetBar('2022-23', 68, '')
-    + widgetBar('2023-24', 74, '')
-    + widgetBar('2024-25', 81, 'bar-fill-green')
-    + widgetBar('2025-26', 88, 'bar-fill-green')
+    + buildTrendBars()
     + '</div></div>'
     + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Enrollment by Department</h3>'
     + '<div class="bar-chart-wrap">'
-    + widgetBar('CSE', 96, 'bar-fill-green')
-    + widgetBar('ECE', 92, 'bar-fill-green')
-    + widgetBar('ME',  88, '')
-    + widgetBar('Civil',84, '')
-    + widgetBar('MBA', 100, 'bar-fill-green')
+    + buildDeptBars()
     + '</div></div></div>';
 }
-
 /* Head: OBE Programme Overview */
 function buildPrincipalOBE() {
   var db = dbGet();
