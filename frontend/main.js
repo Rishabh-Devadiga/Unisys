@@ -378,23 +378,42 @@ const S = {
 
 };
 
+if (typeof window !== 'undefined') {
+  if (window.__ERP_DISABLE_BACKEND == null) window.__ERP_DISABLE_BACKEND = true;
+  if (window.DEMO_MODE == null) window.DEMO_MODE = true;
+}
+
 
 
 /* Apply real student names (from student-names.js) to demo data */
 
 function applyStudentNamesToMain() {
 
+  var dataPool = (window.__STUDENT_DATA && window.__STUDENT_DATA.length) ? window.__STUDENT_DATA.slice() : null;
   var pool = (window.__STUDENT_NAMES && window.__STUDENT_NAMES.length) ? window.__STUDENT_NAMES.slice() : null;
 
   var poolY2 = (window.__STUDENT_NAMES_Y2 && window.__STUDENT_NAMES_Y2.length) ? window.__STUDENT_NAMES_Y2.slice() : null;
 
-  if ((!pool || !pool.length) && (!poolY2 || !poolY2.length)) return;
+  if ((!dataPool || !dataPool.length) && (!pool || !pool.length) && (!poolY2 || !poolY2.length)) return;
 
   if (!S) return;
 
   function pad3(n) { return String(n).padStart(3, '0'); }
 
   function pad2(n) { return String(n).padStart(2, '0'); }
+
+  var deptCycle = ['CSE','ECE','ME','Civil','MBA','AI&DS'];
+  var yearCycle = ['1st Year','2nd Year','3rd Year','4th Year'];
+  function deptForIndex(i) { return deptCycle[i % deptCycle.length]; }
+  function yearForIndex(i) { return yearCycle[i % yearCycle.length]; }
+
+  function formatRoll(raw, idx, yearLabel) {
+    var val = String(raw || '').trim();
+    var yearTag = yearLabel ? ('Y' + (yearCycle.indexOf(yearLabel) + 1) + '-') : '';
+    if (!val) return yearTag + 'AIDS-' + pad3(idx);
+    if (/^[0-9]+$/.test(val)) return yearTag + 'RN-' + String(val).padStart(3, '0');
+    return val;
+  }
 
   function emailFromName(name) {
 
@@ -410,7 +429,23 @@ function applyStudentNamesToMain() {
 
   var students = [];
 
-  if (pool && pool.length) {
+  if (dataPool && dataPool.length) {
+    yearCycle.forEach(function(yearLabel, y) {
+      students = students.concat(dataPool.map(function(entry, i) {
+        var idx = y * dataPool.length + i;
+        var name = (entry && entry.name) ? entry.name : entry;
+        return {
+          id: idx + 1,
+          name: name,
+          roll: formatRoll(entry && entry.roll, i + 1, yearLabel),
+          dept: deptForIndex(i),
+          year: yearLabel,
+          status: 'Active',
+          email: emailFromName(name)
+        };
+      }));
+    });
+  } else if (pool && pool.length) {
 
     students = students.concat(pool.map(function(name, i) {
 
@@ -1790,7 +1825,11 @@ function initERP() {
 
   initPresenceSocket();
 
-  loadErpStateFromApi();
+  if (window.__ERP_DISABLE_BACKEND || window.DEMO_MODE) {
+    applyStudentNamesToMain();
+  } else {
+    loadErpStateFromApi();
+  }
 
   updateAll();
 
@@ -2501,4 +2540,3 @@ window.handleNavbarLogout = async function handleNavbarLogout() {
 /* ── BOOT ──────────────────────────────────────── */
 
 initLanding();
-

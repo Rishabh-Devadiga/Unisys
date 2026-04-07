@@ -22,20 +22,47 @@
   window.EDUSYS_API_BASE = base;
   var _fetch = window.fetch;
   window.fetch = function(input, init) {
+    var disableBackend = false;
+    try { disableBackend = !!window.__ERP_DISABLE_BACKEND || !!window.DEMO_MODE; } catch (e) {}
+    function isApiRequest(url) {
+      return url.indexOf('/api/') === 0 || url.indexOf('/upload-attendance') === 0 || url.indexOf('/attendance-uploads') === 0;
+    }
+    function stubResponse(url) {
+      var payload = { ok: true };
+      if (url.indexOf('/api/schema') === 0) {
+        payload = { ok: true, tables: [], views: [], columns: [] };
+      } else if (url.indexOf('/api/app-state') === 0) {
+        payload = { ok: true, state: null };
+      } else if (url.indexOf('/api/query/execute') === 0) {
+        payload = { ok: true, rows: [] };
+      } else if (url.indexOf('/api/records/') === 0) {
+        payload = { ok: true, record: {} };
+      } else if (url.indexOf('/api/notifications') === 0) {
+        payload = { ok: true, notifications: [] };
+      }
+      return Promise.resolve(new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
     try {
       if (typeof input === 'string') {
-        if (input.indexOf('/api/') === 0 || input.indexOf('/upload-attendance') === 0 || input.indexOf('/attendance-uploads') === 0) {
+        if (isApiRequest(input)) {
+          if (disableBackend) return stubResponse(input);
           input = base + input;
         }
       } else if (input && typeof input === 'object' && typeof input.url === 'string') {
-        if (input.url.indexOf('/api/') === 0 || input.url.indexOf('/upload-attendance') === 0 || input.url.indexOf('/attendance-uploads') === 0) {
+        if (isApiRequest(input.url)) {
+          if (disableBackend) return stubResponse(input.url);
           input = new Request(base + input.url, input);
         } else if (
           input.url.indexOf(window.location.origin + '/api/') === 0 ||
           input.url.indexOf(window.location.origin + '/upload-attendance') === 0 ||
           input.url.indexOf(window.location.origin + '/attendance-uploads') === 0
         ) {
-          input = new Request(base + input.url.slice(window.location.origin.length), input);
+          var apiUrl = input.url.slice(window.location.origin.length);
+          if (disableBackend) return stubResponse(apiUrl);
+          input = new Request(base + apiUrl, input);
         }
       }
     } catch (e) {}

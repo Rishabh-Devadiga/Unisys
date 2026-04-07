@@ -3,6 +3,9 @@
   var debounceTimers = {};
 
   function getApiBase() {
+    if (window.__ERP_DISABLE_BACKEND || window.DEMO_MODE) {
+      return window.location && window.location.origin ? window.location.origin : '';
+    }
     if (window.__ERP_API_BASE) return window.__ERP_API_BASE;
     var host = (window.location && window.location.hostname) ? window.location.hostname : '';
     if (!host || host === 'localhost' || host === '127.0.0.1' || host === '::1') {
@@ -18,6 +21,13 @@
   }
 
   function jsonFetch(path, options) {
+    if (window.__ERP_DISABLE_BACKEND || window.DEMO_MODE) {
+      var payload = { ok: true };
+      if (path === '/api/schema') payload = { ok: true, tables: [], views: [], columns: [] };
+      if (path === '/api/query/execute') payload = { ok: true, rows: [] };
+      if (path.indexOf('/api/records/') === 0) payload = { ok: true, record: {} };
+      return Promise.resolve(payload);
+    }
     return fetch(buildUrl(path), options).then(function (res) {
       return res.json().then(function (data) {
         if (!res.ok) {

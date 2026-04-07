@@ -295,6 +295,319 @@ function applyStudentNamesToExtDb(db) {
   return changed;
 }
 
+function ensureStudentsFromPool(db) {
+  if (!db) return false;
+  if (Array.isArray(db.students) && db.students.length) return false;
+  var dataPool = (window.__STUDENT_DATA && window.__STUDENT_DATA.length) ? window.__STUDENT_DATA : null;
+  var namePool = (window.__STUDENT_NAMES && window.__STUDENT_NAMES.length) ? window.__STUDENT_NAMES : null;
+  if ((!dataPool || !dataPool.length) && (!namePool || !namePool.length)) return false;
+  function pad3(n) { return String(n).padStart(3, '0'); }
+  function emailFromName(name) {
+    return String(name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '.')
+      .replace(/^\.+|\.+$/g, '') + '@college.edu';
+  }
+  var deptCycle = ['CSE','ECE','ME','Civil','MBA','AI&DS'];
+  var yearCycle = ['1st Year','2nd Year','3rd Year','4th Year'];
+  function deptForIndex(i) { return deptCycle[i % deptCycle.length]; }
+  function yearForIndex(i) { return yearCycle[i % yearCycle.length]; }
+  function formatRoll(raw, idx, yearLabel) {
+    var val = String(raw || '').trim();
+    var yearTag = yearLabel ? ('Y' + (yearCycle.indexOf(yearLabel) + 1) + '-') : '';
+    if (!val) return yearTag + 'AIDS-' + pad3(idx);
+    if (/^[0-9]+$/.test(val)) return yearTag + 'RN-' + String(val).padStart(3, '0');
+    return val;
+  }
+  function seededInt(seed, min, max) {
+    var x = Math.abs(Math.sin(seed) * 10000);
+    var n = Math.floor(x) % (max - min + 1);
+    return min + n;
+  }
+  var list = [];
+  if (dataPool && dataPool.length) {
+    yearCycle.forEach(function(yearLabel, y) {
+      list = list.concat(dataPool.map(function(entry, i) {
+        var idx = y * dataPool.length + i;
+        var name = (entry && entry.name) ? entry.name : entry;
+        var cgpa = (6.2 + (seededInt((idx + 1) * 13, 0, 30) / 10)).toFixed(1);
+        var attendance = seededInt((idx + 1) * 17, 68, 98);
+        return {
+          id: idx + 1,
+          name: name,
+          roll: formatRoll(entry && entry.roll, i + 1, yearLabel),
+          dept: deptForIndex(i),
+          year: yearLabel,
+          status: 'Active',
+          email: emailFromName(name),
+          cgpa: cgpa,
+          attendance: attendance,
+          created_at: '2026-03-0' + ((idx % 9) + 1)
+        };
+      }));
+    });
+  } else if (namePool && namePool.length) {
+    list = namePool.map(function(name, i) {
+      return {
+        id: i + 1,
+        name: name,
+        roll: formatRoll(name, i + 1, yearForIndex(i)),
+        dept: deptForIndex(i),
+        year: yearForIndex(i),
+        status: 'Active',
+        email: emailFromName(name),
+        cgpa: (6.5 + ((i % 30) * 0.1)).toFixed(1),
+        attendance: 70 + (i % 30),
+        created_at: '2026-03-0' + ((i % 9) + 1)
+      };
+    });
+  }
+  db.students = list;
+  return true;
+}
+
+function ensureStudentFeatureData(db) {
+  if (!db || !Array.isArray(db.students) || !db.students.length) return false;
+  var changed = false;
+  var students = db.students;
+  var courses = (db.courses && db.courses.length) ? db.courses : [{ code: 'CSE301' }];
+  function seededInt(seed, min, max) {
+    var x = Math.abs(Math.sin(seed) * 10000);
+    var n = Math.floor(x) % (max - min + 1);
+    return min + n;
+  }
+  function pickCourse(idx) {
+    var c = courses[idx % courses.length];
+    return c.code || c.course || c.name || 'CSE301';
+  }
+  function dateFor(idx, day) {
+    var mm = String(((idx % 3) + 3)).padStart(2, '0');
+    var dd = String(((idx % 20) + (day || 1))).padStart(2, '0');
+    return '2026-' + mm + '-' + dd;
+  }
+
+  db.marks = db.marks || [];
+  var marksBy = {};
+  db.marks.forEach(function(m) {
+    if (m && m.studentId != null) marksBy['id:' + m.studentId] = true;
+    if (m && m.roll) marksBy['roll:' + m.roll] = true;
+  });
+  students.forEach(function(s, i) {
+    if (!s) return;
+    if (marksBy['id:' + s.id] || marksBy['roll:' + s.roll]) return;
+    var max = 50;
+    var marks = seededInt(s.id * 7, 20, 49);
+    db.marks.push({
+      id: Date.now() + i,
+      course: pickCourse(i),
+      exam: 'Mid Semester',
+      student: s.name,
+      roll: s.roll,
+      marks: marks,
+      maxMarks: max,
+      grade: marks >= 45 ? 'A+' : marks >= 40 ? 'A' : marks >= 35 ? 'B' : 'C'
+    });
+    changed = true;
+  });
+
+  db.ciaMarks = db.ciaMarks || [];
+  var ciaBy = {};
+  db.ciaMarks.forEach(function(m) {
+    if (m && m.studentId != null) ciaBy[m.studentId] = true;
+  });
+  students.forEach(function(s, i) {
+    if (!s || ciaBy[s.id]) return;
+    var max = 50;
+    var marks = seededInt(s.id * 11, 18, 48);
+    db.ciaMarks.push({
+      id: Date.now() + 1000 + i,
+      studentId: s.id,
+      student: s.name,
+      roll: s.roll,
+      dept: s.dept,
+      course: pickCourse(i),
+      cia: 'CIA1',
+      marks: marks,
+      maxMarks: max,
+      date: dateFor(i, 2),
+      enteredBy: 'Prof. Meera Singh',
+      status: 'Pending'
+    });
+    changed = true;
+  });
+
+  db.eseMarks = db.eseMarks || [];
+  var eseBy = {};
+  db.eseMarks.forEach(function(m) {
+    if (m && m.studentId != null) eseBy[m.studentId] = true;
+  });
+  students.forEach(function(s, i) {
+    if (!s || eseBy[s.id]) return;
+    var max = 100;
+    var marks = seededInt(s.id * 13, 35, 95);
+    db.eseMarks.push({
+      id: Date.now() + 2000 + i,
+      studentId: s.id,
+      student: s.name,
+      roll: s.roll,
+      dept: s.dept,
+      course: pickCourse(i),
+      marks: marks,
+      maxMarks: max,
+      semester: '5',
+      academicYear: '2025-26',
+      date: dateFor(i, 6),
+      enteredBy: 'Prof. Meera Singh',
+      status: 'Pending'
+    });
+    changed = true;
+  });
+
+  db.attendanceEntries = db.attendanceEntries || [];
+  var attBy = {};
+  db.attendanceEntries.forEach(function(a) {
+    if (a && a.studentId != null) attBy[a.studentId] = true;
+  });
+  var statusCycle = ['present','present','late','absent','excused'];
+  students.forEach(function(s, i) {
+    if (!s || attBy[s.id]) return;
+    db.attendanceEntries.push({
+      id: Date.now() + 3000 + i,
+      studentId: s.id,
+      roll: s.roll,
+      dept: s.dept,
+      course: pickCourse(i),
+      date: dateFor(i, 4),
+      status: statusCycle[i % statusCycle.length],
+      markedBy: 'Prof. Meera Singh'
+    });
+    changed = true;
+  });
+
+  db.behaviorRecords = db.behaviorRecords || [];
+  var behBy = {};
+  db.behaviorRecords.forEach(function(b) {
+    if (b && b.studentId != null) behBy[b.studentId] = true;
+  });
+  var behTypes = ['positive','negative'];
+  students.forEach(function(s, i) {
+    if (!s || behBy[s.id]) return;
+    db.behaviorRecords.push({
+      id: Date.now() + 4000 + i,
+      studentId: s.id,
+      student: s.name,
+      roll: s.roll,
+      dept: s.dept,
+      type: behTypes[i % behTypes.length],
+      category: (i % 2 === 0) ? 'participation' : 'discipline',
+      severity: (i % 3 === 0) ? 'low' : (i % 3 === 1) ? 'medium' : 'high',
+      description: (i % 2 === 0) ? 'Active in class discussions' : 'Late submission warning',
+      action: (i % 2 === 0) ? 'Appreciated in class' : 'Counseled by faculty',
+      recordedBy: 'Prof. Meera Singh',
+      date: dateFor(i, 8),
+      status: 'Open'
+    });
+    changed = true;
+  });
+
+  db.studentFlags = db.studentFlags || [];
+  var flagBy = {};
+  db.studentFlags.forEach(function(f) {
+    if (f && f.studentId != null) flagBy[f.studentId] = true;
+  });
+  students.forEach(function(s, i) {
+    if (!s || flagBy[s.id]) return;
+    var pct = seededInt(s.id * 17, 60, 98);
+    var flag = (pct < 75) ? 'Low Attendance (' + pct + '%)' : 'Performance Review';
+    db.studentFlags.push({
+      studentId: s.id,
+      roll: s.roll,
+      name: s.name,
+      flag: flag,
+      severity: (pct < 70) ? 'Urgent' : (pct < 80) ? 'Warning' : 'Info',
+      raisedBy: (pct < 75) ? 'OBE Engine' : 'Faculty',
+      date: dateFor(i, 10)
+    });
+    changed = true;
+  });
+
+  db.feeOutstanding = db.feeOutstanding || [];
+  var feeBy = {};
+  db.feeOutstanding.forEach(function(f) {
+    if (f && f.studentId != null) feeBy[f.studentId] = true;
+  });
+  students.forEach(function(s, i) {
+    if (!s || feeBy[s.id]) return;
+    var amt = seededInt(s.id * 19, 2500, 48000);
+    var status = (amt > 35000) ? 'Overdue' : (amt > 20000) ? 'Pending' : 'Paid';
+    db.feeOutstanding.push({
+      id: Date.now() + 5000 + i,
+      studentId: s.id,
+      type: (i % 3 === 0) ? 'Tuition Fee' : (i % 3 === 1) ? 'Hostel Fee' : 'Exam Fee',
+      amount: amt,
+      dueDate: dateFor(i, 12),
+      status: status
+    });
+    changed = true;
+  });
+
+  db.studentCategories = db.studentCategories || [];
+  var catBy = {};
+  db.studentCategories.forEach(function(c) {
+    if (c && c.studentId != null) catBy[c.studentId] = true;
+  });
+  var categories = ['General','OBC','SC','ST','EWS'];
+  students.forEach(function(s, i) {
+    if (!s || catBy[s.id]) return;
+    var cat = categories[i % categories.length];
+    db.studentCategories.push({
+      studentId: s.id,
+      category: cat,
+      caste: cat === 'General' ? 'General' : cat + '-NCL'
+    });
+    changed = true;
+  });
+
+  db.studentDocuments = db.studentDocuments || [];
+  var docBy = {};
+  db.studentDocuments.forEach(function(d) {
+    if (d && d.studentId != null) docBy[d.studentId] = true;
+  });
+  students.forEach(function(s, i) {
+    if (!s || docBy[s.id]) return;
+    db.studentDocuments.push({
+      id: Date.now() + 6000 + i,
+      studentId: s.id,
+      type: '10th Marksheet',
+      status: (i % 4 === 0) ? 'Pending' : 'Verified',
+      submittedOn: dateFor(i, 14)
+    });
+    changed = true;
+  });
+
+  db.concessionRequests = db.concessionRequests || [];
+  var conBy = {};
+  db.concessionRequests.forEach(function(r) {
+    if (r && r.studentId != null) conBy[r.studentId] = true;
+  });
+  var routes = ['Bengaluru - Mysore','Mysore - Bengaluru','Bengaluru - Pune','Bengaluru - Chennai'];
+  students.forEach(function(s, i) {
+    if (!s || conBy[s.id]) return;
+    db.concessionRequests.push({
+      id: Date.now() + 7000 + i,
+      studentId: s.id,
+      route: routes[i % routes.length],
+      requestDate: dateFor(i, 16),
+      status: (i % 3 === 0) ? 'Scheduled' : 'Requested',
+      appointmentDate: (i % 3 === 0) ? dateFor(i, 20) : '',
+      appointmentTime: (i % 3 === 0) ? '10:30' : ''
+    });
+    changed = true;
+  });
+
+  return changed;
+}
+
 /* ── Extend dbGet to inject EXT_SEED fields on first access ── */
 var _origDbGet = window.dbGet;
 window.dbGet = function() {
@@ -305,9 +618,13 @@ window.dbGet = function() {
   extKeys.forEach(function(k) {
     if (!d[k]) { d[k] = JSON.parse(JSON.stringify(EXT_SEED[k])); changed = true; }
   });
+  var studentsSeeded = ensureStudentsFromPool(d);
+  if (studentsSeeded) changed = true;
   if (changed) dbSave(d);
   var namesChanged = applyStudentNamesToExtDb(d);
   if (namesChanged) dbSave(d);
+  var generated = ensureStudentFeatureData(d);
+  if (generated) dbSave(d);
   return d;
 };
 
