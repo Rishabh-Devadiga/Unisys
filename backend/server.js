@@ -189,6 +189,16 @@ async function getUserStore() {
   return data && typeof data === 'object'
     ? { users: Array.isArray(data.users) ? data.users : [], auditLogs: Array.isArray(data.auditLogs) ? data.auditLogs : [] }
     : { users: [], auditLogs: [] };
+
+function sanitizeUsers(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((user) => {
+    if (!user || typeof user !== 'object') return user;
+    const { password: _pw, ...safeUser } = user;
+    return safeUser;
+  });
+}
+
 }
 
 async function saveUserStore(store) {

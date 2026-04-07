@@ -505,6 +505,8 @@ function getUserInstitute(user) {
 
 }
 
+var COMMON_DEPTS = ['CSE','ECE','ME','Civil','MBA','AI&DS','AIDS','IT','ISE'];
+
 function normalizeDept(input) {
 
   var raw = safeTrim(input);
@@ -519,12 +521,24 @@ function normalizeDept(input) {
     known = db.departments.map(function(d) { return d.name; });
   }
 
-  known = known.concat(['Finance','Admissions','Student Services','Administration','All','General']);
+  known = known.concat(COMMON_DEPTS, ['Finance','Admissions','Student Services','Administration','All','General']);
 
   var match = known.find(function(k) { return k.toLowerCase() === raw.toLowerCase(); });
 
   return match || raw;
 
+}
+
+function ensureDeptExists(deptName) {
+  var dept = safeTrim(deptName);
+  if (!dept) return;
+  var db = dbGet();
+  db.departments = db.departments || [];
+  var exists = db.departments.some(function(d) { return d && String(d.name || '').toLowerCase() === dept.toLowerCase(); });
+  if (!exists) {
+    db.departments.push({ id: Date.now(), name: dept, hod: '?', students: 0, faculty: 0, courses: 0, rating: 4.0 });
+    dbSave(db);
+  }
 }
 
 function isKnownDept(name) {
@@ -541,7 +555,7 @@ function isKnownDept(name) {
     known = db.departments.map(function(d) { return d.name; });
   }
 
-  known = known.concat(['Finance','Admissions','Student Services','Administration','All','General']);
+  known = known.concat(COMMON_DEPTS, ['Finance','Admissions','Student Services','Administration','All','General']);
 
   return known.some(function(k) { return k.toLowerCase() === raw.toLowerCase(); });
 
@@ -733,14 +747,18 @@ function dbSyncFromBackend(force) {
 }
 
 function dbLoad() {
-  if (_dbCache) return _dbCache;
+  if (_dbCache) {
+    dbSyncFromBackend(true);
+    return _dbCache;
+  }
   var raw = safeStoreGet(DEMO_DB_KEY);
   if (raw) {
     try {
       var parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.students) && parsed.students.length) {
+      if (parsed && typeof parsed === 'object') {
         _dbCache = parsed;
-        _dbBootstrapped = true;
+        if (Array.isArray(parsed.students) && parsed.students.length) _dbBootstrapped = true;
+        dbSyncFromBackend(true);
         return _dbCache;
       }
     } catch(e) {}
@@ -1867,8 +1885,11 @@ async function requestAccess() {
 
   if (password.length < 8) return showErr('Password must be at least 8 characters');
 
-  if ((role === 'Faculty' || role === 'HOD') && !isKnownDept(dept)) {
-    return showErr('Please choose a valid department so the approval reaches the correct HOD.');
+  if (role === 'Faculty' || role === 'HOD') {
+    if (!deptRaw) return showErr('Please choose a valid department so the approval reaches the correct HOD.');
+    if (!isKnownDept(dept)) {
+      ensureDeptExists(dept);
+    }
   }
 
 
@@ -2303,6 +2324,9 @@ function buildAdminOverride() {
 /* Admin: User Management */
 
 function buildAdminUsers() {
+  if (typeof dbSyncFromBackend === 'function') {
+    try { dbSyncFromBackend(true); } catch(e) {}
+  }
 
   var db = dbGet();
 
