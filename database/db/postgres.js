@@ -366,11 +366,14 @@ async function ensureSchema() {
       id INTEGER PRIMARY KEY,
       event TEXT,
       start DATE,
-      end DATE,
+      "end" DATE,
       type TEXT,
       dept TEXT
     );
   `);
+  try {
+    await query(`ALTER TABLE calendar_events ADD COLUMN "end" DATE;`);
+  } catch (e) {}
 
   await query(`
     CREATE TABLE IF NOT EXISTS audit_logs (

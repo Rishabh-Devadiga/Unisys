@@ -1,6 +1,6 @@
 /* ============================================================
 
-   roles.js — UniSys EduSys Role-Based Dashboard System
+   roles.js ï¿½ UniSys EduSys Role-Based Dashboard System
 
    Extends main.js without modifying it.
 
@@ -26,9 +26,9 @@ var DEMO_USERS = [
 
   { email:'head@edusys.in', password:'head123', role:'Head', name:'Dr. Anita Sharma',   dept:'All',  title:'Head' },
 
-  { email:'hod@edusys.in',       password:'hod123',       role:'HOD',       name:'Dr. Rajiv Rao',      dept:'CSE',  title:'Head of Department — CSE' },
+  { email:'hod@edusys.in',       password:'hod123',       role:'HOD',       name:'Dr. Rajiv Rao',      dept:'CSE',  title:'Head of Department ï¿½ CSE' },
 
-  { email:'faculty@edusys.in',   password:'faculty123',   role:'Faculty',   name:'Prof. Meera Singh',  dept:'CSE',  title:'Assistant Professor — CSE' },
+  { email:'faculty@edusys.in',   password:'faculty123',   role:'Faculty',   name:'Prof. Meera Singh',  dept:'CSE',  title:'Assistant Professor ï¿½ CSE' },
 
   { email:'accounts@edusys.in',  password:'accounts123',  role:'Account',   name:'Ms. Kavita Shah',    dept:'Finance', title:'Accounts Officer' },
 
@@ -80,9 +80,9 @@ var SEED_DATA = {
 
     { id:9, name:'Ms. Sana Ali',      email:'concession@edusys.in',role:'Railway Concession', dept:'Student Services', status:'Active', lastLogin:'2026-03-14 08:55' },
 
-    { id:10, name:'Prof. Arjun Mehta',  email:'arjun.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
-    { id:11, name:'Dr. Kavya Iyer',    email:'kavya.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
-    { id:12, name:'Prof. Rahul Nair',  email:'rahul.ece@edusys.in',  role:'Faculty', dept:'ECE', status:'Pending', lastLogin:'—', requestedRole:'Faculty', requestedOn:'2026-03-18', institute:'EduSys Demo College' }
+    { id:10, name:'Prof. Arjun Mehta',  email:'arjun.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'ï¿½', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
+    { id:11, name:'Dr. Kavya Iyer',    email:'kavya.cse@edusys.in',  role:'Faculty', dept:'CSE', status:'Pending', lastLogin:'ï¿½', requestedRole:'Faculty', requestedOn:'2026-03-19', institute:'EduSys Demo College' },
+    { id:12, name:'Prof. Rahul Nair',  email:'rahul.ece@edusys.in',  role:'Faculty', dept:'ECE', status:'Pending', lastLogin:'ï¿½', requestedRole:'Faculty', requestedOn:'2026-03-18', institute:'EduSys Demo College' }
 
   ],
 
@@ -251,15 +251,15 @@ var SEED_DATA = {
 
   announcements: [
 
-    { id:1, title:'Mid-Sem Exam Schedule Released',  author:'COE',       audience:'All',     date:'2026-03-12', priority:'High',   content:'Mid-semester exams will be held from April 2–10, 2026. Hall tickets available on portal.' },
+    { id:1, title:'Mid-Sem Exam Schedule Released',  author:'COE',       audience:'All',     date:'2026-03-12', priority:'High',   content:'Mid-semester exams will be held from April 2ï¿½10, 2026. Hall tickets available on portal.' },
 
     { id:2, title:'Fee Submission Deadline Extended', author:'Finance',   audience:'Students',date:'2026-03-10', priority:'Medium', content:'Last date for fee submission extended to March 31, 2026. Late fee of ?500 after deadline.' },
 
     { id:3, title:'Faculty Workshop: AI in Education', author:'Head',audience:'Faculty', date:'2026-03-08', priority:'Medium', content:'Mandatory workshop on March 20, 2026 in Seminar Hall B. Attendance compulsory.' },
 
-    { id:4, title:'Campus Placement Drive — TCS',     author:'T&P Cell',  audience:'Final Year', date:'2026-03-06', priority:'High', content:'TCS placement drive on April 5. Register on placement portal before March 25.' },
+    { id:4, title:'Campus Placement Drive ï¿½ TCS',     author:'T&P Cell',  audience:'Final Year', date:'2026-03-06', priority:'High', content:'TCS placement drive on April 5. Register on placement portal before March 25.' },
 
-    { id:5, title:'HOD Meeting — Academic Planning',  author:'Head', audience:'HODs',    date:'2026-03-05', priority:'Medium', content:'Monthly HOD meeting on March 16 at 11 AM in Conference Room 1.' }
+    { id:5, title:'HOD Meeting ï¿½ Academic Planning',  author:'Head', audience:'HODs',    date:'2026-03-05', priority:'Medium', content:'Monthly HOD meeting on March 16 at 11 AM in Conference Room 1.' }
 
   ],
 
@@ -291,7 +291,7 @@ var SEED_DATA = {
 
     { id:1, user:'Mr. Suresh Kumar', action:'User Created',     target:'Prof. Nisha Patel', timestamp:'2026-03-14 09:30', ip:'192.168.1.10' },
 
-    { id:2, user:'Dr. Rajiv Rao',    action:'Attendance Marked', target:'CSE301 — CSE A',   timestamp:'2026-03-14 09:15', ip:'192.168.1.22' },
+    { id:2, user:'Dr. Rajiv Rao',    action:'Attendance Marked', target:'CSE301 ï¿½ CSE A',   timestamp:'2026-03-14 09:15', ip:'192.168.1.22' },
 
     { id:3, user:'Prof. Meera Singh',action:'Marks Uploaded',   target:'CSE301 Mid Sem',    timestamp:'2026-03-13 17:45', ip:'192.168.1.25' },
 
@@ -321,7 +321,7 @@ var SEED_DATA = {
 
   materials: [
 
-    { id:1, course:'CSE301', title:'Module 3 — Trees & Graphs',   type:'PDF',  faculty:'Prof. Meera Singh', date:'2026-03-13', size:'2.4 MB' },
+    { id:1, course:'CSE301', title:'Module 3 ï¿½ Trees & Graphs',   type:'PDF',  faculty:'Prof. Meera Singh', date:'2026-03-13', size:'2.4 MB' },
 
     { id:2, course:'CSE401', title:'TCP/IP Layer Overview Slides', type:'PPT',  faculty:'Prof. Meera Singh', date:'2026-03-12', size:'5.1 MB' },
 
@@ -563,6 +563,7 @@ var _dbSaveInFlight = null;
 var _dbSaveTimer = null;
 var _dbSaveBackoff = 1000;
 var _dbSaveLastStatus = null;
+var _dbBootstrapped = false;
 var DB_SAVE_QUEUE_KEY = 'edusys_db_save_queue';
 
 function dbSaveLocal(data) {
@@ -701,9 +702,9 @@ function flushDbSaveQueue() {
   return _dbSaveInFlight;
 }
 
-function dbSyncFromBackend() {
+function dbSyncFromBackend(force) {
   if (_dbSyncing) return;
-  if (getQueuedSave()) return;
+  if (!force && getQueuedSave()) return;
   _dbSyncing = true;
   var headers = {};
   if (typeof getSession === 'function') {
@@ -720,6 +721,7 @@ function dbSyncFromBackend() {
       if (payload && payload.state) {
         _dbCache = payload.state;
         dbSaveLocal(_dbCache);
+        _dbBootstrapped = true;
         if (typeof renderRoleSection === 'function') {
           var cur = getCurrentRoleSection && getCurrentRoleSection();
           if (cur) renderRoleSection(cur);
@@ -732,15 +734,28 @@ function dbSyncFromBackend() {
 
 function dbLoad() {
   if (_dbCache) return _dbCache;
+  var raw = safeStoreGet(DEMO_DB_KEY);
+  if (raw) {
+    try {
+      var parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.students) && parsed.students.length) {
+        _dbCache = parsed;
+        _dbBootstrapped = true;
+        return _dbCache;
+      }
+    } catch(e) {}
+  }
   _dbCache = emptyStateFromSeed();
-  dbSyncFromBackend();
-  flushDbSaveQueue();
+  dbSyncFromBackend(true);
   return _dbCache;
 }
 
 function dbSave(data) {
   _dbCache = data;
   dbSaveLocal(data);
+  if (!_dbBootstrapped && (!data || !Array.isArray(data.students) || !data.students.length)) {
+    return Promise.resolve(false);
+  }
   setQueuedSave(data);
   return flushDbSaveQueue();
 }
@@ -793,11 +808,11 @@ var _attendanceUploads = null;
 var _attendanceUploadsLoading = false;
 
 function formatAttendanceInfo(att) {
-  if (att == null) return '—';
+  if (att == null) return 'ï¿½';
   if (typeof att === 'number' || typeof att === 'string') return String(att);
   if (typeof att === 'object') {
     var keys = Object.keys(att || {});
-    if (!keys.length) return '—';
+    if (!keys.length) return 'ï¿½';
     var totalLect = null;
     keys.forEach(function(k) {
       if (String(k).toLowerCase().indexOf('total') >= 0) {
@@ -819,9 +834,9 @@ function formatAttendanceInfo(att) {
       return 'Present: ' + present + '/' + total + ' (' + presentPct + '%) | Absent: ' + absent + '/' + total + ' (' + absentPct + '%)';
     }
     var parts = keys.slice(0, 3).map(function(k) {
-      return k + ': ' + (att[k] == null ? '—' : att[k]);
+      return k + ': ' + (att[k] == null ? 'ï¿½' : att[k]);
     });
-    return parts.join(' | ') + (keys.length > 3 ? ' …' : '');
+    return parts.join(' | ') + (keys.length > 3 ? ' ï¿½' : '');
   }
   return String(att);
 }
@@ -835,10 +850,10 @@ function renderAttendanceUploadsTable(list) {
     list.map(function(item) {
       var when = item.upload_date || item.uploadDate || item.uploaded_at || '';
       return [
-        item.student_name || item.studentName || '—',
+        item.student_name || item.studentName || 'ï¿½',
         formatAttendanceInfo(item.attendance),
-        item.uploaded_by || item.uploadedBy || '—',
-        when ? String(when).replace('T', ' ').replace('Z', '') : '—'
+        item.uploaded_by || item.uploadedBy || 'ï¿½',
+        when ? String(when).replace('T', ' ').replace('Z', '') : 'ï¿½'
       ];
     })
   );
@@ -1277,13 +1292,13 @@ function overallAttRenderList() {
     list.map(function(a) {
       var pc = a.pct >= 85 ? 'green' : a.pct >= 75 ? 'yellow' : 'red';
       return [
-        a.roll || '—',
-        a.name || '—',
+        a.roll || 'ï¿½',
+        a.name || 'ï¿½',
         String(a.present || 0),
         String(a.total || 0),
         '<span class="badge badge-' + pc + '">' + (a.pct || 0) + '%</span>',
-        a.uploadedBy || '—',
-        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : '—'
+        a.uploadedBy || 'ï¿½',
+        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : 'ï¿½'
       ];
     })
   );
@@ -1344,13 +1359,13 @@ function overallAttRenderYearList(yearLabel, subjectSelectId) {
     list.map(function(a) {
       var pc = a.pct >= 85 ? 'green' : a.pct >= 75 ? 'yellow' : 'red';
       return [
-        a.roll || '—',
-        a.name || '—',
+        a.roll || 'ï¿½',
+        a.name || 'ï¿½',
         String(a.present || 0),
         String(a.total || 0),
         '<span class="badge badge-' + pc + '">' + (a.pct || 0) + '%</span>',
-        a.uploadedBy || '—',
-        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : '—'
+        a.uploadedBy || 'ï¿½',
+        a.uploadedAt ? String(a.uploadedAt).replace('T', ' ').replace('Z', '') : 'ï¿½'
       ];
     })
   );
@@ -1421,7 +1436,7 @@ function buildYearAttendanceScreen() {
   });
   var subjectOptions = yearSubjects.length
     ? yearSubjects.map(function(c){
-        return '<option value=\"' + c.code + '\">' + c.code + ' – ' + c.name + '</option>';
+        return '<option value=\"' + c.code + '\">' + c.code + ' ï¿½ ' + c.name + '</option>';
       }).join('')
     : '<option value=\"\">No subjects available</option>';
   var semOptions = sems.map(function(s){ return '<option value=\"' + s + '\">Semester ' + s + '</option>'; }).join('');
@@ -1642,7 +1657,7 @@ function authLogin(email, password, role) {
 
 function authLoginAsRole(role) {
 
-  /* One-click demo login — picks the matching demo user */
+  /* One-click demo login ï¿½ picks the matching demo user */
 
   if (!DEMO_MODE) {
     showToast('Demo mode is disabled', 'warning');
@@ -2235,7 +2250,7 @@ function buildAdminOverride() {
 
   return '<div class="module-header"><div class="module-title">Admin Dashboard</div>'
 
-    + '<div class="module-sub">Full system control — Users, Departments, Analytics, Configuration</div></div>'
+    + '<div class="module-sub">Full system control ï¿½ Users, Departments, Analytics, Configuration</div></div>'
 
     + '<div class="kpi-grid">'
 
@@ -2401,9 +2416,9 @@ function buildAdminConfig() {
 
     + '<div class="form-group"><label class="form-label">Institution Name</label><input class="form-input" value="Northstar University" id="cfg-name"/></div>'
 
-    + '<div class="form-group"><label class="form-label">Academic Year</label><select class="form-select" id="cfg-year"><option>2025–2026</option><option>2026–2027</option></select></div>'
+    + '<div class="form-group"><label class="form-label">Academic Year</label><select class="form-select" id="cfg-year"><option>2025ï¿½2026</option><option>2026ï¿½2027</option></select></div>'
 
-    + '<div class="form-group"><label class="form-label">Current Semester</label><select class="form-select" id="cfg-sem"><option>Even (Jan–May)</option><option>Odd (Jul–Dec)</option></select></div>'
+    + '<div class="form-group"><label class="form-label">Current Semester</label><select class="form-select" id="cfg-sem"><option>Even (Janï¿½May)</option><option>Odd (Julï¿½Dec)</option></select></div>'
 
     + '<div class="form-group"><label class="form-label">Max Attendance Shortage %</label><input class="form-input" type="number" value="25" id="cfg-att"/></div>'
 
@@ -2523,7 +2538,7 @@ function buildPrincipalOverride() {
 
   return '<div class="module-header"><div class="module-title">Head\'s Dashboard</div>'
 
-    + '<div class="module-sub">Institution performance at a glance — Departments, Faculty, Students, Compliance</div></div>'
+    + '<div class="module-sub">Institution performance at a glance ï¿½ Departments, Faculty, Students, Compliance</div></div>'
 
     + '<div class="kpi-grid">'
 
@@ -2565,7 +2580,7 @@ function buildPrincipalOverride() {
 
           var pc = a.priority==='High'?'red':a.priority==='Medium'?'yellow':'gray';
 
-          return [a.title.substring(0,28)+'…', a.author, '<span class="badge badge-'+pc+'">'+a.priority+'</span>', a.date];
+          return [a.title.substring(0,28)+'ï¿½', a.author, '<span class="badge badge-'+pc+'">'+a.priority+'</span>', a.date];
 
         }))
 
@@ -2639,7 +2654,7 @@ function buildPrincipalProposals() {
 
             : '<span class="badge badge-'+(p.status==='Approved'?'green':'red')+'">'+p.status+'</span>';
 
-          return [p.hod, p.dept, p.title, p.description.substring(0,35)+'…', sbadge(p.status), act];
+          return [p.hod, p.dept, p.title, p.description.substring(0,35)+'ï¿½', sbadge(p.status), act];
 
         }))
 
@@ -2687,11 +2702,11 @@ function buildPrincipalStrategic() {
 
     + '<div class="bar-chart-wrap">'
 
-    + widgetBar('3–5 LPA', 35, '')
+    + widgetBar('3ï¿½5 LPA', 35, '')
 
-    + widgetBar('5–8 LPA', 45, 'bar-fill-green')
+    + widgetBar('5ï¿½8 LPA', 45, 'bar-fill-green')
 
-    + widgetBar('8–12 LPA', 15, 'bar-fill-green')
+    + widgetBar('8ï¿½12 LPA', 15, 'bar-fill-green')
 
     + widgetBar('12+ LPA', 5, 'bar-fill-green')
 
@@ -2760,7 +2775,7 @@ function buildPrincipalAccounts() {
 
       + '<button class="btn btn-sm btn-danger" onclick="principalApproveAccount('+u.id+',false)">Reject</button>';
 
-    return [u.name, u.email, u.dept, roleSelectHtml(u), u.requestedOn || '—', act];
+    return [u.name, u.email, u.dept, roleSelectHtml(u), u.requestedOn || 'ï¿½', act];
 
   });
 
@@ -2829,7 +2844,7 @@ function principalApproveAccount(id, approve) {
 
     u.status = 'Active';
 
-    u.lastLogin = u.lastLogin || '—';
+    u.lastLogin = u.lastLogin || 'ï¿½';
 
     showToast('Account approved: ' + u.name);
 
@@ -2897,7 +2912,7 @@ function buildHODAccounts() {
   var pendingRows = pending.map(function(u) {
     var act = '<button class="btn btn-sm btn-success" onclick="hodApproveFaculty('+u.id+',true)">Approve</button> '
       + '<button class="btn btn-sm btn-danger" onclick="hodApproveFaculty('+u.id+',false)">Reject</button>';
-    return [u.name, u.email, u.dept, u.requestedOn || '—', act];
+    return [u.name, u.email, u.dept, u.requestedOn || 'ï¿½', act];
   });
 
   return '<div class="module-header"><div class="module-title">Faculty Accounts - ' + deptLabel + '</div>'
@@ -2937,7 +2952,7 @@ function hodApproveFaculty(id, approve) {
     u.role = 'Faculty';
     u.requestedRole = null;
     u.status = 'Active';
-    u.lastLogin = u.lastLogin || '—';
+    u.lastLogin = u.lastLogin || 'ï¿½';
     showToast('Faculty approved: ' + u.name);
   } else {
     u.status = 'Rejected';
@@ -3006,9 +3021,9 @@ function buildHODOverride() {
 
 
 
-  return '<div class="module-header"><div class="module-title">HOD Dashboard — ' + myDept + '</div>'
+  return '<div class="module-header"><div class="module-title">HOD Dashboard ï¿½ ' + myDept + '</div>'
 
-    + '<div class="module-sub">Department overview: ' + myDept + ' — Students, Faculty, Courses, Attendance</div></div>'
+    + '<div class="module-sub">Department overview: ' + myDept + ' ï¿½ Students, Faculty, Courses, Attendance</div></div>'
 
     + '<div class="kpi-grid">'
 
@@ -3058,7 +3073,7 @@ function buildHODOverride() {
 
             : sbadge(l.status);
 
-          return [l.faculty.split(' ').pop(), l.from+' – '+l.to, l.days, l.reason, act];
+          return [l.faculty.split(' ').pop(), l.from+' ï¿½ '+l.to, l.days, l.reason, act];
 
         }))
 
@@ -3078,7 +3093,7 @@ function buildHODDept() {
 
   var deptInfo = db.departments.find(function(d){return d.name===myDept;}) || {};
 
-  return '<div class="module-header"><div class="module-title">Department Management — ' + myDept + '</div>'
+  return '<div class="module-header"><div class="module-title">Department Management ï¿½ ' + myDept + '</div>'
 
     + '<div class="module-sub">Manage faculty assignments, courses, and department configuration.</div></div>'
 
@@ -3090,7 +3105,7 @@ function buildHODDept() {
 
     + '<div class="form-group"><label class="form-label">Course</label><select class="form-select" id="hod-course">'
 
-    + db.courses.filter(function(c){return c.dept===myDept;}).map(function(c){return '<option>'+c.code+' – '+c.name+'</option>';}).join('')
+    + db.courses.filter(function(c){return c.dept===myDept;}).map(function(c){return '<option>'+c.code+' ï¿½ '+c.name+'</option>';}).join('')
 
     + '</select></div>'
 
@@ -3106,19 +3121,19 @@ function buildHODDept() {
 
     + '<div class="form-grid">'
 
-    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Proposal Title</label><input class="form-input" id="hod-prop-title" placeholder="New course / Lab upgrade / Event…"/></div>'
+    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Proposal Title</label><input class="form-input" id="hod-prop-title" placeholder="New course / Lab upgrade / Eventï¿½"/></div>'
 
-    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Description</label><textarea class="form-textarea" id="hod-prop-desc" rows="2" placeholder="Details for Head review…"></textarea></div>'
+    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Description</label><textarea class="form-textarea" id="hod-prop-desc" rows="2" placeholder="Details for Head reviewï¿½"></textarea></div>'
 
     + '</div><div class="form-actions"><button class="btn btn-primary" onclick="hodSubmitProposal()">Submit to Head</button></div></div></div>'
 
-    + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Faculty List — ' + myDept + '</h3>'
+    + '<div class="panel"><h3 style="font-family:var(--font-head);margin-bottom:14px">Faculty List ï¿½ ' + myDept + '</h3>'
 
     + widgetTable(['Name','Designation','Load','Courses','Leave Balance','Status'],
 
         db.faculty.filter(function(f){return f.dept===myDept;}).map(function(f){
 
-          return [f.name, f.desig, f.load+' hrs', f.courses.join(', ')||'—', f.leaveBalance+' days', sbadge(f.status)];
+          return [f.name, f.desig, f.load+' hrs', f.courses.join(', ')||'ï¿½', f.leaveBalance+' days', sbadge(f.status)];
 
         }))
 
@@ -3172,7 +3187,7 @@ function buildHODTimetable() {
 
       } else {
 
-        table += '<td style="color:var(--text3);font-size:11px">—</td>';
+        table += '<td style="color:var(--text3);font-size:11px">ï¿½</td>';
 
       }
 
@@ -3186,7 +3201,7 @@ function buildHODTimetable() {
 
 
 
-  return '<div class="module-header"><div class="module-title">Department Timetable — ' + myDept + '</div>'
+  return '<div class="module-header"><div class="module-title">Department Timetable ï¿½ ' + myDept + '</div>'
 
     + '<div class="module-sub">Weekly schedule for all courses and faculty in ' + myDept + ' department.</div></div>'
 
@@ -3232,7 +3247,7 @@ function buildHODLeave() {
 
             : sbadge(l.status);
 
-          return [l.faculty, l.appliedOn, l.from+' – '+l.to, l.days+'d', l.reason, sbadge(l.status), act];
+          return [l.faculty, l.appliedOn, l.from+' ï¿½ '+l.to, l.days+'d', l.reason, sbadge(l.status), act];
 
         }))
 
@@ -3312,7 +3327,7 @@ function buildFacultyOverride() {
 
   return '<div class="module-header"><div class="module-title">Faculty Dashboard</div>'
 
-    + '<div class="module-sub">Welcome, ' + myName + ' — Your courses, students, and tasks</div></div>'
+    + '<div class="module-sub">Welcome, ' + myName + ' ï¿½ Your courses, students, and tasks</div></div>'
 
     + '<div class="kpi-grid">'
 
@@ -3350,7 +3365,7 @@ function buildFacultyOverride() {
 
           var pc = a.priority==='High'?'red':a.priority==='Medium'?'yellow':'gray';
 
-          return [a.title.substring(0,28)+'…', a.author, '<span class="badge badge-'+pc+'">'+a.priority+'</span>'];
+          return [a.title.substring(0,28)+'ï¿½', a.author, '<span class="badge badge-'+pc+'">'+a.priority+'</span>'];
 
         }))
 
@@ -3380,7 +3395,7 @@ function buildFacultyMyCourses() {
 
         return '<div class="panel"><div style="display:flex;justify-content:space-between;align-items:start">'
 
-          + '<div><h3 style="font-family:var(--font-head)">' + c.code + ' — ' + c.name + '</h3>'
+          + '<div><h3 style="font-family:var(--font-head)">' + c.code + ' ï¿½ ' + c.name + '</h3>'
 
           + '<p style="color:var(--text2);font-size:13px">Credits: '+c.credits+' | Sem '+c.sem+' | '+c.enrolled+' students | '+c.dept+'</p></div>'
 
@@ -3429,7 +3444,7 @@ function buildFacultyAttendance() {
     + '<div class="module-sub">Upload and review attendance records for your classes.</div></div>'
 
     + '<div class="panel" style="margin-bottom:16px">'
-    + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Overall Attendance — Select Year</h3>'
+    + '<h3 style="font-family:var(--font-head);margin-bottom:8px">Overall Attendance ï¿½ Select Year</h3>'
     + '<div class="form-actions" style="gap:8px;flex-wrap:wrap">'
     + '<button class="' + (year === 'First Year' ? 'btn btn-primary' : 'btn') + '" onclick="openYearAttendance(\'First Year\')">First Year</button>'
     + '<button class="' + (year === 'Second Year' ? 'btn btn-primary' : 'btn') + '" onclick="openYearAttendance(\'Second Year\')">Second Year</button>'
@@ -3444,7 +3459,7 @@ function buildFacultyAttendance() {
 
     + '<div class="geo-ring"></div><div class="geo-ring"></div><div class="geo-ring"></div>'
 
-    + '<div class="geo-dot"></div><span class="geo-label">Campus geofence — verified location</span></div>'
+    + '<div class="geo-dot"></div><span class="geo-label">Campus geofence ï¿½ verified location</span></div>'
 
     + '<div class="form-section-title">Record Today\'s Attendance</div>'
 
@@ -3452,7 +3467,7 @@ function buildFacultyAttendance() {
 
     + '<div class="form-group"><label class="form-label">Course</label><select class="form-select" id="fac-att-course">'
 
-    + myCourses.map(function(c){return '<option value="'+c.code+'">'+c.code+' – '+c.name+'</option>';}).join('')
+    + myCourses.map(function(c){return '<option value="'+c.code+'">'+c.code+' ï¿½ '+c.name+'</option>';}).join('')
 
     + '</select></div>'
 
@@ -3488,7 +3503,7 @@ function buildFacultyAttendance() {
     + '<h3 style="font-family:var(--font-head);margin-bottom:0">Attendance Uploads</h3>'
     + '<input class="form-input" id="attendance-upload-search" placeholder="Search student name" oninput="filterAttendanceUploads()" style="max-width:260px"/>'
     + '</div>'
-    + '<div id="attendance-uploads-wrap" style="min-height:80px;color:var(--text3)">Loading uploads…</div>'
+    + '<div id="attendance-uploads-wrap" style="min-height:80px;color:var(--text3)">Loading uploadsï¿½</div>'
     + '</div>';
 
 }
@@ -4667,7 +4682,7 @@ function appendMeetingChatMessage(payload) {
   var time = formatChatTime(data.ts);
   item.innerHTML =
     '<div class="meet-chat-bubble">'
-    + '<div class="meet-chat-name">' + inviteEscape(name) + (time ? ' · ' + time : '') + '</div>'
+    + '<div class="meet-chat-name">' + inviteEscape(name) + (time ? ' ï¿½ ' + time : '') + '</div>'
     + '<div class="meet-chat-text">' + inviteEscape(text) + '</div>'
     + '</div>';
   list.appendChild(item);
@@ -4936,7 +4951,7 @@ function buildFacultyMaterials() {
 
     + '</select></div>'
 
-    + '<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="fmat-title" placeholder="Module 4 — Sorting Algorithms"/></div>'
+    + '<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="fmat-title" placeholder="Module 4 ï¿½ Sorting Algorithms"/></div>'
 
     + '<div class="form-group"><label class="form-label">File Type</label><select class="form-select" id="fmat-type"><option>PDF</option><option>PPT</option><option>Video</option><option>Link</option></select></div>'
 
@@ -5018,13 +5033,13 @@ function buildFacultyAnnounce() {
 
     + '<div class="form-grid">'
 
-    + '<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="fann-title" placeholder="Assignment deadline reminder…"/></div>'
+    + '<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="fann-title" placeholder="Assignment deadline reminderï¿½"/></div>'
 
     + '<div class="form-group"><label class="form-label">Audience</label><select class="form-select" id="fann-audience"><option>My Students</option><option>CSE Department</option><option>All Students</option></select></div>'
 
     + '<div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="fann-priority"><option>Low</option><option>Medium</option><option>High</option></select></div>'
 
-    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Message</label><textarea class="form-textarea" id="fann-content" rows="3" placeholder="Type your announcement…"></textarea></div>'
+    + '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Message</label><textarea class="form-textarea" id="fann-content" rows="3" placeholder="Type your announcementï¿½"></textarea></div>'
 
     + '</div>'
 
@@ -5038,7 +5053,7 @@ function buildFacultyAnnounce() {
 
           var pc = a.priority==='High'?'red':a.priority==='Medium'?'yellow':'gray';
 
-          return [a.title.substring(0,30)+'…', a.author, a.audience,
+          return [a.title.substring(0,30)+'ï¿½', a.author, a.audience,
 
             '<span class="badge badge-'+pc+'">'+a.priority+'</span>', a.date];
 
@@ -5052,7 +5067,7 @@ function buildFacultyAnnounce() {
 
 /* 
 
-   ACTION HANDLERS — Role-specific button callbacks
+   ACTION HANDLERS ï¿½ Role-specific button callbacks
 
     */
 
@@ -5212,7 +5227,7 @@ function hodAssignCourse() {
 
   var db = dbGet();
 
-  var code = course.split('–')[0].trim();
+  var code = course.split('ï¿½')[0].trim();
 
   var c = db.courses.find(function(x){return x.code===code;});
 
@@ -5240,7 +5255,7 @@ function hodSubmitProposal() {
 
   db.proposals.unshift({ id:Date.now(), hod:sess.name, dept:sess.dept,
 
-    title:title, description:desc||'—', status:'Pending', date:new Date().toISOString().split('T')[0] });
+    title:title, description:desc||'ï¿½', status:'Pending', date:new Date().toISOString().split('T')[0] });
 
   dbSaveWithToast(db, 'Proposal submitted to Head');
 
@@ -5280,7 +5295,7 @@ function facultyMarkAttendance() {
 
   db.attendance.push({ id:Date.now(), cls:cls, course:course, date:date, present:present, total:total, pct:pct });
 
-  dbSaveWithToast(db, 'Attendance recorded — ' + pct + '%');
+  dbSaveWithToast(db, 'Attendance recorded ï¿½ ' + pct + '%');
 
   renderRoleSection('role-attendance');
 
@@ -5360,7 +5375,7 @@ function facultyUploadMaterial() {
 
   db.materials.push({ id:Date.now(), course:course, title:title, type:type,
 
-    faculty:sess.name, date:new Date().toISOString().split('T')[0], size:'—' });
+    faculty:sess.name, date:new Date().toISOString().split('T')[0], size:'ï¿½' });
 
   dbSaveWithToast(db, 'Material uploaded: ' + title);
 
@@ -5394,7 +5409,7 @@ function facultyPostAnnouncement() {
 
 function facultyUpdateSyllabus(code) {
 
-  var pct = prompt('Enter new syllabus % for ' + code + ' (0–100):');
+  var pct = prompt('Enter new syllabus % for ' + code + ' (0ï¿½100):');
 
   if (!pct) return;
 
@@ -5416,7 +5431,7 @@ function facultyUpdateSyllabus(code) {
 
 /* 
 
-   ROLE ENGINE — Core wiring of roles into the ERP shell
+   ROLE ENGINE ï¿½ Core wiring of roles into the ERP shell
 
     */
 
@@ -5498,7 +5513,7 @@ function getCurrentRoleSection() { return _currentRoleSection; }
 
 
 
-/* Main role section renderer — called when nav item is clicked */
+/* Main role section renderer ï¿½ called when nav item is clicked */
 
 function renderRoleSection(sectionId) {
 
@@ -5864,7 +5879,7 @@ function showRoleBadge(sess) {
 
 /* ----------------------------------------------------------
 
-   MAIN ROLE INIT — called from initERP() hook
+   MAIN ROLE INIT ï¿½ called from initERP() hook
 
    ---------------------------------------------------------- */
 
@@ -5872,7 +5887,7 @@ function initRoleDashboard() {
 
   var sess = getSession();
 
-  if (!sess) return; /* No session — default behavior */
+  if (!sess) return; /* No session ï¿½ default behavior */
   syncUsersFromServer();
 
   var role = sess.role;
@@ -5895,7 +5910,7 @@ function initRoleDashboard() {
 
   showRoleBadge(sess);
 
-  /* 5. For Faculty — auto-navigate to their dashboard */
+  /* 5. For Faculty ï¿½ auto-navigate to their dashboard */
 
   if (role === 'Faculty') {
 
@@ -5911,7 +5926,7 @@ function initRoleDashboard() {
 
 /* 
 
-   ENHANCED ACCESS PAGE — Role-based login
+   ENHANCED ACCESS PAGE ï¿½ Role-based login
 
     */
 
@@ -6047,7 +6062,7 @@ function loginAsRole(role) {
 
 function enhanceAccessPage() {
 
-  /* Guard: only inject once — check whole page not just first panel */
+  /* Guard: only inject once ï¿½ check whole page not just first panel */
 
   if (!DEMO_MODE) return;
   if (document.querySelector('#edusys-access .role-selector')) return;
